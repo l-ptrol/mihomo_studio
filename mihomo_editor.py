@@ -271,6 +271,7 @@ button:hover{filter:brightness(1.1)}
     <button onclick="save('save')" class="btn-s">💾 Сохранить</button>
     <button onclick="save('restart')" class="btn-r">🚀 Рестарт</button>
     <button onclick="document.getElementById('upl').click()" class="btn-u">📂 Файл</button>
+    <button onclick="openPanel()" class="btn-g">🌐 Панель</button>
     <select id="theme-sel" onchange="setTheme(this.value)" style="max-width:120px; padding:0 10px; margin:0;">
         <option value="dark">🌑 Dark</option>
         <option value="light">☀️ Light</option>
@@ -341,6 +342,16 @@ button:hover{filter:brightness(1.1)}
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
+var panelPort = '__PANEL_PORT__';
+
+function openPanel() {
+    if (panelPort && panelPort !== 'None' && panelPort !== '') {
+        var url = `http://${window.location.hostname}:${panelPort}/ui/#/proxies`;
+        window.open(url, '_blank');
+    } else {
+        alert('Порт для панели управления не найден в конфигурации (external-controller).');
+    }
+}
 ed.setValue(initialConfig); ed.clearSelection();
 
 function closeM(i){document.getElementById(i).style.display='none'}
@@ -564,13 +575,25 @@ class H(http.server.SimpleHTTPRequestHandler):
     def do_GET(s):
         if s.path != '/': return s.send_error(404)
         c = open(CONFIG_PATH).read() if os.path.exists(CONFIG_PATH) else "proxies:\n"
+        
+        panel_port = ''
+        try:
+            with open(CONFIG_PATH, 'r') as f:
+                config_content = f.read()
+                match = re.search(r"external-controller:\s*[\d\.]+:(\d+)", config_content)
+                if match:
+                    panel_port = match.group(1)
+        except (IOError, FileNotFoundError):
+            pass
+
         s.send_response(200);
         s.send_header('Content-type', 'text/html;charset=utf-8');
         s.end_headers()
         out = HTML_TEMPLATE.replace('__JSON_CONTENT__', json.dumps(c)) \
             .replace('__BACKUPS__', s.get_bks()) \
             .replace('__PROFILES__', s.get_prof_opts()) \
-            .replace('__TIME__', datetime.now().strftime("%H:%M:%S"))
+            .replace('__TIME__', datetime.now().strftime("%H:%M:%S")) \
+            .replace('__PANEL_PORT__', panel_port)
         s.wfile.write(out.encode('utf-8'))
 
     def do_POST(s):
