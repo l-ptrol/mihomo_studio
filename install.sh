@@ -36,8 +36,16 @@ mkdir -p "$INIT_DIR"
 mkdir -p "/opt/etc/mihomo/profiles"
 mkdir -p "/opt/etc/mihomo/backup"
 
-# 3. Скачивание файлов
-echo "[3/4] Скачивание файлов с сервера..."
+# Создаем директорию для PWA
+mkdir -p "/opt/etc/mihomo/public/icons"
+
+# 3. Скачивание и копирование файлов
+echo "[3/4] Скачивание и копирование файлов..."
+
+# Копируем локальные PWA файлы
+echo "Копирование PWA файлов..."
+cp -f public/manifest.json /opt/etc/mihomo/public/manifest.json
+cp -f public/icons/*.png /opt/etc/mihomo/public/icons/
 
 # Скачиваем основной скрипт
 echo "Загрузка $PY_SCRIPT..."
