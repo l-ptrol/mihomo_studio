@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Определяем директорию, в которой находится скрипт
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+
 # === НАСТРОЙКИ РЕПОЗИТОРИЯ ===
 # Укажи здесь имя ветки (master или main)
 BRANCH="master"
@@ -44,8 +47,8 @@ echo "[3/4] Скачивание и копирование файлов..."
 
 # Копируем локальные PWA файлы
 echo "Копирование PWA файлов..."
-cp -f public/manifest.json /opt/etc/mihomo/public/manifest.json
-cp -f public/icons/*.png /opt/etc/mihomo/public/icons/
+cp -f "$SCRIPT_DIR/public/manifest.json" /opt/etc/mihomo/public/manifest.json
+cp -f "$SCRIPT_DIR/public/icons/"*.png /opt/etc/mihomo/public/icons/
 
 # Скачиваем основной скрипт
 echo "Загрузка $PY_SCRIPT..."
