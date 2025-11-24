@@ -11,12 +11,13 @@ INIT_DIR="/opt/etc/init.d"
 PY_SCRIPT="mihomo_editor.py"
 INIT_SCRIPT="S95mihomo-web"
 
-echo "=== Установка Mihomo Studio из репозитория ==="
+echo "=== Установка Mihomo Studio из репозитория (v18.3 + Codecs Fix) ==="
 
 # 1. Проверка и установка зависимостей
 echo "[1/4] Проверка Python и модулей..."
 opkg update
-PACKAGES="python3-base python3-light python3-email python3-urllib"
+# python3-codecs ОБЯЗАТЕЛЕН для работы urllib и кодировки idna
+PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs"
 
 for pkg in $PACKAGES; do
     if ! opkg list-installed | grep -q "^$pkg"; then
