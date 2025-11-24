@@ -12,6 +12,7 @@ import time
 import shutil
 import glob
 import json
+import ssl
 from datetime import datetime
 
 # --- НАСТРОЙКИ ---
@@ -677,6 +678,15 @@ function doRename() {
         })
         .catch(e => alert("Сетевая ошибка: " + e));
 }
+     if ('serviceWorker' in navigator) {
+       window.addEventListener('load', () => {
+         navigator.serviceWorker.register('/service-worker.js').then(registration => {
+           console.log('ServiceWorker registration successful with scope: ', registration.scope);
+         }, err => {
+           console.log('ServiceWorker registration failed: ', err);
+         });
+       });
+     }
 </script></body></html>"""
 
 
@@ -779,6 +789,17 @@ class H(http.server.SimpleHTTPRequestHandler):
             pass  # Silent fail to avoid crashing
 
     def do_GET(s):
+        if s.path == '/service-worker.js':
+            try:
+                with open('public/service-worker.js', 'rb') as f:
+                    s.send_response(200)
+                    s.send_header('Content-type', 'application/javascript')
+                    s.end_headers()
+                    s.wfile.write(f.read())
+            except FileNotFoundError:
+                s.send_error(404, "File not found")
+            return
+
         if s.path == '/manifest.json':
             try:
                 with open('public/manifest.json', 'rb') as f:
@@ -1007,7 +1028,23 @@ class H(http.server.SimpleHTTPRequestHandler):
 
 
 try:
-    socketserver.TCPServer.allow_reuse_address = True;
-    socketserver.TCPServer(("", PORT), H).serve_forever()
+    # Создаем самоподписанный сертификат "на лету"
+    certfile = '/tmp/mihomo_cert.pem'
+    keyfile = '/tmp/mihomo_key.pem'
+    if not os.path.exists(certfile):
+        subprocess.call('openssl req -new -x509 -keyout {k} -out {c} -days 365 -nodes -subj "/C=US/ST=CA/L=./O=./CN=localhost"'.format(k=keyfile, c=certfile), shell=True, stderr=subprocess.DEVNULL)
+
+    server_address = ('', PORT)
+    httpd = http.server.HTTPServer(server_address, H)
+    httpd.socket = ssl.wrap_socket(httpd.socket,
+                                   server_side=True,
+                                   certfile=certfile,
+                                   keyfile=keyfile,
+                                   ssl_version=ssl.PROTOCOL_TLS)
+    print(f"Server running on https://localhost:{PORT}")
+    httpd.serve_forever()
 except Exception as e:
-    print(e)
+    print(f"Failed to start HTTPS server: {e}")
+    print("Fallback to HTTP...")
+    socketserver.TCPServer.allow_reuse_address = True
+    socketserver.TCPServer(("", PORT), H).serve_forever()

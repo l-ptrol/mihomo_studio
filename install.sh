@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Проверка наличия openssl
+if ! command -v openssl &> /dev/null; then
+    echo "openssl not found. Please install it first."
+    # opkg update && opkg install openssl-utils (example for OpenWrt)
+    exit 1
+fi
+
 # Определяем директорию, в которой находится скрипт
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
@@ -69,6 +76,10 @@ wget --no-check-certificate -O "$ICONS_DIR/icon-192x192.png" "$ICON192_URL"
 
 echo "Загрузка icon-512x512.png..."
 wget --no-check-certificate -O "$ICONS_DIR/icon-512x512.png" "$ICON512_URL"
+
+# Загружаем service-worker.js
+echo "Загрузка service-worker.js..."
+wget -O "$PWA_DIR/service-worker.js" "$BASE_URL/public/service-worker.js"
 
 # Скачиваем основной скрипт
 echo "Загрузка $PY_SCRIPT..."
