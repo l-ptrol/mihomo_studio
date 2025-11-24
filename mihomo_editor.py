@@ -330,6 +330,7 @@ button:hover{filter:brightness(1.1)}
         </div>
         <div class="sec">
             <button onclick="showDel()" class="btn-d" style="width:100%">🗑 Удалить прокси</button>
+            <button onclick="showRename()" class="btn-u" style="width:100%">✏️ Переименовать прокси</button>
         </div>
         <div class="sec">
             <h3>Бэкапы</h3>
@@ -350,6 +351,18 @@ button:hover{filter:brightness(1.1)}
 
 <div id="m-del" class="ovl"><div class="mod"><h3>Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px"><button onclick="doDel()" class="btn-d">Удалить</button><button onclick="closeM('m-del')" class="btn-g">Отмена</button></div></div></div>
 <div id="m-con" class="ovl"><div class="mod"><h3>Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px"><button onclick="location.reload()" class="btn-s">Обновить</button><button onclick="closeM('m-con')" class="btn-g">Закрыть</button></div></div></div>
+
+<div id="m-ren" class="ovl"><div class="mod">
+    <h3>Переименовать прокси</h3>
+    <p style="margin-top:0;font-size:13px;color:var(--txt-sec)">Выберите прокси для переименования:</p>
+    <select id="sel-ren-proxy"></select>
+    <p style="margin-top:15px;font-size:13px;color:var(--txt-sec)">Новое имя:</p>
+    <input id="inp-ren-newname" placeholder="Введите новое имя">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+        <button onclick="doRename()" class="btn-s">Переименовать</button>
+        <button onclick="closeM('m-ren')" class="btn-g">Отмена</button>
+    </div>
+</div></div>
 
 <div id="m-add-prof" class="ovl"><div class="mod">
     <h3>Новый профиль</h3>
@@ -606,6 +619,62 @@ function doDel(){
     }
     ed.setValue(nls.join('\\n'));
 }
+
+function showRename() {
+    var ls = ed.getValue().split(/\\r?\\n/);
+    var prs = [], inP = 0;
+    for (var l of ls) {
+        if (l.match(/^proxies:/)) inP = 1;
+        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
+        if (inP) {
+            var m = l.match(/^\s+-\s+name:\s+(.*)/);
+            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
+        }
+    }
+    var s = document.getElementById('sel-ren-proxy');
+    s.innerHTML = '';
+    prs.forEach(p => {
+        var o = document.createElement('option');
+        o.text = p;
+        s.add(o)
+    });
+    document.getElementById('inp-ren-newname').value = '';
+    document.getElementById('m-ren').style.display = 'flex';
+}
+
+function doRename() {
+    var oldName = document.getElementById('sel-ren-proxy').value;
+    var newName = document.getElementById('inp-ren-newname').value.trim();
+    if (!newName) {
+        alert("Новое имя не может быть пустым.");
+        return;
+    }
+    if (!oldName) {
+        alert("Прокси не выбран.");
+        return;
+    }
+
+    var content = ed.getValue();
+    var params = new URLSearchParams();
+    params.append('act', 'rename_proxy');
+    params.append('old_name', oldName);
+    params.append('new_name', newName);
+    params.append('content', content);
+
+    fetch('/', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert('Ошибка: ' + d.error);
+            } else {
+                ed.setValue(d.new_content);
+                ed.clearSelection();
+                closeM('m-ren');
+                showToast("✏️ Прокси переименован!");
+            }
+        })
+        .catch(e => alert("Сетевая ошибка: " + e));
+}
 </script></body></html>"""
 
 
@@ -787,6 +856,32 @@ class H(http.server.SimpleHTTPRequestHandler):
                 s.wfile.write(json.dumps({'status': 'ok', 'content': content}).encode('utf-8'))
             else:
                 s.wfile.write(json.dumps({'error': 'Profile not found'}).encode('utf-8'))
+            return
+
+        if a == 'rename_proxy':
+            old_name = p.get('old_name')
+            new_name = p.get('new_name')
+            content = p.get('content', '')
+            if not all([old_name, new_name, content]):
+                s.wfile.write(json.dumps({'error': 'Missing parameters'}).encode('utf-8'))
+                return
+
+            # 1. Замена в определении прокси: - name: "old_name"
+            # Regex для поиска `name: 'old_name'`, `name: "old_name"` или `name: old_name`
+            # Используем `re.escape` для безопасности
+            escaped_old = re.escape(old_name)
+            # (?P<quote>['"]?) - захватывает кавычку (если она есть) в группу 'quote'
+            # \\1 - ссылается на захваченную кавычку, чтобы заменить на такую же
+            pattern_def = r"(name\s*:\s*)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
+            # Заменяем, сохраняя оригинальные кавычки
+            content = re.sub(pattern_def, r'\g<1>"' + new_name + '"', content, count=1)
+
+            # 2. Замена в списках proxy-groups: - "old_name"
+            # Regex для поиска `- 'old_name'`, `- "old_name"` или `- old_name`
+            pattern_list = r"(-\s+)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
+            content = re.sub(pattern_list, r'\g<1>"' + new_name + '"', content)
+
+            s.wfile.write(json.dumps({'status': 'ok', 'new_content': content}).encode('utf-8'))
             return
 
         # --- EXISTING ACTIONS ---
