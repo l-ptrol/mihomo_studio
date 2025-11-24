@@ -1,0 +1,34 @@
+#!/bin/sh
+
+PROG=/opt/scripts/mihomo_editor.py
+PIDfile=/opt/var/run/mihomo_editor.pid
+
+case "$1" in
+  start)
+    echo "Starting Mihomo Web Editor..."
+    # Запуск python в фоне
+    python3 $PROG > /dev/null 2>&1 &
+    echo $! > $PIDfile
+    ;;
+  stop)
+    echo "Stopping Mihomo Web Editor..."
+    if [ -f $PIDfile ]; then
+        kill $(cat $PIDfile)
+        rm $PIDfile
+    else
+        echo "No PID file found."
+        # На всякий случай убиваем по имени, если PID потерян
+        pkill -f "python3 $PROG"
+    fi
+    ;;
+  restart)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
