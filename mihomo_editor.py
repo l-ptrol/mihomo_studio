@@ -316,6 +316,7 @@ button:hover{filter:brightness(1.1)}
             <div class="prof-row">
                 <select id="prof-sel">__PROFILES__</select>
                 <button onclick="switchProf()" class="btn-s" style="padding:0; width:36px; justify-content:center;" title="Выбрать">✔</button>
+                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:36px; justify-content:center;" title="Скачать">💾</button>
             </div>
             <div class="prof-btns">
                  <button onclick="openAddProf()" class="btn-u">➕ Создать</button>
@@ -429,6 +430,30 @@ function delProf() {
         if(d.error) alert(d.error);
         else { showToast("🗑 Удалено"); setTimeout(()=>{window.location.reload()}, 500); }
     });
+}
+
+function downloadProf() {
+    var sel = document.getElementById('prof-sel');
+    if (!sel.value) return;
+    var name = sel.value;
+    var params = new URLSearchParams();
+    params.append('act', 'get_prof_content');
+    params.append('name', name);
+    fetch('/', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                var a = document.createElement('a');
+                a.href = 'data:text/yaml;charset=utf-8,' + encodeURIComponent(d.content);
+                a.download = name + '.yaml';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('📄 Загрузка началась');
+            }
+        });
 }
 
 function fmtLog(raw) {
@@ -751,6 +776,17 @@ class H(http.server.SimpleHTTPRequestHandler):
                 s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
             else:
                 s.wfile.write(json.dumps({'error': 'File not found'}).encode('utf-8'))
+            return
+
+        if a == 'get_prof_content':
+            n = p.get('name')
+            target = os.path.join(PROFILES_DIR, n + ".yaml")
+            if os.path.exists(target):
+                with open(target, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                s.wfile.write(json.dumps({'status': 'ok', 'content': content}).encode('utf-8'))
+            else:
+                s.wfile.write(json.dumps({'error': 'Profile not found'}).encode('utf-8'))
             return
 
         # --- EXISTING ACTIONS ---
