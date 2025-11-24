@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# Проверка наличия openssl
-if ! command -v openssl &> /dev/null; then
-    echo "openssl not found. Please install it first."
-    # opkg update && opkg install openssl-utils (example for OpenWrt)
-    exit 1
-fi
-
 # Определяем директорию, в которой находится скрипт
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 

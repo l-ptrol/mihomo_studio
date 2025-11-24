@@ -12,7 +12,6 @@ import time
 import shutil
 import glob
 import json
-import ssl
 from datetime import datetime
 
 # --- НАСТРОЙКИ ---
@@ -1028,23 +1027,7 @@ class H(http.server.SimpleHTTPRequestHandler):
 
 
 try:
-    # Создаем самоподписанный сертификат "на лету"
-    certfile = '/tmp/mihomo_cert.pem'
-    keyfile = '/tmp/mihomo_key.pem'
-    if not os.path.exists(certfile):
-        subprocess.call('openssl req -new -x509 -keyout {k} -out {c} -days 365 -nodes -subj "/C=US/ST=CA/L=./O=./CN=localhost"'.format(k=keyfile, c=certfile), shell=True, stderr=subprocess.DEVNULL)
-
-    server_address = ('', PORT)
-    httpd = http.server.HTTPServer(server_address, H)
-    httpd.socket = ssl.wrap_socket(httpd.socket,
-                                   server_side=True,
-                                   certfile=certfile,
-                                   keyfile=keyfile,
-                                   ssl_version=ssl.PROTOCOL_TLS)
-    print(f"Server running on https://localhost:{PORT}")
-    httpd.serve_forever()
-except Exception as e:
-    print(f"Failed to start HTTPS server: {e}")
-    print("Fallback to HTTP...")
     socketserver.TCPServer.allow_reuse_address = True
     socketserver.TCPServer(("", PORT), H).serve_forever()
+except Exception as e:
+    print(e)
