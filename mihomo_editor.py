@@ -162,7 +162,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.4</title>
+<title>Mihomo Editor v18.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -278,7 +278,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.4 Panel Fix</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.5 Panel Fix</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -357,15 +357,10 @@ var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="miho
 var initialConfig = __JSON_CONTENT__;
 
 function openPanel() {
-    // Формируем URL для автоматического подключения к прокси
-    // Используем текущий хост и порт веб-интерфейса (например, 8888)
-    // Дашборд будет стучаться в /mihomo_panel/, а скрипт перенаправит это на внутренний порт
-
     var host = window.location.hostname;
     var port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     var path = '/mihomo_panel'; 
 
-    // Параметры для Yacd/Metacubexd
     var params = `hostname=${host}&port=${port}&path=${path}`;
     var url = `${window.location.protocol}//${host}:${port}${path}/ui/#/setup?${params}`;
 
@@ -552,16 +547,12 @@ function doDel(){
     }
     ed.setValue(nls.join('\\n'));
 }
-</script></body></html>"""
-
-
+"""
 class H(http.server.SimpleHTTPRequestHandler):
     def end_headers(s):
-        s.send_header('Cache-Control', 'no-store, no-cache, must-revalidate');
-        s.send_header('Pragma',
-                      'no-cache');
-        s.send_header(
-            'Expires', '0');
+        s.send_header('Cache-Control', 'no-store, no-cache, must-revalidate'); 
+        s.send_header('Pragma', 'no-cache'); 
+        s.send_header('Expires', '0'); 
         super().end_headers()
 
     def get_bks(s):
@@ -605,6 +596,14 @@ class H(http.server.SimpleHTTPRequestHandler):
             pass
         return panel_port
 
+    # --- HELPER: Add CORS Headers ---
+    def add_cors_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE, PATCH')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, *')
+        # Fix for Chrome Private Network Access
+        self.send_header('Access-Control-Allow-Private-Network', 'true')
+
     # --- PROXY LOGIC ---
     def proxy_pass(self, method):
         panel_port = self.get_panel_port()
@@ -612,35 +611,47 @@ class H(http.server.SimpleHTTPRequestHandler):
             self.send_error(500, "Panel port not found in config")
             return
 
-        # Strip prefix
         rel_path = self.path.replace('/mihomo_panel/', '', 1)
         target_url = f"http://127.0.0.1:{panel_port}/{rel_path}"
 
-        # Read Body
         content_len = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_len) if content_len > 0 else None
 
-        # Create Request
         req = urllib.request.Request(target_url, data=body, method=method)
         for k, v in self.headers.items():
-            if k.lower() not in ['host']:
+            if k.lower() not in ['host', 'origin', 'referer']:
                 req.add_header(k, v)
 
         try:
             with urllib.request.urlopen(req) as resp:
                 self.send_response(resp.status)
+
+                # Copy headers from backend but filter conflicting CORS
                 for k, v in resp.getheaders():
-                    self.send_header(k, v)
+                    if k.lower() not in ['access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers']:
+                        self.send_header(k, v)
+
+                # Force our permissive CORS
+                self.add_cors_headers()
                 self.end_headers()
                 self.wfile.write(resp.read())
+
         except urllib.error.HTTPError as e:
             self.send_response(e.code)
-            for k, v in e.headers.items():
-                self.send_header(k, v)
+            self.add_cors_headers()
             self.end_headers()
             self.wfile.write(e.read())
         except Exception as e:
             self.send_error(500, str(e))
+
+    def do_OPTIONS(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.send_response(200)
+            s.add_cors_headers()
+            s.end_headers()
+            return
+        s.send_response(200)
+        s.end_headers()
 
     def do_GET(s):
         if s.path.startswith('/mihomo_panel/'):
@@ -672,7 +683,6 @@ class H(http.server.SimpleHTTPRequestHandler):
         s.send_header('Content-Type', 'application/json');
         s.end_headers()
 
-        # --- PROFILE ACTIONS ---
         if a == 'switch_prof':
             n = p.get('name')
             target = os.path.join(PROFILES_DIR, n + ".yaml")
@@ -692,8 +702,7 @@ class H(http.server.SimpleHTTPRequestHandler):
             if os.path.exists(target):
                 s.wfile.write(json.dumps({'error': 'Профиль с таким именем уже существует'}).encode('utf-8'))
             else:
-                with open(target, 'w') as f:
-                    f.write(c)
+                with open(target, 'w') as f: f.write(c)
                 if not os.path.exists(CONFIG_PATH): os.symlink(target, CONFIG_PATH)
                 s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
             return
@@ -703,9 +712,7 @@ class H(http.server.SimpleHTTPRequestHandler):
             target = os.path.join(PROFILES_DIR, n + ".yaml")
             real_curr = os.path.realpath(CONFIG_PATH)
             if os.path.realpath(target) == real_curr:
-                s.wfile.write(
-                    json.dumps({'error': 'Нельзя удалить активный профиль. Сначала переключитесь на другой.'}).encode(
-                        'utf-8'))
+                s.wfile.write(json.dumps({'error': 'Нельзя удалить активный профиль.'}).encode('utf-8'))
             elif os.path.exists(target):
                 os.remove(target)
                 s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'))
@@ -713,54 +720,40 @@ class H(http.server.SimpleHTTPRequestHandler):
                 s.wfile.write(json.dumps({'error': 'File not found'}).encode('utf-8'))
             return
 
-        # --- EXISTING ACTIONS ---
-
         if a == 'parse':
             d, e = parse_vless(p.get('link', ''))
-            s.wfile.write(json.dumps(d if d else {'error': e}).encode('utf-8'));
-            return
+            s.wfile.write(json.dumps(d if d else {'error': e}).encode('utf-8')); return
 
         if a == 'apply_insert':
-            content = p.get('content', '');
-            p_name = p.get('proxy_name', '');
-            p_yaml = p.get('proxy_yaml', '');
-            targets = json.loads(p.get('targets', '[]'))
-            lines = content.splitlines();
-            inserted = False
+            content = p.get('content', ''); p_name = p.get('proxy_name', ''); p_yaml = p.get('proxy_yaml', ''); targets = json.loads(p.get('targets', '[]'))
+            lines = content.splitlines(); inserted = False
             for i, line in enumerate(lines):
                 if line.strip().startswith('proxies:'):
                     blk = p_yaml.splitlines();
                     for bi, bl in enumerate(blk): lines.insert(i + 1 + bi, "  " + bl)
-                    inserted = True;
-                    break
+                    inserted = True; break
             if not inserted: lines.append("proxies:"); lines.extend(["  " + l for l in p_yaml.splitlines()])
             uc = insert_proxy_logic("\n".join(lines), p_name, targets)
-            s.wfile.write(json.dumps({'new_content': uc}).encode('utf-8'));
-            return
+            s.wfile.write(json.dumps({'new_content': uc}).encode('utf-8')); return
 
         if a == 'clean_backups':
             limit = int(p.get('limit', 5))
             files = sorted(glob.glob(BACKUP_DIR + "/*.yaml"), key=os.path.getmtime, reverse=True)
             if len(files) > limit:
                 for f in files[limit:]:
-                    try:
-                        os.remove(f)
-                    except:
-                        pass
-            s.wfile.write(json.dumps({'backups': s.get_bks()}).encode('utf-8'));
-            return
+                    try: os.remove(f)
+                    except: pass
+            s.wfile.write(json.dumps({'backups': s.get_bks()}).encode('utf-8')); return
 
         if a == 'del_backup':
             fname = p.get('f')
             path = os.path.join(BACKUP_DIR, os.path.basename(fname))
             if os.path.exists(path): os.remove(path)
-            s.wfile.write(json.dumps({'backups': s.get_bks()}).encode('utf-8'));
-            return
+            s.wfile.write(json.dumps({'backups': s.get_bks()}).encode('utf-8')); return
 
         if a == 'rest':
             shutil.copy(os.path.join(BACKUP_DIR, os.path.basename(p.get('f'))), CONFIG_PATH)
-            s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'));
-            return
+            s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8')); return
 
         new_c = p.get('content', '').replace('\r\n', '\n')
         if a in ['save', 'restart']:
@@ -769,45 +762,25 @@ class H(http.server.SimpleHTTPRequestHandler):
                 prof_n = os.path.splitext(real_p)[0]
                 ts = datetime.now().strftime('%Y%m%d_%H%M%S')
                 shutil.copy(CONFIG_PATH, f"{BACKUP_DIR}/{prof_n}_{ts}.yaml")
-
-            with open(CONFIG_PATH, 'w') as f:
-                f.write(new_c);
-                f.flush();
-                os.fsync(f.fileno())
+            with open(CONFIG_PATH, 'w') as f: f.write(new_c); f.flush(); os.fsync(f.fileno())
 
         if a == 'restart':
-            my_env = os.environ.copy();
-            my_env["TERM"] = "xterm-256color"
+            my_env = os.environ.copy(); my_env["TERM"] = "xterm-256color"
             subprocess.run(RESTART_CMD, shell=True, env=my_env)
             log = open(LOG_FILE).read() if os.path.exists(LOG_FILE) else "Log empty"
             s.wfile.write(json.dumps({'log': log}).encode('utf-8'))
         elif a == 'save':
-            s.wfile.write(json.dumps(
-                {'status': 'ok', 'time': datetime.now().strftime("%H:%M:%S"), 'backups': s.get_bks()}).encode('utf-8'))
+            s.wfile.write(json.dumps({'status': 'ok', 'time': datetime.now().strftime("%H:%M:%S"), 'backups': s.get_bks()}).encode('utf-8'))
 
     def do_PUT(s):
-        if s.path.startswith('/mihomo_panel/'):
-            s.proxy_pass('PUT')
-            return
+        if s.path.startswith('/mihomo_panel/'): s.proxy_pass('PUT'); return
         s.send_error(405, "Method Not Allowed")
 
     def do_DELETE(s):
-        if s.path.startswith('/mihomo_panel/'):
-            s.proxy_pass('DELETE')
-            return
+        if s.path.startswith('/mihomo_panel/'): s.proxy_pass('DELETE'); return
         s.send_error(405, "Method Not Allowed")
 
-    def do_OPTIONS(s):
-        if s.path.startswith('/mihomo_panel/'):
-            s.proxy_pass('OPTIONS')
-            return
-        s.send_response(200)
-        s.send_header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
-        s.end_headers()
-
-
 try:
-    socketserver.TCPServer.allow_reuse_address = True;
-    socketserver.TCPServer(("", PORT), H).serve_forever()
+    socketserver.TCPServer.allow_reuse_address = True; socketserver.TCPServer(("", PORT), H).serve_forever()
 except Exception as e:
     print(e)
