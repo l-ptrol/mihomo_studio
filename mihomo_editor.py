@@ -1,4 +1,4 @@
-# !/opt/bin/python3
+#!/opt/bin/python3
 # -*- coding: utf-8 -*-
 import http.server
 import socketserver
@@ -162,7 +162,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.3</title>
+<title>Mihomo Editor v18.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -236,7 +236,6 @@ button:hover{filter:brightness(1.1)}
 .prof-btns { display: flex; gap: 8px; margin-top: 5px; }
 .prof-btns button { flex: 1; }
 
-/* Новый стиль для Loaded плашки */
 #last-load {
     font-size: 11px;
     color: var(--txt);
@@ -279,7 +278,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.3 UI Polish</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.4 Panel Fix</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -357,9 +356,19 @@ var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/m
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
 
-// Обновленная функция открытия панели через локальный прокси
 function openPanel() {
-    var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
+    // Формируем URL для автоматического подключения к прокси
+    // Используем текущий хост и порт веб-интерфейса (например, 8888)
+    // Дашборд будет стучаться в /mihomo_panel/, а скрипт перенаправит это на внутренний порт
+
+    var host = window.location.hostname;
+    var port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+    var path = '/mihomo_panel'; 
+
+    // Параметры для Yacd/Metacubexd
+    var params = `hostname=${host}&port=${port}&path=${path}`;
+    var url = `${window.location.protocol}//${host}:${port}${path}/ui/#/setup?${params}`;
+
     window.open(url, '_blank');
 }
 ed.setValue(initialConfig); ed.clearSelection();
@@ -787,6 +796,14 @@ class H(http.server.SimpleHTTPRequestHandler):
             s.proxy_pass('DELETE')
             return
         s.send_error(405, "Method Not Allowed")
+
+    def do_OPTIONS(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.proxy_pass('OPTIONS')
+            return
+        s.send_response(200)
+        s.send_header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
+        s.end_headers()
 
 
 try:
