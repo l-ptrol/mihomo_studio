@@ -45,10 +45,30 @@ mkdir -p "/opt/etc/mihomo/public/icons"
 # 3. Скачивание и копирование файлов
 echo "[3/4] Скачивание и копирование файлов..."
 
-# Копируем локальные PWA файлы
-echo "Копирование PWA файлов..."
-cp -f "$SCRIPT_DIR/public/manifest.json" /opt/etc/mihomo/public/manifest.json
-cp -f "$SCRIPT_DIR/public/icons/"*.png /opt/etc/mihomo/public/icons/
+# Загружаем PWA файлы
+echo "Загрузка PWA файлов..."
+
+# Директории на роутере для PWA
+PWA_DIR="/opt/etc/mihomo/public"
+ICONS_DIR="$PWA_DIR/icons"
+
+# Убедимся, что директории существуют
+mkdir -p "$ICONS_DIR"
+
+# URL-ы для сырых файлов PWA
+MANIFEST_URL="$BASE_URL/public/manifest.json"
+ICON192_URL="$BASE_URL/public/icons/icon-192x192.png"
+ICON512_URL="$BASE_URL/public/icons/icon-512x512.png"
+
+# Загрузка файлов
+echo "Загрузка manifest.json..."
+wget --no-check-certificate -O "$PWA_DIR/manifest.json" "$MANIFEST_URL"
+
+echo "Загрузка icon-192x192.png..."
+wget --no-check-certificate -O "$ICONS_DIR/icon-192x192.png" "$ICON192_URL"
+
+echo "Загрузка icon-512x512.png..."
+wget --no-check-certificate -O "$ICONS_DIR/icon-512x512.png" "$ICON512_URL"
 
 # Скачиваем основной скрипт
 echo "Загрузка $PY_SCRIPT..."
