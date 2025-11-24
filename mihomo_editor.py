@@ -1,4 +1,4 @@
-#!/opt/bin/python3
+# !/opt/bin/python3
 # -*- coding: utf-8 -*-
 import http.server
 import socketserver
@@ -53,7 +53,8 @@ def parse_vless(link):
             return None, "No UUID"
         if ':' in srv_port:
             if ']' in srv_port:
-                srv, port = srv_port.rsplit(':', 1); srv = srv.replace('[', '').replace(']', '')
+                srv, port = srv_port.rsplit(':', 1);
+                srv = srv.replace('[', '').replace(']', '')
             else:
                 srv, port = srv_port.split(':')
         else:
@@ -278,7 +279,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.4 Panel Fix</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.4 UI Polish</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -355,20 +356,16 @@ button:hover{filter:brightness(1.1)}
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
+var apiSecret = "__SECRET__";
 
+// Обновленная функция открытия панели: передаем параметры хоста, чтобы панель шла через Python-прокси
 function openPanel() {
-    // Формируем URL для автоматического подключения к прокси
-    // Используем текущий хост и порт веб-интерфейса (например, 8888)
-    // Дашборд будет стучаться в /mihomo_panel/, а скрипт перенаправит это на внутренний порт
-
     var host = window.location.hostname;
-    var port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-    var path = '/mihomo_panel'; 
-
-    // Параметры для Yacd/Metacubexd
-    var params = `hostname=${host}&port=${port}&path=${path}`;
-    var url = `${window.location.protocol}//${host}:${port}${path}/ui/#/setup?${params}`;
-
+    var port = window.location.port; // Порт редактора (8888)
+    // Формируем URL с параметрами авто-настройки Metacubexd/Yacd
+    // path=/mihomo_panel заставляет панель делать запросы к API через наш Python скрипт
+    var params = "?hostname=" + host + "&port=" + port + "&secret=" + apiSecret + "&path=/mihomo_panel";
+    var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/" + params;
     window.open(url, '_blank');
 }
 ed.setValue(initialConfig); ed.clearSelection();
@@ -601,49 +598,71 @@ class H(http.server.SimpleHTTPRequestHandler):
                 match = re.search(r"external-controller:\s*[\d\.]+:(\d+)", config_content)
                 if match:
                     panel_port = match.group(1)
+                else:
+                    match = re.search(r"external-controller:\s*[:]?(\d+)", config_content)
+                    if match: panel_port = match.group(1)
         except (IOError, FileNotFoundError):
             pass
-        return panel_port
+        return panel_port or "9090"
+
+    def get_secret(self):
+        try:
+            with open(CONFIG_PATH, 'r') as f:
+                config_content = f.read()
+                match = re.search(r"secret:\s*[\"']?([^\"'\s]+)[\"']?", config_content)
+                if match:
+                    return match.group(1)
+        except:
+            pass
+        return ""
 
     # --- PROXY LOGIC ---
     def proxy_pass(self, method):
         panel_port = self.get_panel_port()
         if not panel_port:
-            self.send_error(500, "Panel port not found in config")
+            self.send_error(500, "Panel port not found")
             return
 
-        # Strip prefix
-        rel_path = self.path.replace('/mihomo_panel/', '', 1)
-        target_url = f"http://127.0.0.1:{panel_port}/{rel_path}"
+        # Важно: если запрос /mihomo_panel/proxies -> шлем в корень /proxies
+        # Если запрос /mihomo_panel/ui/ -> шлем в /ui/
+        rel_path = self.path.replace('/mihomo_panel', '', 1)
+        if not rel_path.startswith('/'): rel_path = '/' + rel_path
 
-        # Read Body
+        target_url = f"http://127.0.0.1:{panel_port}{rel_path}"
+
         content_len = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_len) if content_len > 0 else None
 
-        # Create Request
         req = urllib.request.Request(target_url, data=body, method=method)
         for k, v in self.headers.items():
-            if k.lower() not in ['host']:
+            if k.lower() not in ['host', 'origin', 'referer']:
                 req.add_header(k, v)
+
+        # Обманываем Mihomo, чтобы он думал, что запрос локальный
+        req.add_header("Host", f"127.0.0.1:{panel_port}")
 
         try:
             with urllib.request.urlopen(req) as resp:
                 self.send_response(resp.status)
                 for k, v in resp.getheaders():
-                    self.send_header(k, v)
+                    # Фильтруем заголовки CORS, чтобы браузер не ругался на дубликаты
+                    if k.lower() not in ['access-control-allow-origin', 'content-encoding', 'transfer-encoding']:
+                        self.send_header(k, v)
                 self.end_headers()
                 self.wfile.write(resp.read())
         except urllib.error.HTTPError as e:
             self.send_response(e.code)
             for k, v in e.headers.items():
-                self.send_header(k, v)
+                if k.lower() not in ['access-control-allow-origin']:
+                    self.send_header(k, v)
             self.end_headers()
             self.wfile.write(e.read())
         except Exception as e:
-            self.send_error(500, str(e))
+            # Игнорируем ошибки вебсокетов (urllib их не умеет), но статика загрузится
+            pass
 
     def do_GET(s):
-        if s.path.startswith('/mihomo_panel/'):
+        if s.path.startswith('/mihomo_panel'):
             s.proxy_pass('GET')
             return
 
@@ -656,11 +675,12 @@ class H(http.server.SimpleHTTPRequestHandler):
         out = HTML_TEMPLATE.replace('__JSON_CONTENT__', json.dumps(c)) \
             .replace('__BACKUPS__', s.get_bks()) \
             .replace('__PROFILES__', s.get_prof_opts()) \
+            .replace('__SECRET__', s.get_secret()) \
             .replace('__TIME__', datetime.now().strftime("%H:%M:%S"))
         s.wfile.write(out.encode('utf-8'))
 
     def do_POST(s):
-        if s.path.startswith('/mihomo_panel/'):
+        if s.path.startswith('/mihomo_panel'):
             s.proxy_pass('POST')
             return
 
@@ -786,24 +806,16 @@ class H(http.server.SimpleHTTPRequestHandler):
                 {'status': 'ok', 'time': datetime.now().strftime("%H:%M:%S"), 'backups': s.get_bks()}).encode('utf-8'))
 
     def do_PUT(s):
-        if s.path.startswith('/mihomo_panel/'):
+        if s.path.startswith('/mihomo_panel'):
             s.proxy_pass('PUT')
             return
         s.send_error(405, "Method Not Allowed")
 
     def do_DELETE(s):
-        if s.path.startswith('/mihomo_panel/'):
+        if s.path.startswith('/mihomo_panel'):
             s.proxy_pass('DELETE')
             return
         s.send_error(405, "Method Not Allowed")
-
-    def do_OPTIONS(s):
-        if s.path.startswith('/mihomo_panel/'):
-            s.proxy_pass('OPTIONS')
-            return
-        s.send_response(200)
-        s.send_header('Allow', 'GET, POST, OPTIONS, PUT, DELETE')
-        s.end_headers()
 
 
 try:
