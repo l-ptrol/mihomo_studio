@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Определяем директорию, в которой находится скрипт
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
-
 # === НАСТРОЙКИ РЕПОЗИТОРИЯ ===
 # Укажи здесь имя ветки (master или main)
 BRANCH="master"
@@ -39,40 +36,8 @@ mkdir -p "$INIT_DIR"
 mkdir -p "/opt/etc/mihomo/profiles"
 mkdir -p "/opt/etc/mihomo/backup"
 
-# Создаем директорию для PWA
-mkdir -p "/opt/etc/mihomo/public/icons"
-
-# 3. Скачивание и копирование файлов
-echo "[3/4] Скачивание и копирование файлов..."
-
-# Загружаем PWA файлы
-echo "Загрузка PWA файлов..."
-
-# Директории на роутере для PWA
-PWA_DIR="/opt/etc/mihomo/public"
-ICONS_DIR="$PWA_DIR/icons"
-
-# Убедимся, что директории существуют
-mkdir -p "$ICONS_DIR"
-
-# URL-ы для сырых файлов PWA
-MANIFEST_URL="$BASE_URL/public/manifest.json"
-ICON192_URL="$BASE_URL/public/icons/icon-192x192.png"
-ICON512_URL="$BASE_URL/public/icons/icon-512x512.png"
-
-# Загрузка файлов
-echo "Загрузка manifest.json..."
-wget --no-check-certificate -O "$PWA_DIR/manifest.json" "$MANIFEST_URL"
-
-echo "Загрузка icon-192x192.png..."
-wget --no-check-certificate -O "$ICONS_DIR/icon-192x192.png" "$ICON192_URL"
-
-echo "Загрузка icon-512x512.png..."
-wget --no-check-certificate -O "$ICONS_DIR/icon-512x512.png" "$ICON512_URL"
-
-# Загружаем service-worker.js
-echo "Загрузка service-worker.js..."
-wget -O "$PWA_DIR/service-worker.js" "$BASE_URL/public/service-worker.js"
+# 3. Скачивание файлов
+echo "[3/4] Скачивание файлов с сервера..."
 
 # Скачиваем основной скрипт
 echo "Загрузка $PY_SCRIPT..."

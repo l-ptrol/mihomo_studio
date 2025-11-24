@@ -164,8 +164,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Mihomo Editor v18.4</title>
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -677,15 +675,6 @@ function doRename() {
         })
         .catch(e => alert("Сетевая ошибка: " + e));
 }
-     if ('serviceWorker' in navigator) {
-       window.addEventListener('load', () => {
-         navigator.serviceWorker.register('/service-worker.js').then(registration => {
-           console.log('ServiceWorker registration successful with scope: ', registration.scope);
-         }, err => {
-           console.log('ServiceWorker registration failed: ', err);
-         });
-       });
-     }
 </script></body></html>"""
 
 
@@ -788,41 +777,6 @@ class H(http.server.SimpleHTTPRequestHandler):
             pass  # Silent fail to avoid crashing
 
     def do_GET(s):
-        if s.path == '/service-worker.js':
-            try:
-                with open('public/service-worker.js', 'rb') as f:
-                    s.send_response(200)
-                    s.send_header('Content-type', 'application/javascript')
-                    s.end_headers()
-                    s.wfile.write(f.read())
-            except FileNotFoundError:
-                s.send_error(404, "File not found")
-            return
-
-        if s.path == '/manifest.json':
-            try:
-                with open('public/manifest.json', 'rb') as f:
-                    s.send_response(200)
-                    s.send_header('Content-type', 'application/json')
-                    s.end_headers()
-                    s.wfile.write(f.read())
-            except FileNotFoundError:
-                s.send_error(404, "File not found")
-            return
-
-        if s.path.startswith('/icons/'):
-            try:
-                # Sanitize path to prevent directory traversal
-                safe_path = os.path.join('public', s.path[1:]).replace('\\\\', '/')
-                with open(safe_path, 'rb') as f:
-                    s.send_response(200)
-                    s.send_header('Content-type', 'image/png')
-                    s.end_headers()
-                    s.wfile.write(f.read())
-            except FileNotFoundError:
-                s.send_error(404, "File not found")
-            return
-
         if s.path.startswith('/mihomo_panel/'):
             s.proxy_pass('GET')
             return
@@ -1027,7 +981,7 @@ class H(http.server.SimpleHTTPRequestHandler):
 
 
 try:
-    socketserver.TCPServer.allow_reuse_address = True
+    socketserver.TCPServer.allow_reuse_address = True;
     socketserver.TCPServer(("", PORT), H).serve_forever()
 except Exception as e:
     print(e)
