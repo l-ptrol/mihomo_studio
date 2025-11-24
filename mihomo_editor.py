@@ -162,7 +162,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.2</title>
+<title>Mihomo Editor v18.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -191,7 +191,7 @@ body.cyber {
 body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 * { box-sizing: border-box; }
 
-.hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;height:40px;flex-shrink:0}
+.hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;height:45px;flex-shrink:0}
 .bar{background:var(--bg-ter);padding:8px 15px;display:flex;gap:10px;border-bottom:1px solid var(--bd);flex-wrap:wrap;flex-shrink:0}
 
 button, input, select, textarea {
@@ -236,6 +236,20 @@ button:hover{filter:brightness(1.1)}
 .prof-btns { display: flex; gap: 8px; margin-top: 5px; }
 .prof-btns button { flex: 1; }
 
+/* Новый стиль для Loaded плашки */
+#last-load {
+    font-size: 11px;
+    color: var(--txt);
+    background: var(--bg-ter);
+    border: 1px solid var(--bd);
+    padding: 2px 10px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    font-weight: 600;
+}
+
 #cons{background:var(--log-bg);color:var(--log-txt);font-family:'Consolas',monospace;padding:10px;height:350px;overflow:auto;white-space:pre-wrap;font-size:12px;border:1px solid var(--bd);border-radius:4px}
 .g-list {display: grid;grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));gap: 8px;overflow-y: auto;padding: 5px;margin-top: 5px;}
 .g-item { position: relative; }
@@ -263,16 +277,15 @@ button:hover{filter:brightness(1.1)}
 <body>
 <div class="toast" id="toast">✅ Успешно сохранено</div>
 <div class="hdr">
-    <div style="display:flex;align-items:baseline;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.2 Header Fix</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.3 UI Polish</span>
     </div>
-    <div id="last-load" style="font-size:12px;color:var(--txt-sec)">Loaded: __TIME__</div>
+    <div id="last-load">Loaded: __TIME__</div>
 </div>
 <div class="bar">
     <button onclick="save('save')" class="btn-s">💾 Сохранить</button>
     <button onclick="save('restart')" class="btn-r">🚀 Рестарт</button>
-    <button onclick="document.getElementById('upl').click()" class="btn-u">📂 Файл</button>
     <button onclick="openPanel()" class="btn-g">🌐 Панель</button>
     <select id="theme-sel" onchange="setTheme(this.value)" style="max-width:120px; padding:0 10px; margin:0;">
         <option value="dark">🌑 Dark</option>
@@ -280,7 +293,6 @@ button:hover{filter:brightness(1.1)}
         <option value="midnight">🌃 Midnight</option>
         <option value="cyber">👾 Cyber</option>
     </select>
-    <input type="file" id="upl" onchange="upload(this)" style="display:none">
 </div>
 <div class="main">
     <div id="ed"></div>
@@ -347,8 +359,6 @@ var initialConfig = __JSON_CONTENT__;
 
 // Обновленная функция открытия панели через локальный прокси
 function openPanel() {
-    // Открываем относительный путь /mihomo_panel/ui/
-    // Браузер сам подставит текущий хост и протокол (http/https)
     var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
     window.open(url, '_blank');
 }
@@ -481,7 +491,6 @@ function restoreBackup(fname){
     });
 }
 
-function upload(i){var f=i.files[0];var r=new FileReader();r.onload=function(e){ed.setValue(e.target.result)};r.readAsText(f);i.value=''}
 function parseVless(){
     var l=document.getElementById('vl').value;if(!l)return;
     var p=new URLSearchParams();p.append('act','parse');p.append('link',l);
