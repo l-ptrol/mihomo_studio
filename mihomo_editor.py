@@ -5,6 +5,8 @@ import socketserver
 import os
 import subprocess
 import urllib.parse
+import urllib.request
+import urllib.error
 import re
 import time
 import shutil
@@ -342,15 +344,13 @@ button:hover{filter:brightness(1.1)}
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
-var panelPort = '__PANEL_PORT__';
 
+// Обновленная функция открытия панели через локальный прокси
 function openPanel() {
-    if (panelPort && panelPort !== 'None' && panelPort !== '') {
-        var url = `http://${window.location.hostname}:${panelPort}/ui/#/proxies`;
-        window.open(url, '_blank');
-    } else {
-        alert('Порт для панели управления не найден в конфигурации (external-controller).');
-    }
+    // Открываем относительный путь /mihomo_panel/ui/
+    // Браузер сам подставит текущий хост и протокол (http/https)
+    var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
+    window.open(url, '_blank');
 }
 ed.setValue(initialConfig); ed.clearSelection();
 
@@ -539,9 +539,12 @@ function doDel(){
 
 class H(http.server.SimpleHTTPRequestHandler):
     def end_headers(s):
-        s.send_header('Cache-Control', 'no-store, no-cache, must-revalidate'); s.send_header('Pragma',
-                                                                                             'no-cache'); s.send_header(
-            'Expires', '0'); super().end_headers()
+        s.send_header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        s.send_header('Pragma',
+                      'no-cache');
+        s.send_header(
+            'Expires', '0');
+        super().end_headers()
 
     def get_bks(s):
         b = ""
@@ -572,10 +575,7 @@ class H(http.server.SimpleHTTPRequestHandler):
             opts += f'<option value="{n}" {sel}>{n}</option>'
         return opts
 
-    def do_GET(s):
-        if s.path != '/': return s.send_error(404)
-        c = open(CONFIG_PATH).read() if os.path.exists(CONFIG_PATH) else "proxies:\n"
-        
+    def get_panel_port(self):
         panel_port = ''
         try:
             with open(CONFIG_PATH, 'r') as f:
@@ -585,6 +585,52 @@ class H(http.server.SimpleHTTPRequestHandler):
                     panel_port = match.group(1)
         except (IOError, FileNotFoundError):
             pass
+        return panel_port
+
+    # --- PROXY LOGIC ---
+    def proxy_pass(self, method):
+        panel_port = self.get_panel_port()
+        if not panel_port:
+            self.send_error(500, "Panel port not found in config")
+            return
+
+        # Strip prefix
+        rel_path = self.path.replace('/mihomo_panel/', '', 1)
+        target_url = f"http://127.0.0.1:{panel_port}/{rel_path}"
+
+        # Read Body
+        content_len = int(self.headers.get('Content-Length', 0))
+        body = self.rfile.read(content_len) if content_len > 0 else None
+
+        # Create Request
+        req = urllib.request.Request(target_url, data=body, method=method)
+        for k, v in self.headers.items():
+            if k.lower() not in ['host']:
+                req.add_header(k, v)
+
+        try:
+            with urllib.request.urlopen(req) as resp:
+                self.send_response(resp.status)
+                for k, v in resp.getheaders():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(resp.read())
+        except urllib.error.HTTPError as e:
+            self.send_response(e.code)
+            for k, v in e.headers.items():
+                self.send_header(k, v)
+            self.end_headers()
+            self.wfile.write(e.read())
+        except Exception as e:
+            self.send_error(500, str(e))
+
+    def do_GET(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.proxy_pass('GET')
+            return
+
+        if s.path != '/': return s.send_error(404)
+        c = open(CONFIG_PATH).read() if os.path.exists(CONFIG_PATH) else "proxies:\n"
 
         s.send_response(200);
         s.send_header('Content-type', 'text/html;charset=utf-8');
@@ -592,11 +638,14 @@ class H(http.server.SimpleHTTPRequestHandler):
         out = HTML_TEMPLATE.replace('__JSON_CONTENT__', json.dumps(c)) \
             .replace('__BACKUPS__', s.get_bks()) \
             .replace('__PROFILES__', s.get_prof_opts()) \
-            .replace('__TIME__', datetime.now().strftime("%H:%M:%S")) \
-            .replace('__PANEL_PORT__', panel_port)
+            .replace('__TIME__', datetime.now().strftime("%H:%M:%S"))
         s.wfile.write(out.encode('utf-8'))
 
     def do_POST(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.proxy_pass('POST')
+            return
+
         l = int(s.headers['Content-Length']);
         d = s.rfile.read(l).decode('utf-8', 'ignore')
         p = {k: v[0] for k, v in urllib.parse.parse_qs(d).items()};
@@ -704,7 +753,9 @@ class H(http.server.SimpleHTTPRequestHandler):
                 shutil.copy(CONFIG_PATH, f"{BACKUP_DIR}/{prof_n}_{ts}.yaml")
 
             with open(CONFIG_PATH, 'w') as f:
-                f.write(new_c); f.flush(); os.fsync(f.fileno())
+                f.write(new_c);
+                f.flush();
+                os.fsync(f.fileno())
 
         if a == 'restart':
             my_env = os.environ.copy();
@@ -716,9 +767,21 @@ class H(http.server.SimpleHTTPRequestHandler):
             s.wfile.write(json.dumps(
                 {'status': 'ok', 'time': datetime.now().strftime("%H:%M:%S"), 'backups': s.get_bks()}).encode('utf-8'))
 
+    def do_PUT(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.proxy_pass('PUT')
+            return
+        s.send_error(405, "Method Not Allowed")
+
+    def do_DELETE(s):
+        if s.path.startswith('/mihomo_panel/'):
+            s.proxy_pass('DELETE')
+            return
+        s.send_error(405, "Method Not Allowed")
+
 
 try:
-    socketserver.TCPServer.allow_reuse_address = True; socketserver.TCPServer(("", PORT), H).serve_forever()
+    socketserver.TCPServer.allow_reuse_address = True;
+    socketserver.TCPServer(("", PORT), H).serve_forever()
 except Exception as e:
     print(e)
-
