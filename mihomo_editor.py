@@ -227,6 +227,20 @@ button:hover{filter:brightness(1.1)}
 .bk-btns { display: flex; gap: 4px; flex-shrink: 0; }
 .bk-btns button { width: 28px; padding: 0; height: 28px; font-size: 14px; }
 
+#bk-content {
+    background: var(--log-bg);
+    color: var(--log-txt);
+    font-family: 'Consolas', monospace;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--bd);
+    white-space: pre-wrap;
+    overflow-y: auto;
+    flex-grow: 1;
+    min-height: 200px;
+    max-height: 60vh;
+}
+
 .bk-controls {display:flex; gap:8px; align-items:center; background:var(--bg-ter); padding:5px 10px; border-radius:4px; border: 1px solid var(--bd);}
 .bk-controls input {width: 50px !important; text-align: center; margin:0; height: 28px; padding: 0;}
 .bk-controls span {font-size:12px; color:var(--txt-sec); white-space: nowrap;}
@@ -349,6 +363,15 @@ button:hover{filter:brightness(1.1)}
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px">
         <button onclick="saveNewProf()" class="btn-s">Сохранить</button>
         <button onclick="closeM('m-add-prof')" class="btn-g">Отмена</button>
+    </div>
+</div></div>
+
+<div id="m-view-bk" class="ovl"><div class="mod">
+    <h3>Просмотр бэкапа</h3>
+    <pre id="bk-content" style="flex-grow:1; overflow-y:auto; min-height: 200px; max-height:60vh;"></pre>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px;padding-top:10px;border-top:1px solid var(--bd)">
+        <button id="bk-restore-btn" class="btn-r">Восстановить</button>
+        <button onclick="closeM('m-view-bk')" class="btn-g">Закрыть</button>
     </div>
 </div></div>
 
@@ -483,6 +506,21 @@ function delBackup(fname){
     });
 }
 
+function viewBackup(fname) {
+    var p = new URLSearchParams();
+    p.append('act', 'view_backup');
+    p.append('f', fname);
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(d => {
+        if (d.error) {
+            alert(d.error);
+        } else {
+            document.getElementById('bk-content').textContent = d.content;
+            document.getElementById('bk-restore-btn').onclick = function() { restoreBackup(fname) };
+            document.getElementById('m-view-bk').style.display = 'flex';
+        }
+    });
+}
+
 function restoreBackup(fname){
     if(!confirm('Восстановить ' + fname + '? Текущий конфиг будет перезаписан.')) return;
     var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', fname);
@@ -563,6 +601,7 @@ class H(http.server.SimpleHTTPRequestHandler):
             b += f'''<div class="bk-item">
                     <div><b>{n}</b><span style="font-size:10px;color:var(--txt-sec)">{t}</span></div>
                     <div class="bk-btns">
+                        <button onclick="viewBackup('{n}')" class="btn-u" title="Просмотр">👁️</button>
                         <button onclick="restoreBackup('{n}')" class="btn-g" title="Восстановить">↺</button>
                         <button onclick="delBackup('{n}')" class="btn-d" title="Удалить">✕</button>
                     </div>
@@ -761,6 +800,17 @@ class H(http.server.SimpleHTTPRequestHandler):
         if a == 'rest':
             shutil.copy(os.path.join(BACKUP_DIR, os.path.basename(p.get('f'))), CONFIG_PATH)
             s.wfile.write(json.dumps({'status': 'ok'}).encode('utf-8'));
+            return
+
+        if a == 'view_backup':
+            fname = p.get('f')
+            path = os.path.join(BACKUP_DIR, os.path.basename(fname))
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                s.wfile.write(json.dumps({'content': content}).encode('utf-8'))
+            else:
+                s.wfile.write(json.dumps({'error': 'File not found'}).encode('utf-8'))
             return
 
         new_c = p.get('content', '').replace('\r\n', '\n')
