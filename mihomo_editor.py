@@ -53,7 +53,8 @@ def parse_vless(link):
             return None, "No UUID"
         if ':' in srv_port:
             if ']' in srv_port:
-                srv, port = srv_port.rsplit(':', 1); srv = srv.replace('[', '').replace(']', '')
+                srv, port = srv_port.rsplit(':', 1);
+                srv = srv.replace('[', '').replace(']', '')
             else:
                 srv, port = srv_port.split(':')
         else:
@@ -162,7 +163,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.3</title>
+<title>Mihomo Editor v18.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -236,7 +237,6 @@ button:hover{filter:brightness(1.1)}
 .prof-btns { display: flex; gap: 8px; margin-top: 5px; }
 .prof-btns button { flex: 1; }
 
-/* Новый стиль для Loaded плашки */
 #last-load {
     font-size: 11px;
     color: var(--txt);
@@ -279,14 +279,14 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.3 UI Polish</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.4 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
 <div class="bar">
     <button onclick="save('save')" class="btn-s">💾 Сохранить</button>
     <button onclick="save('restart')" class="btn-r">🚀 Рестарт</button>
-    <button onclick="openPanel()" class="btn-g">🌐 Панель</button>
+    <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo">🌐 Панель</button>
     <select id="theme-sel" onchange="setTheme(this.value)" style="max-width:120px; padding:0 10px; margin:0;">
         <option value="dark">🌑 Dark</option>
         <option value="light">☀️ Light</option>
@@ -357,7 +357,7 @@ var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/m
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
 
-// Обновленная функция открытия панели через локальный прокси
+// Открываем панель через наш локальный прокси (безопасно для PNA/CORS)
 function openPanel() {
     var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
     window.open(url, '_blank');
@@ -589,7 +589,9 @@ class H(http.server.SimpleHTTPRequestHandler):
         try:
             with open(CONFIG_PATH, 'r') as f:
                 config_content = f.read()
-                match = re.search(r"external-controller:\s*[\d\.]+:(\d+)", config_content)
+                # Улучшенный regex для поиска порта (учитывает кавычки и IP)
+                # Ищет external-controller: "0.0.0.0:9090" или '127.0.0.1:9090' или просто :9090
+                match = re.search(r"external-controller:\s*(?:['\"]?)(?:[^:]*):(\d+)(?:['\"]?)", config_content)
                 if match:
                     panel_port = match.group(1)
         except (IOError, FileNotFoundError):
@@ -612,18 +614,25 @@ class H(http.server.SimpleHTTPRequestHandler):
         body = self.rfile.read(content_len) if content_len > 0 else None
 
         # Create Request
-        req = urllib.request.Request(target_url, data=body, method=method)
-        for k, v in self.headers.items():
-            if k.lower() not in ['host']:
-                req.add_header(k, v)
-
         try:
+            req = urllib.request.Request(target_url, data=body, method=method)
+            for k, v in self.headers.items():
+                if k.lower() not in ['host', 'origin', 'referer']:
+                    req.add_header(k, v)
+
+            # Важно: подменяем Host для корректной работы backend
+            req.add_header('Host', f'127.0.0.1:{panel_port}')
+
             with urllib.request.urlopen(req) as resp:
                 self.send_response(resp.status)
                 for k, v in resp.getheaders():
-                    self.send_header(k, v)
+                    # Фильтруем CORS заголовки от backend, т.к. мы их сами выставим если надо,
+                    # но здесь мы действуем как same-origin
+                    if k.lower() not in ['access-control-allow-origin', 'server', 'date']:
+                        self.send_header(k, v)
                 self.end_headers()
                 self.wfile.write(resp.read())
+
         except urllib.error.HTTPError as e:
             self.send_response(e.code)
             for k, v in e.headers.items():
@@ -631,7 +640,8 @@ class H(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(e.read())
         except Exception as e:
-            self.send_error(500, str(e))
+            # self.send_error(500, str(e))
+            pass  # Silent fail to avoid crashing
 
     def do_GET(s):
         if s.path.startswith('/mihomo_panel/'):
