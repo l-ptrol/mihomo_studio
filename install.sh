@@ -182,44 +182,47 @@ uninstall_service() {
 
 # --- Главное меню ---
 main_menu() {
-    # Сценарий 1: Не установлено
-    if [ "$LOCAL_VERSION" = "0" ]; then
-        echo "Сервис не установлен. Выберите действие:"
-        echo " 1. Установить"
-        echo " q. Выход"
-        read -p "Ваш выбор: " choice
-        case "$choice" in
-            1) install_service ;;
-            q|Q) exit 0 ;;
-            *) echo "Неверный выбор." ;;
-        esac
-    # Сценарий 2: Есть обновление
-    elif [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ] && [ "$REMOTE_VERSION" != "0" ]; then
-        echo "Доступна новая версия! Выберите действие:"
-        echo " 1. Обновить"
-        echo " 2. Удалить"
-        echo " q. Выход"
-        read -p "Ваш выбор: " choice
-        case "$choice" in
-            1) update_service ;;
-            2) uninstall_service ;;
-            q|Q) exit 0 ;;
-            *) echo "Неверный выбор." ;;
-        esac
-    # Сценарий 3: Последняя версия установлена
-    else
-        echo "Установлена последняя версия. Выберите действие:"
-        echo " 1. Переустановить"
-        echo " 2. Удалить"
-        echo " q. Выход"
-        read -p "Ваш выбор: " choice
-        case "$choice" in
-            1) install_service ;;
-            2) uninstall_service ;;
-            q|Q) exit 0 ;;
-            *) echo "Неверный выбор." ;;
-        esac
-    fi
+    while true; do
+        # Сценарий 1: Не установлено
+        if [ "$LOCAL_VERSION" = "0" ]; then
+            echo "Сервис не установлен. Выберите действие:"
+            echo " 1. Установить"
+            echo " q. Выход"
+            read -p "Ваш выбор: " choice
+            case "$choice" in
+                1) install_service; break ;;
+                q|Q) exit 0 ;;
+                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
+            esac
+        # Сценарий 2: Есть обновление
+        elif [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ] && [ "$REMOTE_VERSION" != "0" ]; then
+            echo "Доступна новая версия! Выберите действие:"
+            echo " 1. Обновить"
+            echo " 2. Удалить"
+            echo " q. Выход"
+            read -p "Ваш выбор: " choice
+            case "$choice" in
+                1) update_service; break ;;
+                2) uninstall_service; break ;;
+                q|Q) exit 0 ;;
+                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
+            esac
+        # Сценарий 3: Последняя версия установлена
+        else
+            echo "Установлена последняя версия. Выберите действие:"
+            echo " 1. Переустановить"
+            echo " 2. Удалить"
+            echo " q. Выход"
+            read -p "Ваш выбор: " choice
+            case "$choice" in
+                1) install_service; break ;;
+                2) uninstall_service; break ;;
+                q|Q) exit 0 ;;
+                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
+            esac
+        fi
+        echo # Добавляем пустую строку для лучшей читаемости перед следующим показом меню
+    done
 }
 
 # === ТОЧКА ВХОДА ===
