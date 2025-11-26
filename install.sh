@@ -3,7 +3,7 @@
 # === НАСТРОЙКИ РЕПОЗИТОРИЯ ===
 # Укажи здесь имя ветки (master или main)
 BRANCH="master"
-BASE_URL="http://freedom.l-ptr.ru:3000/Petro1990/mihomo_studio/raw/branch/${BRANCH}"
+BASE_URL="https://github.com/l-ptrol/mihomo_studio/blob/${BRANCH}"
 
 
 # === ПУТИ НА РОУТЕРЕ ===
