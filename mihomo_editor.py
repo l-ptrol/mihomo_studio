@@ -219,35 +219,60 @@ def parse_wireguard(config_text, custom_name=None):
 def process_manual_yaml(yaml_text, custom_name):
     try:
         lines = yaml_text.splitlines()
-        clean_lines = []
 
-        # 1. Clean up and find existing keys
+        # Filter relevant lines and remove duplicates of "name"
+        temp_lines = []
         for line in lines:
             stripped = line.strip()
             if not stripped: continue
-
-            # Skip existing name lines to replace them
+            # Skip name line as we construct it manually
             if re.match(r'^-?\s*name:', stripped):
                 continue
+            temp_lines.append(line)
 
-            # Remove leading dash from the first significant line if present
-            if not clean_lines and stripped.startswith('-'):
-                # Remove first dash and whitespace
-                line_content = re.sub(r'^\s*-\s*', '', line, count=1)
-                clean_lines.append(line_content)
-            else:
-                clean_lines.append(line)
+        if not temp_lines:
+            return {"yaml": f'- name: "{custom_name}"', "name": custom_name}, None
 
-        # 2. Reconstruct
-        # Ensure name is double quoted
-        final_lines = [f'- name: "{custom_name}"']
+        final_block = []
+        final_block.append(f'- name: "{custom_name}"')
 
-        # Re-indent everything else by 2 spaces
-        for line in clean_lines:
-            # Simple heuristic: Just indent everything by 2 spaces relative to root
-            final_lines.append(f"  {line.lstrip()}")
+        # Determine baseline indentation from the first significant line
+        first_line = temp_lines[0]
 
-        return {"yaml": "\n".join(final_lines), "name": custom_name}, None
+        # Check for list item marker "- " at the start
+        m_dash = re.match(r'^(\s*-\s*)', first_line)
+
+        if m_dash:
+            # The content actually starts after "- ".
+            # We want to map this start column to indentation 2 (2 spaces).
+            content_col = m_dash.end(1)
+            shift = 2 - content_col
+
+            # Reconstruct the first line: remove "- " and apply indent 2
+            # We use rstrip() to clean trailing spaces, lstrip() is implicit by skipping prefix
+            final_block.append("  " + first_line[content_col:].rstrip())
+
+            # The rest of the lines should simply be shifted relative to that logic
+            rest_lines = temp_lines[1:]
+        else:
+            # No dash, normal YAML keys. Base indent is the indent of the first line.
+            first_indent = len(first_line) - len(first_line.lstrip())
+            shift = 2 - first_indent
+            rest_lines = temp_lines  # Process all lines including first
+
+        for line in rest_lines:
+            if not line.strip():
+                continue
+
+            curr_indent = len(line) - len(line.lstrip())
+            new_indent = curr_indent + shift
+
+            # Safety clamp
+            if new_indent < 0: new_indent = 0
+
+            final_block.append(" " * new_indent + line.lstrip())
+
+        return {"yaml": "\n".join(final_block), "name": custom_name}, None
 
     except Exception as e:
         return None, str(e)
@@ -804,90 +829,6 @@ const TR = {
         log_loading: "⏳ Выполнение xkeen -restart...",
         last_load: "Загружено:",
         last_saved: "Сохранено:"
-    },
-    uk: {
-        title: "Mihomo Studio",
-        save: "💾 Зберегти",
-        restart: "🚀 Рестарт",
-        panel: "🌐 Panel",
-        profiles: "Профілі",
-        create: "➕ Створити",
-        delete: "🗑 Видалити",
-        select: "✔",
-        download: "💾",
-        proxy_mgmt: "Керування",
-        add: "➕ Додати",
-        edit: "✏️ Замінити",
-        rename: "Перейменувати",
-        backups: "Бекапи",
-        clean: "Очистити",
-        keep: "Залишити:",
-        theme_dark: "🌑 Темна",
-        theme_light: "☀️ Світла",
-        theme_midnight: "🌃 Північ",
-        theme_cyber: "👾 Кібер",
-        toast_saved: "✅ Успішно збережено",
-        toast_cleaned: "🧹 Очищено",
-        toast_deleted: "🗑 Видалено",
-        toast_restored: "♻️ Відновлено",
-        toast_added: "✅ Додано",
-        toast_renamed: "✏️ Проксі перейменовано",
-        toast_updated: "✏️ Дані проксі оновлено",
-        confirm_switch: "Переключиться на профіль {0}?",
-        confirm_del_prof: "Видалити профіль {0}? Ця дія незворотна.",
-        confirm_del_bk: "Видалити бекап {0}?",
-        confirm_clean: "Залишити тільки {0} останніх бекапів?",
-        confirm_restore: "Відновити {0}? Поточний конфіг буде перезаписано.",
-        confirm_del_proxy: "Видалити?",
-        confirm_replace: "Замінити дані проксі '{0}'?",
-        prompt_enter_name: "Введіть ім'я!",
-        error_invalid_name: "Неприпустиме ім'я!",
-        error_exists: "Профіль з таким ім'ям вже існує",
-        error_no_proxy_edit: "Виберіть проксі для редагування",
-        error_empty_wg: "Конфігурація WireGuard не може бути порожньою.",
-        error_empty_yaml: "YAML не може бути порожнім.",
-        modal_add_proxy: "Додати проксі",
-        modal_edit_proxy: "Змінити проксі",
-        lbl_vless_link: "Посилання VLESS:",
-        lbl_proxy_name: "Ім'я проксі (необов'язково):",
-        lbl_proxy_name_req: "Ім'я проксі (обов'язково):",
-        lbl_wg_conf: "Конфігурація WireGuard:",
-        lbl_yaml_content: "YAML Блок проксі:",
-        btn_add: "Додати",
-        btn_save: "Зберегти",
-        btn_cancel: "Скасувати",
-        btn_restore: "Відновити",
-        btn_close: "Закрити",
-        btn_update: "Оновити",
-        tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
-        tab_yaml: "YAML/Manual",
-        lbl_select_edit: "Виберіть проксі для зміни:",
-        warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
-        modal_new_prof: "Новий профіль",
-        lbl_prof_name: "Ім'я (англ, без пробілів):",
-        lbl_content: "Вміст:",
-        btn_load_file: "📂 Завантажити файл",
-        ph_paste_yaml: "Вставте YAML конфіг сюди...",
-        ph_paste_yaml_block: "- name: my_proxy\\n  type: vless...",
-        ph_auto_vless: "Автоматично з посилання",
-        ph_auto_wg: "Автоматично з Endpoint",
-        ph_req_name: "Введіть ім'я",
-        ph_paste_conf: "Вставте вміст .conf файлу сюди...",
-        modal_groups: "Додати в групи:",
-        btn_sel_all: "☑ Обрати всі",
-        btn_sel_none: "☐ Зняти всі",
-        modal_del_proxy: "Видалити проксі",
-        modal_ren_proxy: "Перейменувати проксі",
-        lbl_sel_ren: "Виберіть проксі для перейменування:",
-        lbl_new_name: "Нове ім'я:",
-        ph_new_name: "Введіть нове ім'я",
-        btn_rename: "Перейменувати",
-        modal_console: "Консоль",
-        modal_view_bk: "Перегляд бекапу",
-        log_loading: "⏳ Виконання xkeen -restart...",
-        last_load: "Завантажено:",
-        last_saved: "Збережено:"
     },
     en: {
         title: "Mihomo Studio",
