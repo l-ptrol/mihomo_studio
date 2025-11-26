@@ -617,7 +617,7 @@ button:hover{filter:brightness(1.1)}
 
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
-        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard</button>
+        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard|AmneziaWG</button>
     </div>
 
     <div id="vlessTab" class="tab-content active">
@@ -716,7 +716,7 @@ const TR = {
         btn_close: "Закрыть",
         btn_update: "Обновить",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard",
+        tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Выберите прокси для изменения:",
         warn_edit: "⚠️ Данные этого прокси будут полностью заменены новыми!",
         modal_new_prof: "Новый профиль",
@@ -794,7 +794,7 @@ const TR = {
         btn_close: "Закрити",
         btn_update: "Оновити",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard",
+        tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Виберіть проксі для зміни:",
         warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
         modal_new_prof: "Новий профіль",
@@ -1140,6 +1140,8 @@ function getProxiesList() {
 function openAddProxyModal() {
     isEditMode = false;
     document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
+    document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
+    document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
     document.getElementById('edit-proxy-container').style.display = 'none';
     document.getElementById('vless-name-block').style.display = 'block';
     document.getElementById('wg-name-block').style.display = 'block';
@@ -1156,6 +1158,8 @@ function openAddProxyModal() {
 function openEditProxyModal() {
     isEditMode = true;
     document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy');
+    document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
+    document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
     document.getElementById('edit-proxy-container').style.display = 'block';
     document.getElementById('vless-name-block').style.display = 'none';
     document.getElementById('wg-name-block').style.display = 'none';
