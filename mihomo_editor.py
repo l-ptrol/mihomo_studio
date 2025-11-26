@@ -216,6 +216,74 @@ def parse_wireguard(config_text, custom_name=None):
         return None, str(e)
 
 
+def process_manual_yaml(yaml_text, custom_name):
+    try:
+        lines = yaml_text.splitlines()
+        clean_lines = []
+
+        # 1. Clean up and find existing keys
+        for line in lines:
+            stripped = line.strip()
+            if not stripped: continue
+
+            # Skip existing name lines to replace them
+            if re.match(r'^-?\s*name:', stripped):
+                continue
+
+            # Remove leading dash from the first significant line if present
+            if not clean_lines and stripped.startswith('-'):
+                # Remove first dash and whitespace
+                line_content = re.sub(r'^\s*-\s*', '', line, count=1)
+                clean_lines.append(line_content)
+            else:
+                clean_lines.append(line)
+
+        # 2. Reconstruct
+        # Ensure name is double quoted
+        final_lines = [f'- name: "{custom_name}"']
+
+        # Re-indent everything else by 2 spaces
+        for line in clean_lines:
+            # Detect current indent
+            curr_indent = len(line) - len(line.lstrip())
+            # If the user pasted a block that was already indented (e.g. from 'proxies:' section), reduce indent?
+            # Or just blindly add 2 spaces. Blind add is safer for nested structures.
+            # But if user pasted flat yaml (0 indent), we add 2.
+            # We assume user pasted consistent yaml.
+
+            # Simple heuristic: Just indent everything by 2 spaces relative to root
+            final_lines.append(f"  {line.lstrip()}")  # Reset indent and add 2 spaces? Risk of breaking nested.
+            # Better: Keep relative indent, but ensure root is at 2 spaces.
+            # Since we can't easily parse YAML structure without library, let's assume
+            # the user provides a block where the keys (type, server) are at the same level.
+
+        # Re-approach: Just strip all, check if it looks like a dict, indent by 2.
+        # Let's rely on the user pasting a block. We simply prepend "- name" and indent the rest.
+
+        final_block = [f'- name: "{custom_name}"']
+
+        # Determine base indent of the first line of the actual content
+        if not clean_lines: return None, "Empty config"
+
+        first_line_indent = len(clean_lines[0]) - len(clean_lines[0].lstrip())
+
+        for line in clean_lines:
+            stripped = line.strip()
+            if not stripped: continue
+            # Remove the base indent
+            if len(line) >= first_line_indent:
+                rel_line = line[first_line_indent:]
+            else:
+                rel_line = line.lstrip()
+
+            final_block.append(f"  {rel_line}")
+
+        return {"yaml": "\n".join(final_block), "name": custom_name}, None
+
+    except Exception as e:
+        return None, str(e)
+
+
 def insert_proxy_logic(content, proxy_name, target_groups):
     lines = content.splitlines()
     new_lines = []
@@ -361,7 +429,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.10</title>
+<title>Mihomo Editor v18.11</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -411,7 +479,8 @@ button:hover{filter:brightness(1.1)}
 
 .main{display:flex;flex:1;overflow:hidden}
 #ed{flex:1;font-size:14px}
-.sb{width:320px;background:var(--bg-sec);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sb{width:320px;background:var(--bg-sec);border-left:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+.sb-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
 .sec{padding:15px;border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:8px;}
 .sec h3{margin:0 0 5px 0;font-size:14px;color:var(--txt-sec)}
 
@@ -508,7 +577,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50" data-i18n="title">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.10 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.11 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -534,37 +603,39 @@ button:hover{filter:brightness(1.1)}
 <div class="main">
     <div id="ed"></div>
     <div class="sb">
-        <div class="sec">
-            <h3><span data-i18n="profiles">Профили</span></h3>
-            <div class="prof-row">
-                <select id="prof-sel">__PROFILES__</select>
-                <button onclick="switchProf()" class="btn-s" style="padding:0; width:36px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
-                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:36px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
+        <div class="sb-scroll">
+            <div class="sec">
+                <h3><span data-i18n="profiles">Профили</span></h3>
+                <div class="prof-row">
+                    <select id="prof-sel">__PROFILES__</select>
+                    <button onclick="switchProf()" class="btn-s" style="padding:0; width:36px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
+                    <button onclick="downloadProf()" class="btn-g" style="padding:0; width:36px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
+                </div>
+                <div class="prof-btns">
+                     <button onclick="openAddProf()" class="btn-u" data-i18n="create">➕ Создать</button>
+                     <button onclick="delProf()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
+                </div>
             </div>
-            <div class="prof-btns">
-                 <button onclick="openAddProf()" class="btn-u" data-i18n="create">➕ Создать</button>
-                 <button onclick="delProf()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
+            <div class="sec">
+                <h3><span data-i18n="proxy_mgmt">Управление</span></h3>
+                <div class="proxy-grid">
+                    <button onclick="openAddProxyModal()" class="btn-s" data-i18n="add">➕ Добавить</button>
+                    <button onclick="openEditProxyModal()" class="btn-u" data-i18n="edit">✏️ Заменить</button>
+                    <button onclick="showRename()" class="btn-g" data-i18n="rename">Переименовать</button>
+                    <button onclick="showDel()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
+                </div>
+            </div>
+            <div class="sec">
+                <h3><span data-i18n="backups">Бэкапы</span></h3>
+                <div class="bk-controls">
+                    <span data-i18n="keep">Оставить:</span>
+                    <input type="number" id="bk-lim" value="5" min="1" max="50">
+                    <button onclick="cleanBackups()" class="btn-g" data-i18n="clean">Очистить</button>
+                </div>
+                <div id="bk-list">__BACKUPS__</div>
             </div>
         </div>
-        <div class="sec">
-            <h3><span data-i18n="proxy_mgmt">Управление</span></h3>
-            <div class="proxy-grid">
-                <button onclick="openAddProxyModal()" class="btn-s" data-i18n="add">➕ Добавить</button>
-                <button onclick="openEditProxyModal()" class="btn-u" data-i18n="edit">✏️ Заменить</button>
-                <button onclick="showRename()" class="btn-g" data-i18n="rename">Переименовать</button>
-                <button onclick="showDel()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
-            </div>
-        </div>
-        <div class="sec">
-            <h3><span data-i18n="backups">Бэкапы</span></h3>
-            <div class="bk-controls">
-                <span data-i18n="keep">Оставить:</span>
-                <input type="number" id="bk-lim" value="5" min="1" max="50">
-                <button onclick="cleanBackups()" class="btn-g" data-i18n="clean">Очистить</button>
-            </div>
-            <div id="bk-list">__BACKUPS__</div>
-        </div>
-        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 10px 15px; border-bottom: none;">
+        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 10px 15px; border-bottom: none; border-top: 1px solid var(--bd); background: var(--bg-sec); flex-shrink: 0;">
             Copyright (c) 2025 Peter Lobanok
         </div>
     </div>
@@ -621,6 +692,7 @@ button:hover{filter:brightness(1.1)}
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
         <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard|AmneziaWG</button>
+        <button onclick="switchTab(event, 'yamlTab')" data-i18n="tab_yaml">YAML/Manual</button>
     </div>
 
     <div id="vlessTab" class="tab-content active">
@@ -647,6 +719,18 @@ button:hover{filter:brightness(1.1)}
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
         <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
         <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
+    </div>
+
+    <div id="yamlTab" class="tab-content">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_yaml_content">YAML Блок прокси:</label>
+        <textarea id="manualYaml" rows="8" placeholder="- name: my_proxy\n  type: vless..." data-i18n-ph="ph_paste_yaml_block" style="width:100%; margin-bottom:10px;"></textarea>
+
+        <div id="yaml-name-block">
+            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name_req">Имя прокси (обязательно):</label>
+            <input id="yamlProxyName" placeholder="Введите имя" data-i18n-ph="ph_req_name" style="margin-bottom:10px;">
+        </div>
+
+        <button onclick="addManualYaml()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
     </div>
 </div></div>
 
@@ -706,12 +790,15 @@ const TR = {
         error_invalid_name: "Недопустимое имя!",
         error_exists: "Профиль с таким именем уже существует",
         error_no_proxy_edit: "Выберите прокси для редактирования",
-        error_empty_wg: "Конфигурація WireGuard не може бути порожньою.",
+        error_empty_wg: "Конфигурация WireGuard не может быть пустой.",
+        error_empty_yaml: "YAML не может быть пустым.",
         modal_add_proxy: "Добавить прокси",
         modal_edit_proxy: "Изменить прокси",
         lbl_vless_link: "Ссылка VLESS:",
         lbl_proxy_name: "Имя прокси (необязательно):",
+        lbl_proxy_name_req: "Имя прокси (обязательно):",
         lbl_wg_conf: "Конфигурация WireGuard:",
+        lbl_yaml_content: "YAML Блок прокси:",
         btn_add: "Добавить",
         btn_save: "Сохранить",
         btn_cancel: "Отмена",
@@ -720,6 +807,7 @@ const TR = {
         btn_update: "Обновить",
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
+        tab_yaml: "YAML/Manual",
         lbl_select_edit: "Выберите прокси для изменения:",
         warn_edit: "⚠️ Данные этого прокси будут полностью заменены новыми!",
         modal_new_prof: "Новый профиль",
@@ -727,8 +815,10 @@ const TR = {
         lbl_content: "Содержимое:",
         btn_load_file: "📂 Загрузить файл",
         ph_paste_yaml: "Вставьте YAML конфиг сюда...",
+        ph_paste_yaml_block: "- name: my_proxy\\n  type: vless...",
         ph_auto_vless: "Автоматически из ссылки",
         ph_auto_wg: "Автоматически из Endpoint",
+        ph_req_name: "Введите имя",
         ph_paste_conf: "Вставьте содержимое .conf файла сюда...",
         modal_groups: "Добавить в группы:",
         btn_sel_all: "☑ Выбрать все",
@@ -785,11 +875,14 @@ const TR = {
         error_exists: "Профіль з таким ім'ям вже існує",
         error_no_proxy_edit: "Виберіть проксі для редагування",
         error_empty_wg: "Конфігурація WireGuard не може бути порожньою.",
+        error_empty_yaml: "YAML не може бути порожнім.",
         modal_add_proxy: "Додати проксі",
         modal_edit_proxy: "Змінити проксі",
         lbl_vless_link: "Посилання VLESS:",
         lbl_proxy_name: "Ім'я проксі (необов'язково):",
+        lbl_proxy_name_req: "Ім'я проксі (обов'язково):",
         lbl_wg_conf: "Конфігурація WireGuard:",
+        lbl_yaml_content: "YAML Блок проксі:",
         btn_add: "Додати",
         btn_save: "Зберегти",
         btn_cancel: "Скасувати",
@@ -798,6 +891,7 @@ const TR = {
         btn_update: "Оновити",
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
+        tab_yaml: "YAML/Manual",
         lbl_select_edit: "Виберіть проксі для зміни:",
         warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
         modal_new_prof: "Новий профіль",
@@ -805,8 +899,10 @@ const TR = {
         lbl_content: "Вміст:",
         btn_load_file: "📂 Завантажити файл",
         ph_paste_yaml: "Вставте YAML конфіг сюди...",
+        ph_paste_yaml_block: "- name: my_proxy\\n  type: vless...",
         ph_auto_vless: "Автоматично з посилання",
         ph_auto_wg: "Автоматично з Endpoint",
+        ph_req_name: "Введіть ім'я",
         ph_paste_conf: "Вставте вміст .conf файлу сюди...",
         modal_groups: "Додати в групи:",
         btn_sel_all: "☑ Обрати всі",
@@ -863,11 +959,14 @@ const TR = {
         error_exists: "Profile with this name already exists",
         error_no_proxy_edit: "Select a proxy to edit",
         error_empty_wg: "WireGuard configuration cannot be empty.",
+        error_empty_yaml: "YAML cannot be empty.",
         modal_add_proxy: "Add Proxy",
         modal_edit_proxy: "Edit Proxy",
         lbl_vless_link: "VLESS Link:",
         lbl_proxy_name: "Proxy Name (optional):",
+        lbl_proxy_name_req: "Proxy Name (required):",
         lbl_wg_conf: "WireGuard Config:",
+        lbl_yaml_content: "YAML Proxy Block:",
         btn_add: "Add",
         btn_save: "Save",
         btn_cancel: "Cancel",
@@ -876,6 +975,7 @@ const TR = {
         btn_update: "Update",
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
+        tab_yaml: "YAML/Manual",
         lbl_select_edit: "Select proxy to replace:",
         warn_edit: "⚠️ This proxy's data will be fully replaced!",
         modal_new_prof: "New Profile",
@@ -883,8 +983,10 @@ const TR = {
         lbl_content: "Content:",
         btn_load_file: "📂 Upload File",
         ph_paste_yaml: "Paste YAML config here...",
+        ph_paste_yaml_block: "- name: my_proxy\\n  type: vless...",
         ph_auto_vless: "Automatically from link",
         ph_auto_wg: "Automatically from Endpoint",
+        ph_req_name: "Enter Name",
         ph_paste_conf: "Paste .conf file content here...",
         modal_groups: "Add to groups:",
         btn_sel_all: "☑ Select All",
@@ -952,6 +1054,19 @@ document.getElementById('wgConfig').addEventListener('input', function() {
     if (endpointMatch && endpointMatch[1]) {
         var server = endpointMatch[1].split(':')[0].trim();
         if (server) nameField.value = 'WG_' + server;
+    }
+});
+
+document.getElementById('manualYaml').addEventListener('input', function() {
+    // Only auto-fill if we are not in edit mode (or we can decide to overwrite in edit mode too)
+    // But requirement says: "In Add/Replace add insert... if name is present insert it"
+
+    var txt = this.value;
+    // Look for name: "..." or name: ...
+    // Supports: - name: "val", name: "val", name: val
+    var match = txt.match(/^[\s-]*name:\s*["']?([^"'\n\r]+)["']?/m);
+    if(match && match[1]) {
+        document.getElementById('yamlProxyName').value = match[1].trim();
     }
 });
 
@@ -1145,15 +1260,21 @@ function openAddProxyModal() {
     document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
     document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
     document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
+    document.querySelector('[data-i18n="tab_yaml"]').innerText = t('tab_yaml');
+
     document.getElementById('edit-proxy-container').style.display = 'none';
+
     document.getElementById('vless-name-block').style.display = 'block';
     document.getElementById('wg-name-block').style.display = 'block';
+    document.getElementById('yaml-name-block').style.display = 'block';
 
     // Clear inputs
     document.getElementById('vlessLink').value = '';
     document.getElementById('vlessProxyName').value = '';
     document.getElementById('wgConfig').value = '';
     document.getElementById('wgProxyName').value = '';
+    document.getElementById('manualYaml').value = '';
+    document.getElementById('yamlProxyName').value = '';
 
     document.getElementById('addProxyModal').style.display = 'flex';
 }
@@ -1163,9 +1284,14 @@ function openEditProxyModal() {
     document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy');
     document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
     document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
+    document.querySelector('[data-i18n="tab_yaml"]').innerText = t('tab_yaml');
+
     document.getElementById('edit-proxy-container').style.display = 'block';
+
     document.getElementById('vless-name-block').style.display = 'none';
     document.getElementById('wg-name-block').style.display = 'none';
+    document.getElementById('yaml-name-block').style.display = 'none'; // Name is locked to selected in Edit mode, or should we allow edit?
+    // In edit mode, we are replacing CONTENT of proxy X. So we don't need a new name input, we use the selected name.
 
     // Populate select
     var prs = getProxiesList();
@@ -1188,6 +1314,7 @@ function openEditProxyModal() {
     // Clear inputs
     document.getElementById('vlessLink').value = '';
     document.getElementById('wgConfig').value = '';
+    document.getElementById('manualYaml').value = '';
 
     document.getElementById('addProxyModal').style.display = 'flex';
 }
@@ -1244,6 +1371,42 @@ function addWireguard() {
                 alert(d.error);
             } else {
                 if(isEditMode) {
+                   replaceProxyData(name, d.yaml);
+                } else {
+                   pData = d;
+                   closeM('addProxyModal');
+                   showG();
+                }
+            }
+        });
+}
+
+function addManualYaml() {
+    var yamlText = document.getElementById('manualYaml').value;
+    var name = '';
+
+    if(isEditMode) {
+        name = document.getElementById('edit-proxy-sel').value;
+        if(!name || document.getElementById('edit-proxy-sel').disabled) return alert(t('error_no_proxy_edit'));
+    } else {
+        name = document.getElementById('yamlProxyName').value.trim();
+        if(!name) return alert(t('prompt_enter_name'));
+    }
+
+    if (!yamlText) return alert(t('error_empty_yaml'));
+
+    var p = new URLSearchParams();
+    p.append('act', 'process_manual_yaml');
+    p.append('yaml_text', yamlText);
+    p.append('name', name);
+
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                 if(isEditMode) {
                    replaceProxyData(name, d.yaml);
                 } else {
                    pData = d;
@@ -1655,6 +1818,23 @@ class H(http.server.SimpleHTTPRequestHandler):
                 return
 
             s.wfile.write(json.dumps(proxy_data).encode('utf-8'))
+            return
+
+        if a == 'process_manual_yaml':
+            yaml_text = p.get('yaml_text', '')
+            name = p.get('name', '')
+            if not yaml_text:
+                s.wfile.write(json.dumps({'error': 'Empty YAML'}).encode('utf-8'))
+                return
+            if not name:
+                s.wfile.write(json.dumps({'error': 'Name is required'}).encode('utf-8'))
+                return
+
+            d, e = process_manual_yaml(yaml_text, name)
+            if e:
+                s.wfile.write(json.dumps({'error': e}).encode('utf-8'))
+            else:
+                s.wfile.write(json.dumps(d).encode('utf-8'))
             return
 
         if a == 'apply_insert':
