@@ -12,7 +12,6 @@ import time
 import shutil
 import glob
 import json
-import yaml
 from datetime import datetime
 
 # --- НАСТРОЙКИ ---
@@ -49,7 +48,7 @@ def parse_vless(link, custom_name=None):
         elif '#' in main:
             main, n = main.split('#', 1)
             name = urllib.parse.unquote(n).strip()
-        
+
         name = re.sub(r'[\[\]\{\}\"\']', '', name)
         user_srv = main.split('?')[0]
         params = urllib.parse.parse_qs(main.split('?')[1]) if '?' in main else {}
@@ -98,87 +97,120 @@ def parse_vless(link, custom_name=None):
 
 def parse_wireguard(config_text, custom_name=None):
     try:
-        name = "WireGuard"
-        params = {}
-        current_section = None
+        # Простой парсер INI формата (чтобы не использовать configparser или yaml)
+        conf = {"interface": {}, "peer": {}}
+        section = None
+
         for line in config_text.splitlines():
             line = line.strip()
-            if not line or line.startswith('#'):
-                continue
+            if not line or line.startswith('#') or line.startswith(';'): continue
+
             if line.startswith('[') and line.endswith(']'):
-                current_section = line[1:-1].lower()
+                s_name = line[1:-1].lower()
+                if s_name == 'interface' or s_name == 'peer':
+                    section = s_name
+                else:
+                    section = None
                 continue
-            if '=' in line:
-                key, value = map(str.strip, line.split('=', 1))
-                if current_section:
-                    if current_section not in params:
-                        params[current_section] = {}
-                    params[current_section][key] = value
 
-        if 'interface' not in params or 'peer' not in params:
-            return None, "Invalid WireGuard config: missing [Interface] or [Peer] section."
+            if section and '=' in line:
+                key, val = line.split('=', 1)
+                conf[section][key.strip().lower()] = val.strip()
 
-        interface = params.get('interface', {})
-        peer = params.get('peer', {})
+        iface = conf['interface']
+        peer = conf['peer']
 
-        server, port_str = peer.get('Endpoint', ':').rsplit(':', 1)
+        if not iface or not peer:
+            return None, "Invalid WireGuard config: missing Interface or Peer"
 
+        # Endpoint parsing
+        endpoint = peer.get('endpoint', '')
+        if not endpoint: return None, "No Endpoint found"
+
+        # Обработка IPv6 в Endpoint [::1]:port
+        if ']:' in endpoint:
+            server = endpoint.split(']:')[0][1:]
+            port = endpoint.split(']:')[1]
+        elif ':' in endpoint:
+            server, port = endpoint.rsplit(':', 1)
+        else:
+            return None, "Invalid Endpoint format"
+
+        # Name logic
+        name = "WireGuard"
         if custom_name:
             name = custom_name
         else:
-            name_match = re.search(r'#\s*(.+)', config_text.splitlines()[0])
-            if name_match:
-                name = name_match.group(1).strip()
-            elif server:
-                 name = f"WG_{server}"
+            # Пытаемся вытащить имя из первой строки комментария, если есть
+            first_line = config_text.splitlines()[0].strip()
+            if first_line.startswith('#') and len(first_line) > 2:
+                name = first_line[1:].strip()
             else:
-                 name = "WireGuard"
-        
-        # Преобразуем порт в int, если возможно, иначе оставляем как есть
-        try:
-            port = int(port_str)
-        except (ValueError, TypeError):
-            port = port_str
+                name = f"WG_{server}"
 
-        ip_address = interface.get("Address", "").split("/")[0]
+        # IP Parsing (Mihomo requires 'ip', usually stripped of CIDR)
+        # Address = 10.0.0.2/32, fd00::2/64
+        address_raw = iface.get('address', '')
+        if not address_raw: return None, "No Address found"
 
-        proxy_dict = {
-            'name': name,
-            'type': 'wireguard',
-            'server': server,
-            'port': port,
-            'private-key': interface.get("PrivateKey"),
-            'public-key': peer.get("PublicKey"),
-            'ip': ip_address
-        }
+        # Берем первый адрес до запятой и убираем маску
+        ip_addr = address_raw.split(',')[0].strip().split('/')[0]
 
-        if interface.get('DNS'):
-            proxy_dict['dns'] = [d.strip() for d in interface.get('DNS').split(',')]
+        # Строим YAML вручную (без модуля yaml)
+        y = []
+        y.append(f'- name: "{name}"')
+        y.append(f'  type: wireguard')
+        y.append(f'  server: {server}')
+        y.append(f'  port: {port}')
+        y.append(f'  ip: {ip_addr}')
 
-        if peer.get('AllowedIPs'):
-            proxy_dict['allowed-ips'] = [ip.strip() for ip in peer.get('AllowedIPs').split(',')]
+        pk = iface.get('privatekey')
+        if pk: y.append(f'  private-key: {pk}')
 
-        if peer.get('PresharedKey'):
-            proxy_dict['preshared-key'] = peer.get("PresharedKey")
-        
-        if peer.get('PersistentKeepalive'):
-             proxy_dict['keep-alive'] = int(peer.get("PersistentKeepalive"))
+        pubk = peer.get('publickey')
+        if pubk: y.append(f'  public-key: {pubk}')
 
-        amnezia_keys = ['Jc', 'Jmin', 'Jmax', 'S1', 'S2', 'H1', 'H2', 'H3', 'H4']
-        amnezia_opts = {key: interface.get(key) for key in amnezia_keys if interface.get(key) is not None}
+        psk = peer.get('presharedkey')
+        if psk: y.append(f'  preshared-key: {psk}')
 
-        if amnezia_opts:
-            proxy_dict['amnezia-wg-option'] = {k: v for k, v in amnezia_opts.items()}
+        # DNS (JSON array is valid YAML flow style)
+        dns_raw = iface.get('dns')
+        if dns_raw:
+            dns_list = [d.strip() for d in dns_raw.split(',')]
+            y.append(f'  dns: {json.dumps(dns_list)}')
 
-        # Создаем YAML, который будет добавлен в `proxies:`
-        # Используем NoQuoteDumper для вывода без кавычек, где это возможно
-        yaml_string = yaml.dump([proxy_dict], default_flow_style=False, sort_keys=False, allow_unicode=True, indent=2)
+        mtu = iface.get('mtu')
+        if mtu: y.append(f'  mtu: {mtu}')
 
-        # Удаляем `- ` с первой строки, т.к. мы добавляем только один прокси за раз
-        # и обертка в список нужна только для yaml.dump
-        final_yaml = yaml_string.replace('- ', '  ', 1).replace('  name:', '- name:')
+        y.append('  udp: true')
 
-        return {"yaml": final_yaml.strip(), "name": name}, None
+        # AmneziaWG specific options (Mihomo structure)
+        # Ключи обычно: Jc, Jmin, Jmax, S1, S2, H1, H2, H3, H4
+        amnezia_keys = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']
+        amn_opts = {}
+        for k in amnezia_keys:
+            if k in iface:
+                val = iface[k]
+                # Пытаемся преобразовать в число, если это число
+                if val.isdigit(): val = int(val)
+                amn_opts[k] = val
+
+        if amn_opts:
+            y.append('  amnezia-wg-option:')
+            for k, v in amn_opts.items():
+                y.append(f'    {k}: {v}')
+
+        # AllowedIPs (опционально для клиента, но иногда полезно для routing rules)
+        allowed = peer.get('allowedips')
+        if allowed:
+            al_list = [x.strip() for x in allowed.split(',')]
+            y.append(f'  allowed-ips: {json.dumps(al_list)}')
+
+        ka = peer.get('persistentkeepalive')
+        if ka:
+            y.append(f'  keep-alive: {ka}')
+
+        return {"yaml": "\n".join(y), "name": name}, None
 
     except Exception as e:
         return None, str(e)
@@ -257,7 +289,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.4</title>
+<title>Mihomo Editor v18.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -402,7 +434,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.4 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.5 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -1134,12 +1166,12 @@ class H(http.server.SimpleHTTPRequestHandler):
             if not config_text:
                 s.wfile.write(json.dumps({'error': 'Empty config'}).encode('utf-8'))
                 return
-            
+
             proxy_data, err = parse_wireguard(config_text, custom_name)
             if err:
                 s.wfile.write(json.dumps({'error': err}).encode('utf-8'))
                 return
-            
+
             s.wfile.write(json.dumps(proxy_data).encode('utf-8'))
             return
 
