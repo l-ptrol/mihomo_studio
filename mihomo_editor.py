@@ -250,6 +250,7 @@ def insert_proxy_logic(content, proxy_name, target_groups):
 
         if is_new_group:
             if in_proxies_list and current_group_name in target_groups and current_group_name not in inserted_in_group:
+                # End of list section
                 prefix = " " * (proxies_list_indent + 2)
                 new_lines.append(prefix + '- "' + proxy_name + '"')
                 inserted_in_group.add(current_group_name)
@@ -268,6 +269,26 @@ def insert_proxy_logic(content, proxy_name, target_groups):
                 current_group_name = raw_name.strip("'").strip('"')
 
             if current_group_name in target_groups and stripped.startswith('proxies:'):
+                # Check for inline list style: proxies: [a, b]
+                if '[' in stripped and stripped.rstrip().endswith(']'):
+                    start = line.find('[')
+                    end = line.rfind(']')
+                    if start != -1 and end != -1:
+                        content_inner = line[start + 1:end]
+                        # Check if proxy already exists in the list
+                        # Simple check: name in text (robust enough for simple cases)
+                        if proxy_name not in content_inner:
+                            sep = ", " if content_inner.strip() else ""
+                            new_content = content_inner + sep + f'"{proxy_name}"'
+                            new_line = line[:start + 1] + new_content + line[end:]
+                            new_lines.append(new_line)
+                            inserted_in_group.add(current_group_name)
+                            continue
+                        else:
+                            new_lines.append(line)
+                            inserted_in_group.add(current_group_name)
+                            continue
+
                 in_proxies_list = True
                 proxies_list_indent = indent
                 new_lines.append(line)
@@ -303,7 +324,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.6</title>
+<title>Mihomo Editor v18.7</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -448,7 +469,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.6 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.7 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -719,7 +740,9 @@ function save(mode){
             document.getElementById('last-load').innerText = "Saved: " + d.time;
             if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
         } else {
-            document.getElementById('cons').innerHTML = fmtLog(d.log);
+            var consoleDiv = document.getElementById('cons');
+            consoleDiv.innerHTML = fmtLog(d.log);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
     }).catch(e=>alert("Error: "+e));
 }
@@ -894,6 +917,20 @@ function doDel(){
             }
         }
         if(delB)continue;
+
+        if(l.match(/^\s*proxies:\s*\[.*\]/)){
+             var st = l.indexOf('['); var en = l.lastIndexOf(']');
+             var pre = l.substring(0, st+1); var suf = l.substring(en);
+             var mid = l.substring(st+1, en);
+             var parts = mid.split(',');
+             var res = []; var changed = false;
+             for(var p of parts){
+                 var clean = p.trim().replace(/^['"]|['"]$/g, '');
+                 if(clean === nm){ changed = true; } else { res.push(p); }
+             }
+             if(changed){ nls.push(pre + res.join(',') + suf); continue; }
+        }
+
         var rm=l.match(/^\s+-\s+(?:"([^"]+)"|'([^']+)'|([^"':]+))\s*$/);
         if(rm){var rn=rm[1]||rm[2]||rm[3];if(rn&&rn.trim()===nm)continue}
         nls.push(l);
@@ -1157,10 +1194,15 @@ class H(http.server.SimpleHTTPRequestHandler):
             # Заменяем, сохраняя оригинальные кавычки
             content = re.sub(pattern_def, r'\g<1>"' + new_name + '"', content, count=1)
 
-            # 2. Замена в списках proxy-groups: - "old_name"
+            # 2. Замена в списках proxy-groups: - "old_name" (Block Style)
             # Regex для поиска `- 'old_name'`, `- "old_name"` или `- old_name`
             pattern_list = r"(-\s+)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
             content = re.sub(pattern_list, r'\g<1>"' + new_name + '"', content)
+
+            # 3. Замена в Inline Lists: [ ..., "old_name", ... ]
+            # Ищем old_name внутри delimiters [ или , с последующим , или ]
+            pattern_inline = r"([\[,]\s*)(?P<q>['\"]?)" + escaped_old + r"(?P=q)(\s*[,\]])"
+            content = re.sub(pattern_inline, r'\1\g<q>' + new_name + r'\g<q>\3', content)
 
             s.wfile.write(json.dumps({'status': 'ok', 'new_content': content}).encode('utf-8'))
             return
