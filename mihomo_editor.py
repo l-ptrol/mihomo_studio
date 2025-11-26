@@ -319,12 +319,95 @@ def insert_proxy_logic(content, proxy_name, target_groups):
     return "\n".join(new_lines)
 
 
+def replace_proxy_block(content, target_name, new_yaml_lines):
+    lines = content.splitlines()
+    new_content_lines = []
+
+    in_proxies = False
+    found_target = False
+    replaced = False
+
+    # Регулярка для поиска начала блока прокси с указанным именем
+    # Учитывает кавычки и пробелы: - name: "target_name"
+    name_pattern = re.compile(r'^\s*-\s+name:\s*(["\'])?' + re.escape(target_name) + r'(\1)?\s*$')
+
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+
+        # Определяем секцию proxies
+        if stripped.startswith('proxies:'):
+            in_proxies = True
+            new_content_lines.append(line)
+            i += 1
+            continue
+
+        # Если вышли из proxies (новая секция начинается без отступа)
+        if in_proxies and line and not line.startswith(' ') and not line.startswith('\t') and not line.startswith('#'):
+            in_proxies = False
+
+        if in_proxies and not replaced:
+            if name_pattern.match(stripped):
+                # Нашли целевой прокси.
+                # 1. Определяем отступ этого блока (обычно 2 пробела)
+                indent_len = len(line) - len(line.lstrip())
+
+                # 2. Добавляем новый YAML.
+                # new_yaml_lines приходят без отступов (или с базовыми).
+                # Нам нужно убедиться, что первая строка имеет дефис, а остальные - отступ.
+                # Обычно new_yaml_lines[0] уже "- name: ...".
+                # Просто добавим отступ всем строкам.
+
+                # Принудительно меняем имя в новом YAML на целевое, чтобы сохранить структуру
+                # (хотя парсеры уже могли вернуть новое имя, но лучше перестраховаться)
+                if new_yaml_lines and "name:" in new_yaml_lines[0]:
+                    # Заменяем имя в первой строке нового конфига на старое (target_name)
+                    new_yaml_lines[0] = re.sub(r'name:\s*".*"', f'name: "{target_name}"', new_yaml_lines[0])
+
+                for n_line in new_yaml_lines:
+                    new_content_lines.append(" " * indent_len + n_line)
+
+                replaced = True
+                found_target = True
+
+                # 3. Пропускаем старый блок
+                # Читаем дальше, пока не найдем строку с ТАКИМ ЖЕ отступом, начинающуюся с '-' (следующий элемент списка)
+                # или строку с МЕНЬШИМ отступом (конец секции)
+                i += 1
+                while i < len(lines):
+                    next_line = lines[i]
+                    next_stripped = next_line.strip()
+                    next_indent = len(next_line) - len(next_line.lstrip())
+
+                    if not next_stripped:  # Пустые строки пропускаем/удаляем внутри блока
+                        i += 1
+                        continue
+
+                    if next_indent < indent_len:
+                        # Конец секции proxies
+                        break
+
+                    if next_indent == indent_len and next_stripped.startswith('-'):
+                        # Следующий элемент списка
+                        break
+
+                    # Это всё еще часть старого блока, пропускаем
+                    i += 1
+                continue
+
+        new_content_lines.append(line)
+        i += 1
+
+    return "\n".join(new_content_lines)
+
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.7</title>
+<title>Mihomo Editor v18.8</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -412,6 +495,8 @@ button:hover{filter:brightness(1.1)}
 .prof-btns { display: flex; gap: 8px; margin-top: 5px; }
 .prof-btns button { flex: 1; }
 
+.proxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
 #last-load {
     font-size: 11px;
     color: var(--txt);
@@ -469,7 +554,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.7 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.8 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -501,9 +586,12 @@ button:hover{filter:brightness(1.1)}
         </div>
         <div class="sec">
             <h3>Управление прокси</h3>
-            <button onclick="openAddProxyModal()" class="btn-s" style="width:100%">➕ Добавить прокси</button>
-            <button onclick="showDel()" class="btn-d" style="width:100%">🗑 Удалить прокси</button>
-            <button onclick="showRename()" class="btn-u" style="width:100%">✏️ Переименовать прокси</button>
+            <div class="proxy-grid">
+                <button onclick="openAddProxyModal()" class="btn-s">➕ Добавить</button>
+                <button onclick="openEditProxyModal()" class="btn-u">✏️ Изменить</button>
+                <button onclick="showRename()" class="btn-g">Aa Переимен.</button>
+                <button onclick="showDel()" class="btn-d">🗑 Удалить</button>
+            </div>
         </div>
         <div class="sec">
             <h3>Бэкапы</h3>
@@ -555,9 +643,16 @@ button:hover{filter:brightness(1.1)}
 
 <div id="addProxyModal" class="ovl"><div class="mod">
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:10px; margin-bottom:0;">
-       <h3 style="margin:0; padding:0; border:0;">Добавить прокси</h3>
+       <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;">Добавить прокси</h3>
        <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:var(--bg-ter); color:var(--txt); font-size:18px;">✕</button>
     </div>
+
+    <div id="edit-proxy-container" style="display:none; margin-bottom:10px;">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Выберите прокси для изменения:</label>
+        <select id="edit-proxy-sel"></select>
+        <div style="font-size:11px; color:var(--btn-u); margin-top:5px;">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
+    </div>
+
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')">VLESS</button>
         <button onclick="switchTab(event, 'wgTab')">WireGuard</button>
@@ -566,19 +661,27 @@ button:hover{filter:brightness(1.1)}
     <div id="vlessTab" class="tab-content active">
         <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Ссылка VLESS:</label>
         <input id="vlessLink" placeholder="vless://..." style="margin-bottom:10px;">
-        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
-        <input id="vlessProxyName" placeholder="Автоматически из ссылки" style="margin-bottom:10px;">
-        <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
+
+        <div id="vless-name-block">
+            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
+            <input id="vlessProxyName" placeholder="Автоматически из ссылки" style="margin-bottom:10px;">
+        </div>
+
+        <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;">Сохранить</button>
     </div>
 
     <div id="wgTab" class="tab-content">
         <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Конфигурация WireGuard:</label>
         <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." style="width:100%; margin-bottom:10px;"></textarea>
-        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
-        <input id="wgProxyName" placeholder="Автоматически из Endpoint" style="margin-bottom:10px;">
+
+        <div id="wg-name-block">
+            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
+            <input id="wgProxyName" placeholder="Автоматически из Endpoint" style="margin-bottom:10px;">
+        </div>
+
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
         <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;">📂 Или загрузить .conf файл</button>
-        <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
+        <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;">Сохранить</button>
     </div>
 </div></div>
 
@@ -595,6 +698,7 @@ button:hover{filter:brightness(1.1)}
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme";
 var initialConfig = __JSON_CONTENT__;
+var isEditMode = false;
 
 // Открываем панель через наш локальный прокси (безопасно для PNA/CORS)
 function openPanel() {
@@ -604,6 +708,7 @@ function openPanel() {
 ed.setValue(initialConfig); ed.clearSelection();
 
 document.getElementById('vlessLink').addEventListener('input', function() {
+    if(isEditMode) return; // В режиме редактирования имя берется из селекта
     var link = this.value;
     if (link.startsWith("vless://") && link.includes("#")) {
         var name = link.split('#')[1];
@@ -612,6 +717,7 @@ document.getElementById('vlessLink').addEventListener('input', function() {
 });
 
 document.getElementById('wgConfig').addEventListener('input', function() {
+    if(isEditMode) return;
     var conf = this.value;
     var nameField = document.getElementById('wgProxyName');
     var endpointMatch = conf.match(/Endpoint\s*=\s*(.+)/);
@@ -789,26 +895,78 @@ function restoreBackup(fname){
     });
 }
 
+function getProxiesList() {
+    var ls = ed.getValue().split(/\\r?\\n/);
+    var prs = [], inP = 0;
+    for (var l of ls) {
+        if (l.match(/^proxies:/)) inP = 1;
+        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
+        if (inP) {
+            var m = l.match(/^\s+-\s+name:\s+(.*)/);
+            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
+        }
+    }
+    return prs;
+}
+
 function openAddProxyModal() {
+    isEditMode = false;
+    document.getElementById('proxyModalTitle').innerText = "Добавить прокси";
+    document.getElementById('edit-proxy-container').style.display = 'none';
+    document.getElementById('vless-name-block').style.display = 'block';
+    document.getElementById('wg-name-block').style.display = 'block';
+
+    // Clear inputs
+    document.getElementById('vlessLink').value = '';
+    document.getElementById('vlessProxyName').value = '';
+    document.getElementById('wgConfig').value = '';
+    document.getElementById('wgProxyName').value = '';
+
+    document.getElementById('addProxyModal').style.display = 'flex';
+}
+
+function openEditProxyModal() {
+    isEditMode = true;
+    document.getElementById('proxyModalTitle').innerText = "Изменить прокси";
+    document.getElementById('edit-proxy-container').style.display = 'block';
+    document.getElementById('vless-name-block').style.display = 'none';
+    document.getElementById('wg-name-block').style.display = 'none';
+
+    // Populate select
+    var prs = getProxiesList();
+    var sel = document.getElementById('edit-proxy-sel');
+    sel.innerHTML = '';
+    if(prs.length === 0) {
+        var o = document.createElement('option');
+        o.text = "Нет прокси для редактирования";
+        sel.add(o);
+        sel.disabled = true;
+    } else {
+        sel.disabled = false;
+        prs.forEach(p => {
+            var o = document.createElement('option');
+            o.text = p;
+            sel.add(o);
+        });
+    }
+
+    // Clear inputs
+    document.getElementById('vlessLink').value = '';
+    document.getElementById('wgConfig').value = '';
+
     document.getElementById('addProxyModal').style.display = 'flex';
 }
 
 function switchTab(evt, tabName) {
     var i, tabcontent, tablinks;
-
-    // Сначала скрываем все панели с контентом
     tabcontent = document.getElementsByClassName("tab-content");
     for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].classList.remove("active");
     }
-
-    // Затем убираем активный класс со всех кнопок-вкладок
     tablinks = document.getElementsByClassName("modal-tabs")[0].getElementsByTagName("button");
     for (i = 0; i < tablinks.length; i++) {
         tablinks[i].classList.remove("active");
     }
-
-    // И только потом показываем нужную вкладку и делаем ее активной
     document.getElementById(tabName).classList.add("active");
     evt.currentTarget.classList.add("active");
 }
@@ -820,7 +978,6 @@ function loadWgFile(input) {
     r.onload = function(e) {
         var content = e.target.result;
         document.getElementById('wgConfig').value = content;
-        // Trigger the input event to auto-fill the name
         document.getElementById('wgConfig').dispatchEvent(new Event('input'));
     };
     r.readAsText(f);
@@ -829,53 +986,97 @@ function loadWgFile(input) {
 
 function addWireguard() {
     var conf = document.getElementById('wgConfig').value;
-    var name = document.getElementById('wgProxyName').value.trim();
+    var name = ''; 
+
+    if(isEditMode) {
+        name = document.getElementById('edit-proxy-sel').value;
+        if(!name || document.getElementById('edit-proxy-sel').disabled) return alert("Выберите прокси для редактирования");
+    } else {
+        name = document.getElementById('wgProxyName').value.trim();
+    }
+
     if (!conf) return alert("Конфигурация WireGuard не может быть пустой.");
+
     var p = new URLSearchParams();
     p.append('act', 'add_wireguard');
     p.append('config_text', conf);
-    if (name) {
-        p.append('proxy_name', name);
-    }
+    if (name) p.append('proxy_name', name);
+
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
         .then(d => {
             if (d.error) {
                 alert(d.error);
             } else {
-                pData = d;
-                closeM('addProxyModal');
-                document.getElementById('wgConfig').value = '';
-                document.getElementById('wgProxyName').value = '';
-                showG();
+                if(isEditMode) {
+                   replaceProxyData(name, d.yaml);
+                } else {
+                   pData = d;
+                   closeM('addProxyModal');
+                   showG();
+                }
             }
         });
 }
 
 function parseVless(){
     var link = document.getElementById('vlessLink').value;
-    var name = document.getElementById('vlessProxyName').value.trim();
+    var name = '';
+
+    if(isEditMode) {
+        name = document.getElementById('edit-proxy-sel').value;
+        if(!name || document.getElementById('edit-proxy-sel').disabled) return alert("Выберите прокси для редактирования");
+    } else {
+        name = document.getElementById('vlessProxyName').value.trim();
+    }
+
     if (!link) return;
+
     var p = new URLSearchParams();
     p.append('act', 'parse');
     p.append('link', link);
-    if (name) {
-        p.append('proxy_name', name);
-    }
+    if (name) p.append('proxy_name', name);
+
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
         .then(d => {
             if (d.error) {
                 alert(d.error);
             } else {
-                pData = d;
-                closeM('addProxyModal');
-                document.getElementById('vlessLink').value = '';
-                document.getElementById('vlessProxyName').value = '';
-                showG();
+                if(isEditMode) {
+                    replaceProxyData(name, d.yaml);
+                } else {
+                    pData = d;
+                    closeM('addProxyModal');
+                    showG();
+                }
             }
         });
 }
+
+function replaceProxyData(targetName, newYaml) {
+    if(!confirm("Заменить данные прокси '" + targetName + "'?")) return;
+    var content = ed.getValue();
+    var p = new URLSearchParams();
+    p.append('act', 'replace_proxy');
+    p.append('target_name', targetName);
+    p.append('new_yaml', newYaml);
+    p.append('content', content);
+
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                ed.setValue(d.new_content);
+                ed.clearSelection();
+                closeM('addProxyModal');
+                showToast("✏️ Данные прокси обновлены");
+            }
+        });
+}
+
 function showG(){
     var txt=ed.getValue(); var ls=txt.split(/\\r?\\n/); var grps=[], inG=false;
     for(var l of ls){ if(l.match(/^proxy-groups:/))inG=true; if(inG && l.match(/^[a-zA-Z]/) && !l.match(/^proxy-groups:/))inG=false; if(inG){var m=l.match(/^\s*-\s+name:\s+(.*)/);if(m)grps.push(m[1].trim().replace(/^['"]|['"]$/g,''))}}
@@ -896,8 +1097,7 @@ function applyVless(){
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{ed.setValue(d.new_content);ed.clearSelection();showToast("✅ Добавлено")}});
 }
 function showDel(){
-    var ls=ed.getValue().split(/\\r?\\n/); var prs=[], inP=0;
-    for(var l of ls){ if(l.match(/^proxies:/))inP=1; if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/))inP=0; if(inP){var m=l.match(/^\s+-\s+name:\s+(.*)/);if(m)prs.push(m[1].trim().replace(/^['"]|['"]$/g,''))}}
+    var prs = getProxiesList();
     var s=document.getElementById('sel-del');s.innerHTML='';
     prs.forEach(p=>{var o=document.createElement('option');o.text=p;s.add(o)});
     document.getElementById('m-del').style.display='flex';
@@ -939,16 +1139,7 @@ function doDel(){
 }
 
 function showRename() {
-    var ls = ed.getValue().split(/\\r?\\n/);
-    var prs = [], inP = 0;
-    for (var l of ls) {
-        if (l.match(/^proxies:/)) inP = 1;
-        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
-        if (inP) {
-            var m = l.match(/^\s+-\s+name:\s+(.*)/);
-            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
-        }
-    }
+    var prs = getProxiesList();
     var s = document.getElementById('sel-ren-proxy');
     s.innerHTML = '';
     prs.forEach(p => {
@@ -1185,22 +1376,15 @@ class H(http.server.SimpleHTTPRequestHandler):
                 return
 
             # 1. Замена в определении прокси: - name: "old_name"
-            # Regex для поиска `name: 'old_name'`, `name: "old_name"` или `name: old_name`
-            # Используем `re.escape` для безопасности
             escaped_old = re.escape(old_name)
-            # (?P<quote>['"]?) - захватывает кавычку (если она есть) в группу 'quote'
-            # \\1 - ссылается на захваченную кавычку, чтобы заменить на такую же
             pattern_def = r"(name\s*:\s*)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
-            # Заменяем, сохраняя оригинальные кавычки
             content = re.sub(pattern_def, r'\g<1>"' + new_name + '"', content, count=1)
 
             # 2. Замена в списках proxy-groups: - "old_name" (Block Style)
-            # Regex для поиска `- 'old_name'`, `- "old_name"` или `- old_name`
             pattern_list = r"(-\s+)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
             content = re.sub(pattern_list, r'\g<1>"' + new_name + '"', content)
 
             # 3. Замена в Inline Lists: [ ..., "old_name", ... ]
-            # Ищем old_name внутри delimiters [ или , с последующим , или ]
             pattern_inline = r"([\[,]\s*)(?P<q>['\"]?)" + escaped_old + r"(?P=q)(\s*[,\]])"
             content = re.sub(pattern_inline, r'\1\g<q>' + new_name + r'\g<q>\3', content)
 
@@ -1247,6 +1431,16 @@ class H(http.server.SimpleHTTPRequestHandler):
             if not inserted: lines.append("proxies:"); lines.extend(["  " + l for l in p_yaml.splitlines()])
             uc = insert_proxy_logic("\n".join(lines), p_name, targets)
             s.wfile.write(json.dumps({'new_content': uc}).encode('utf-8'));
+            return
+
+        if a == 'replace_proxy':
+            target_name = p.get('target_name', '')
+            new_yaml = p.get('new_yaml', '')
+            content = p.get('content', '')
+
+            new_yaml_lines = new_yaml.splitlines()
+            uc = replace_proxy_block(content, target_name, new_yaml_lines)
+            s.wfile.write(json.dumps({'new_content': uc}).encode('utf-8'))
             return
 
         if a == 'clean_backups':
