@@ -5,6 +5,7 @@
 BRANCH="master"
 BASE_URL="http://freedom.l-ptr.ru:3000/Petro1990/mihomo_studio/raw/branch/${BRANCH}"
 
+
 # === ПУТИ НА РОУТЕРЕ ===
 INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
