@@ -49,28 +49,38 @@ get_remote_version() {
 
 # --- Отображение заголовка ---
 display_header() {
-    LOCAL_VERSION=$(get_local_version)
-    REMOTE_VERSION=$(get_remote_version)
+    # Переменные local_version и remote_version должны быть определены
+    # перед вызовом этой функции в глобальной области видимости.
 
     # Коррекция отображения для пользователя
-    if [ "$LOCAL_VERSION" = "0" ]; then
-        DISPLAY_LOCAL="не установлено"
+    if [ "$local_version" = "0" ]; then
+        display_local="не установлено"
     else
-        DISPLAY_LOCAL="$LOCAL_VERSION"
+        display_local="$local_version"
     fi
 
-    if [ "$REMOTE_VERSION" = "0" ]; then
-        DISPLAY_REMOTE="не удалось получить"
+    if [ "$remote_version" = "0" ]; then
+        display_remote="не удалось получить"
     else
-        DISPLAY_REMOTE="$REMOTE_VERSION"
+        display_remote="$remote_version"
     fi
 
     echo "========================================"
     echo " ${SERVICE_NAME} Installer"
     echo "----------------------------------------"
-    echo " Установленная версия:  ${DISPLAY_LOCAL}"
-    echo " Доступная версия:      ${DISPLAY_REMOTE}"
+    echo " Установленная версия:  ${display_local}"
+    echo " Доступная версия:      ${display_remote}"
     echo "========================================"
+}
+
+# --- Справка ---
+usage() {
+    echo "Использование: $0 {install|update|reinstall|uninstall|uninstall-full}"
+    echo "  install         - Установить сервис (если не установлен)"
+    echo "  update          - Обновить сервис (если есть новая версия)"
+    echo "  reinstall       - Принудительно переустановить/обновить сервис"
+    echo "  uninstall       - Удалить сервис (сохранив зависимости)"
+    echo "  uninstall-full  - Удалить сервис и все его зависимости"
 }
 
 # --- Установка зависимостей ---
@@ -140,91 +150,71 @@ install_service() {
     echo "Веб-интерфейс (если запущен) доступен по адресу: http://$(uname -n):8888"
 }
 
-# --- Синоним для обновления ---
-update_service() {
-    install_service
-}
-
 # --- Удаление сервиса ---
 uninstall_service() {
-    echo ">>> Начинаем удаление..."
-
-    # 1. Остановка сервиса
+    echo "[1/2] Остановка и удаление службы..."
     if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
-        echo "[1/3] Остановка сервиса..."
         "$INIT_DIR/$INIT_SCRIPT" stop
     fi
-
-    # 2. Удаление файлов
-    echo "[2/3] Удаление файлов..."
     rm -f "$INSTALL_DIR/$PY_SCRIPT"
     rm -f "$INIT_DIR/$INIT_SCRIPT"
-    # Файл версии больше не используется, строка удалена.
-    # Опционально: можно добавить удаление всей директории /opt/etc/mihomo, но это может удалить пользовательские конфиги
-    # rm -rf "$MIHOMO_ETC_DIR" 
 
-    # 3. Запрос на удаление зависимостей
-    echo "[3/3] Удаление зависимостей..."
-    echo "ВНИМАНИЕ: Следующие пакеты были установлены как зависимости:"
-    echo "$PACKAGES"
-    echo "Эти пакеты могут использоваться другими приложениями. Их удаление может нарушить их работу."
-    
-    read -p "Вы хотите удалить эти зависимости? (y/N): " answer
-    if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-        echo "Удаляем зависимости..."
+    if [ "$1" = "full" ]; then
+        echo "[2/2] Удаление зависимостей..."
+        echo "ВНИМАНИЕ: Следующие пакеты будут удалены: $PACKAGES"
+        echo "Это может повлиять на работу других приложений."
         opkg remove $PACKAGES
     else
-        echo "Зависимости не будут удалены."
+        echo "[2/2] Зависимости не были удалены."
     fi
 
-    echo "=== ${SERVICE_NAME} успешно удален. ==="
+    echo "=== Удаление завершено! ==="
 }
 
-# --- Главное меню ---
-main_menu() {
-    while true; do
-        # Сценарий 1: Не установлено
-        if [ "$LOCAL_VERSION" = "0" ]; then
-            echo "Сервис не установлен. Выберите действие:"
-            echo " 1. Установить"
-            echo " q. Выход"
-            read -p "Ваш выбор: " choice
-            case "$choice" in
-                1) install_service; break ;;
-                q|Q) exit 0 ;;
-                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
-            esac
-        # Сценарий 2: Есть обновление
-        elif [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ] && [ "$REMOTE_VERSION" != "0" ]; then
-            echo "Доступна новая версия! Выберите действие:"
-            echo " 1. Обновить"
-            echo " 2. Удалить"
-            echo " q. Выход"
-            read -p "Ваш выбор: " choice
-            case "$choice" in
-                1) update_service; break ;;
-                2) uninstall_service; break ;;
-                q|Q) exit 0 ;;
-                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
-            esac
-        # Сценарий 3: Последняя версия установлена
-        else
-            echo "Установлена последняя версия. Выберите действие:"
-            echo " 1. Переустановить"
-            echo " 2. Удалить"
-            echo " q. Выход"
-            read -p "Ваш выбор: " choice
-            case "$choice" in
-                1) install_service; break ;;
-                2) uninstall_service; break ;;
-                q|Q) exit 0 ;;
-                *) echo "Неверный выбор. Пожалуйста, повторите." ;;
-            esac
-        fi
-        echo # Добавляем пустую строку для лучшей читаемости перед следующим показом меню
-    done
-}
+# --- ТОЧКА ВХОДА ---
 
-# === ТОЧКА ВХОДА ===
+# 1. Получаем версии
+local_version=$(get_local_version)
+remote_version=$(get_remote_version)
+
+# 2. Выводим информацию
 display_header
-main_menu
+
+# 3. Обрабатываем аргумент
+case "$1" in
+    install)
+        if [ "$local_version" != "0" ]; then
+            echo "Сервис уже установлен. Используйте 'update' или 'reinstall'."
+            exit 1
+        fi
+        install_service
+        ;;
+    update)
+        if [ "$local_version" = "0" ]; then
+            echo "Сервис не установлен. Используйте 'install'."
+            exit 1
+        fi
+        # Сравнение версий. `sort -V` корректно сравнивает номера версий.
+        latest=$(printf "%s\n%s" "$local_version" "$remote_version" | sort -V | tail -n1)
+        if [ "$local_version" = "$remote_version" ] || [ "$local_version" = "$latest" ]; then
+            echo "У вас уже установлена последняя версия."
+            exit 0
+        fi
+        echo "Доступно обновление. Установка..."
+        install_service
+        ;;
+    reinstall)
+        echo "Принудительная переустановка..."
+        install_service
+        ;;
+    uninstall)
+        uninstall_service
+        ;;
+    uninstall-full)
+        uninstall_service "full"
+        ;;
+    *)
+        usage
+        exit 1
+        ;;
+esac
