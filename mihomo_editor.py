@@ -90,6 +90,84 @@ def parse_vless(link):
         return None, str(e)
 
 
+def parse_wireguard(config_text):
+    try:
+        name = "WireGuard"
+        params = {}
+        current_section = None
+        for line in config_text.splitlines():
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.startswith('[') and line.endswith(']'):
+                current_section = line[1:-1].lower()
+                continue
+            if '=' in line:
+                key, value = map(str.strip, line.split('=', 1))
+                if current_section:
+                    if current_section not in params:
+                        params[current_section] = {}
+                    params[current_section][key] = value
+
+        if 'interface' not in params or 'peer' not in params:
+            return None, "Invalid WireGuard config: missing [Interface] or [Peer] section."
+
+        interface = params.get('interface', {})
+        peer = params.get('peer', {})
+
+        # Extract name from comment if exists
+        name_match = re.search(r'#\s*(.+)', config_text.splitlines()[0])
+        if name_match:
+            name = name_match.group(1).strip()
+        
+        name = f"WG-{name}"
+
+        server, port = peer.get('Endpoint', ':').rsplit(':', 1)
+        
+        y = [
+            f'- name: "{name}"',
+            '  type: wireguard',
+            f'  server: {server}',
+            f'  port: {port}',
+            f'  private-key: "{interface.get("PrivateKey")}"',
+            f'  public-key: "{peer.get("PublicKey")}"',
+            f'  ip: "{interface.get("Address").split("/")[0]}"'
+        ]
+
+        if interface.get('DNS'):
+            dns_servers = [d.strip() for d in interface.get('DNS').split(',')]
+            y.append(f'  dns: {dns_servers}')
+
+        if peer.get('PresharedKey'):
+            y.append(f'  preshared-key: "{peer.get("PresharedKey")}"')
+        
+        if peer.get('PersistentKeepalive'):
+             y.append(f'  keep-alive: {peer.get("PersistentKeepalive")}')
+
+        amnezia_opts = {
+            'Jc': interface.get('Jc'),
+            'Jmin': interface.get('Jmin'),
+            'Jmax': interface.get('Jmax'),
+            'S1': interface.get('S1'),
+            'S2': interface.get('S2'),
+            'H1': interface.get('H1'),
+            'H2': interface.get('H2'),
+            'H3': interface.get('H3'),
+            'H4': interface.get('H4')
+        }
+        
+        if any(v is not None for v in amnezia_opts.values()):
+            y.append('  amnezia-wg-opts:')
+            for key, value in amnezia_opts.items():
+                if value is not None:
+                    y.append(f'    {key.lower()}: {value}')
+
+        return {"yaml": "\n".join(y), "name": name}, None
+
+    except Exception as e:
+        return None, str(e)
+
+
 def insert_proxy_logic(content, proxy_name, target_groups):
     lines = content.splitlines()
     new_lines = []
@@ -272,6 +350,21 @@ button:hover{filter:brightness(1.1)}
 .g-item input:checked + label {background: var(--btn-s);color: white;border-color: var(--btn-s);font-weight: bold;}
 .toast {position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--btn-r); color: white; padding: 10px 20px; border-radius: 5px; z-index: 3000; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.5);}
 
+.modal-tabs { display: flex; border-bottom: 1px solid var(--bd); margin-bottom: 15px; }
+.modal-tabs button {
+   flex: 1; justify-content: center; background: none; border: none; border-bottom: 2px solid transparent;
+   border-radius: 0; padding: 10px; font-size: 14px; color: var(--txt-sec); height: auto;
+}
+.modal-tabs button.active { color: var(--txt); border-bottom-color: var(--btn-s); font-weight: bold; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.file-drop-zone {
+   border: 2px dashed var(--bd); border-radius: 4px; padding: 20px; text-align: center;
+   color: var(--txt-sec); cursor: pointer; transition: 0.2s; margin-bottom: 10px;
+}
+.file-drop-zone:hover { background: var(--bg-ter); border-color: var(--btn-s); }
+.file-drop-zone.dragover { background: var(--bg-ter); border-color: var(--btn-s); }
+
 .log-time { color: #888; margin-right: 8px; }
 .log-info { color: #2196f3; font-weight: bold; }
 .log-warn { color: #ff9800; font-weight: bold; }
@@ -324,11 +417,8 @@ button:hover{filter:brightness(1.1)}
             </div>
         </div>
         <div class="sec">
-            <h3>Быстрый VLESS</h3>
-            <input id="vl" placeholder="vless://..." style="margin:0">
-            <button onclick="parseVless()" class="btn-s" style="width:100%">➕ Добавить прокси</button>
-        </div>
-        <div class="sec">
+            <h3>Управление прокси</h3>
+            <button onclick="openAddProxyModal()" class="btn-s" style="width:100%">➕ Добавить прокси</button>
             <button onclick="showDel()" class="btn-d" style="width:100%">🗑 Удалить прокси</button>
             <button onclick="showRename()" class="btn-u" style="width:100%">✏️ Переименовать прокси</button>
         </div>
@@ -377,6 +467,31 @@ button:hover{filter:brightness(1.1)}
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px">
         <button onclick="saveNewProf()" class="btn-s">Сохранить</button>
         <button onclick="closeM('m-add-prof')" class="btn-g">Отмена</button>
+    </div>
+</div></div>
+
+<div id="addProxyModal" class="ovl"><div class="mod">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:10px; margin-bottom:0;">
+       <h3 style="margin:0; padding:0; border:0;">Добавить прокси</h3>
+       <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:var(--bg-ter); color:var(--txt); font-size:18px;">✕</button>
+    </div>
+    <div class="modal-tabs">
+        <button class="active" onclick="switchTab(event, 'vlessTab')">VLESS</button>
+        <button onclick="switchTab(event, 'wgTab')">WireGuard</button>
+    </div>
+
+    <div id="vlessTab" class="tab-content active">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Ссылка VLESS:</label>
+        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:10px;">
+        <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
+    </div>
+
+    <div id="wgTab" class="tab-content">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Конфигурация WireGuard:</label>
+        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." style="width:100%; margin-bottom:10px;"></textarea>
+        <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
+        <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;">📂 Или загрузить .conf файл</button>
+        <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
     </div>
 </div></div>
 
@@ -567,10 +682,59 @@ function restoreBackup(fname){
     });
 }
 
+function openAddProxyModal() {
+    document.getElementById('addProxyModal').style.display = 'flex';
+}
+
+function switchTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+        tabcontent[i].classList.remove("active");
+    }
+    tablinks = document.getElementsByClassName("modal-tabs")[0].getElementsByTagName("button");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    document.getElementById(tabName).classList.add("active");
+    evt.currentTarget.className += " active";
+}
+
+function loadWgFile(input) {
+    var f=input.files[0];
+    if (!f) return;
+    var r=new FileReader();
+    r.onload=function(e){ document.getElementById('wgConfig').value = e.target.result; };
+    r.readAsText(f);
+    input.value = '';
+}
+
+function addWireguard() {
+    var conf = document.getElementById('wgConfig').value;
+    if (!conf) return alert("Конфигурация WireGuard не может быть пустой.");
+    var p = new URLSearchParams();
+    p.append('act', 'add_wireguard');
+    p.append('config_text', conf);
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                pData = d;
+                closeM('addProxyModal');
+                document.getElementById('wgConfig').value = '';
+                showG();
+            }
+        });
+}
+
 function parseVless(){
-    var l=document.getElementById('vl').value;if(!l)return;
+    var l=document.getElementById('vlessLink').value;if(!l)return;
     var p=new URLSearchParams();p.append('act','parse');p.append('link',l);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{pData=d;showG();document.getElementById('vl').value=''}})
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{pData=d; closeM('addProxyModal'); document.getElementById('vlessLink').value=''; showG();}})
 }
 function showG(){
     var txt=ed.getValue(); var ls=txt.split(/\\r?\\n/); var grps=[], inG=false;
@@ -889,6 +1053,20 @@ class H(http.server.SimpleHTTPRequestHandler):
         if a == 'parse':
             d, e = parse_vless(p.get('link', ''))
             s.wfile.write(json.dumps(d if d else {'error': e}).encode('utf-8'));
+            return
+
+        if a == 'add_wireguard':
+            config_text = p.get('config_text', '')
+            if not config_text:
+                s.wfile.write(json.dumps({'error': 'Empty config'}).encode('utf-8'))
+                return
+            
+            proxy_data, err = parse_wireguard(config_text)
+            if err:
+                s.wfile.write(json.dumps({'error': err}).encode('utf-8'))
+                return
+            
+            s.wfile.write(json.dumps(proxy_data).encode('utf-8'))
             return
 
         if a == 'apply_insert':
