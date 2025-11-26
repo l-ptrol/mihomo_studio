@@ -564,6 +564,9 @@ button:hover{filter:brightness(1.1)}
             </div>
             <div id="bk-list">__BACKUPS__</div>
         </div>
+        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 10px 15px; border-bottom: none;">
+            Copyright (c) 2025 Peter Lobanok
+        </div>
     </div>
 </div>
 
