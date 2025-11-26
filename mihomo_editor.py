@@ -361,7 +361,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.10</title>
+<title>Mihomo Editor v1.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -508,7 +508,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50" data-i18n="title">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.10 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v1.1 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
