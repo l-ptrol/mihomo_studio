@@ -3,7 +3,7 @@
 # === НАСТРОЙКИ РЕПОЗИТОРИЯ ===
 # Укажи здесь имя ветки (master или main)
 BRANCH="master"
-BASE_URL="https://github.com/l-ptrol/mihomo_studio/blob/${BRANCH}"
+BASE_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}"
 
 
 # === ПУТИ НА РОУТЕРЕ ===
