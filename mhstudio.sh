@@ -76,10 +76,10 @@ display_header() {
 # --- Справка ---
 usage() {
     echo "Использование: mhstudio {update|reinstall|uninstall|uninstall-full}"
-    echo "  update          - Обновить сервис (если есть новая версия)"
-    echo "  reinstall       - Принудительно переустановить/обновить сервис"
-    echo "  uninstall       - Удалить сервис (сохранив зависимости)"
-    echo "  uninstall-full  - Удалить сервис и все его зависимости"
+    echo "  mhstudio -update          - Обновить сервис (если есть новая версия)"
+    echo "  mhstudio -reinstall       - Принудительно переустановить/обновить сервис"
+    echo "  mhstudio -uninstall       - Удалить сервис (сохранив зависимости)"
+    echo "  mhstudio -uninstall-full  - Удалить сервис и все его зависимости"
 }
 
 # --- Установка зависимостей ---
@@ -198,7 +198,7 @@ if [ -z "$1" ]; then
 fi
 
 case "$1" in
-    update)
+    -update)
         if [ "$local_version" = "0" ]; then
             echo "Сервис не установлен. Используйте 'install'."
             exit 1
@@ -212,14 +212,14 @@ case "$1" in
         echo "Доступно обновление. Установка..."
         install_service
         ;;
-    reinstall)
+    -reinstall)
         echo "Принудительная переустановка..."
         install_service
         ;;
-    uninstall)
+    -uninstall)
         uninstall_service
         ;;
-    uninstall-full)
+    -uninstall-full)
         uninstall_service "full"
         ;;
     *)
