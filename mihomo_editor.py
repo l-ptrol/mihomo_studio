@@ -361,7 +361,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.9</title>
+<title>Mihomo Editor v18.10</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -508,7 +508,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50" data-i18n="title">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.9 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.10 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -626,7 +626,7 @@ button:hover{filter:brightness(1.1)}
 
         <div id="vless-name-block">
             <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="vlessProxyName" placeholder="Автоматически из ссылки" style="margin-bottom:10px;">
+            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:10px;">
         </div>
 
         <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
@@ -634,11 +634,11 @@ button:hover{filter:brightness(1.1)}
 
     <div id="wgTab" class="tab-content">
         <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
-        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." style="width:100%; margin-bottom:10px;"></textarea>
+        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:10px;"></textarea>
 
         <div id="wg-name-block">
             <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="wgProxyName" placeholder="Автоматически из Endpoint" style="margin-bottom:10px;">
+            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:10px;">
         </div>
 
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
@@ -724,6 +724,9 @@ const TR = {
         lbl_content: "Содержимое:",
         btn_load_file: "📂 Загрузить файл",
         ph_paste_yaml: "Вставьте YAML конфиг сюда...",
+        ph_auto_vless: "Автоматически из ссылки",
+        ph_auto_wg: "Автоматически из Endpoint",
+        ph_paste_conf: "Вставьте содержимое .conf файла сюда...",
         modal_groups: "Добавить в группы:",
         btn_sel_all: "☑ Выбрать все",
         btn_sel_none: "☐ Снять все",
@@ -799,6 +802,9 @@ const TR = {
         lbl_content: "Вміст:",
         btn_load_file: "📂 Завантажити файл",
         ph_paste_yaml: "Вставте YAML конфіг сюди...",
+        ph_auto_vless: "Автоматично з посилання",
+        ph_auto_wg: "Автоматично з Endpoint",
+        ph_paste_conf: "Вставте вміст .conf файлу сюди...",
         modal_groups: "Додати в групи:",
         btn_sel_all: "☑ Обрати всі",
         btn_sel_none: "☐ Зняти всі",
@@ -874,6 +880,9 @@ const TR = {
         lbl_content: "Content:",
         btn_load_file: "📂 Upload File",
         ph_paste_yaml: "Paste YAML config here...",
+        ph_auto_vless: "Automatically from link",
+        ph_auto_wg: "Automatically from Endpoint",
+        ph_paste_conf: "Paste .conf file content here...",
         modal_groups: "Add to groups:",
         btn_sel_all: "☑ Select All",
         btn_sel_none: "☐ Select None",
@@ -1595,15 +1604,22 @@ class H(http.server.SimpleHTTPRequestHandler):
                 return
 
             # 1. Замена в определении прокси: - name: "old_name"
+            # Regex для поиска `name: 'old_name'`, `name: "old_name"` или `name: old_name`
+            # Используем `re.escape` для безопасности
             escaped_old = re.escape(old_name)
+            # (?P<quote>['"]?) - захватывает кавычку (если она есть) в группу 'quote'
+            # \\1 - ссылается на захваченную кавычку, чтобы заменить на такую же
             pattern_def = r"(name\s*:\s*)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
+            # Заменяем, сохраняя оригинальные кавычки
             content = re.sub(pattern_def, r'\g<1>"' + new_name + '"', content, count=1)
 
-            # 2. Замена в списках proxy-groups: - "old_name" (Block Style)
+            # 2. Замена в списках proxy-groups: - "old_name"
+            # Regex для поиска `- 'old_name'`, `- "old_name"` или `- old_name`
             pattern_list = r"(-\s+)(?P<quote>['\"]?)" + escaped_old + r"(?P=quote)"
             content = re.sub(pattern_list, r'\g<1>"' + new_name + '"', content)
 
             # 3. Замена в Inline Lists: [ ..., "old_name", ... ]
+            # Ищем old_name внутри delimiters [ или , с последующим , или ]
             pattern_inline = r"([\[,]\s*)(?P<q>['\"]?)" + escaped_old + r"(?P=q)(\s*[,\]])"
             content = re.sub(pattern_inline, r'\1\g<q>' + new_name + r'\g<q>\3', content)
 
