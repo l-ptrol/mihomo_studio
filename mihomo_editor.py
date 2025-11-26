@@ -97,13 +97,14 @@ def parse_vless(link, custom_name=None):
 
 def parse_wireguard(config_text, custom_name=None):
     try:
-        # Простой парсер INI формата (чтобы не использовать configparser или yaml)
         conf = {"interface": {}, "peer": {}}
         section = None
 
+        # 1. Читаем построчно, чистим комментарии и собираем секции
         for line in config_text.splitlines():
-            line = line.strip()
-            if not line or line.startswith('#') or line.startswith(';'): continue
+            # Удаляем inline комментарии (# или ;)
+            line = line.split('#')[0].split(';')[0].strip()
+            if not line: continue
 
             if line.startswith('[') and line.endswith(']'):
                 s_name = line[1:-1].lower()
@@ -123,7 +124,7 @@ def parse_wireguard(config_text, custom_name=None):
         if not iface or not peer:
             return None, "Invalid WireGuard config: missing Interface or Peer"
 
-        # Endpoint parsing
+        # 2. Endpoint (Server + Port)
         endpoint = peer.get('endpoint', '')
         if not endpoint: return None, "No Endpoint found"
 
@@ -136,33 +137,46 @@ def parse_wireguard(config_text, custom_name=None):
         else:
             return None, "Invalid Endpoint format"
 
-        # Name logic
+        # 3. Name Logic
         name = "WireGuard"
         if custom_name:
             name = custom_name
         else:
-            # Пытаемся вытащить имя из первой строки комментария, если есть
+            # Пытаемся взять имя из первой строки оригинального текста, если там комментарий
             first_line = config_text.splitlines()[0].strip()
             if first_line.startswith('#') and len(first_line) > 2:
                 name = first_line[1:].strip()
             else:
                 name = f"WG_{server}"
 
-        # IP Parsing (Mihomo requires 'ip', usually stripped of CIDR)
-        # Address = 10.0.0.2/32, fd00::2/64
+        # 4. Address (IP + IPv6)
         address_raw = iface.get('address', '')
         if not address_raw: return None, "No Address found"
 
-        # Берем первый адрес до запятой и убираем маску
-        ip_addr = address_raw.split(',')[0].strip().split('/')[0]
+        ips = [x.strip() for x in address_raw.split(',')]
+        ip_v4 = None
+        ip_v6 = None
 
-        # Строим YAML вручную (без модуля yaml)
+        for ip in ips:
+            # Убираем маску /32, /24 и т.д.
+            clean_ip = ip.split('/')[0]
+            if ':' in clean_ip:
+                if not ip_v6: ip_v6 = clean_ip
+            else:
+                if not ip_v4: ip_v4 = clean_ip
+
+        if not ip_v4 and not ip_v6:
+            return None, "No valid IP address found"
+
+        # 5. Сборка YAML
         y = []
         y.append(f'- name: "{name}"')
         y.append(f'  type: wireguard')
         y.append(f'  server: {server}')
         y.append(f'  port: {port}')
-        y.append(f'  ip: {ip_addr}')
+
+        if ip_v4: y.append(f'  ip: {ip_v4}')
+        if ip_v6: y.append(f'  ipv6: {ip_v6}')
 
         pk = iface.get('privatekey')
         if pk: y.append(f'  private-key: {pk}')
@@ -170,10 +184,11 @@ def parse_wireguard(config_text, custom_name=None):
         pubk = peer.get('publickey')
         if pubk: y.append(f'  public-key: {pubk}')
 
+        # Исправлено: pre-shared-key (с дефисом)
         psk = peer.get('presharedkey')
-        if psk: y.append(f'  preshared-key: {psk}')
+        if psk: y.append(f'  pre-shared-key: {psk}')
 
-        # DNS (JSON array is valid YAML flow style)
+        # DNS
         dns_raw = iface.get('dns')
         if dns_raw:
             dns_list = [d.strip() for d in dns_raw.split(',')]
@@ -184,31 +199,30 @@ def parse_wireguard(config_text, custom_name=None):
 
         y.append('  udp: true')
 
-        # AmneziaWG specific options (Mihomo structure)
-        # Ключи обычно: Jc, Jmin, Jmax, S1, S2, H1, H2, H3, H4
+        # 6. AmneziaWG Specific
         amnezia_keys = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']
         amn_opts = {}
         for k in amnezia_keys:
             if k in iface:
                 val = iface[k]
-                # Пытаемся преобразовать в число, если это число
-                if val.isdigit(): val = int(val)
-                amn_opts[k] = val
+                if val.isdigit():
+                    amn_opts[k] = int(val)  # Важно: int, не string
 
         if amn_opts:
             y.append('  amnezia-wg-option:')
             for k, v in amn_opts.items():
                 y.append(f'    {k}: {v}')
 
-        # AllowedIPs (опционально для клиента, но иногда полезно для routing rules)
+        # 7. AllowedIPs (добавлено)
         allowed = peer.get('allowedips')
         if allowed:
             al_list = [x.strip() for x in allowed.split(',')]
             y.append(f'  allowed-ips: {json.dumps(al_list)}')
 
+        # Исправлено: persistent-keepalive
         ka = peer.get('persistentkeepalive')
         if ka:
-            y.append(f'  keep-alive: {ka}')
+            y.append(f'  persistent-keepalive: {ka}')
 
         return {"yaml": "\n".join(y), "name": name}, None
 
@@ -289,7 +303,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v18.5</title>
+<title>Mihomo Editor v18.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -434,7 +448,7 @@ button:hover{filter:brightness(1.1)}
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
         <h2 style="margin:0;color:#4caf50">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v18.5 Auto-Panel</span>
+        <span style="color:var(--txt-sec);font-size:12px">v18.6 Auto-Panel</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
