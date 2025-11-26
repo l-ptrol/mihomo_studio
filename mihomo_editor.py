@@ -872,7 +872,7 @@ const TR = {
         btn_close: "Close",
         btn_update: "Update",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard",
+        tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Select proxy to replace:",
         warn_edit: "⚠️ This proxy's data will be fully replaced!",
         modal_new_prof: "New Profile",
