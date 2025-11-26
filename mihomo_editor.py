@@ -617,7 +617,7 @@ button:hover{filter:brightness(1.1)}
 
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
-        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard</button>
+        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard|AmneziaWG</button>
     </div>
 
     <div id="vlessTab" class="tab-content active">
@@ -716,7 +716,7 @@ const TR = {
         btn_close: "Закрыть",
         btn_update: "Обновить",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard/AmneziaWG",
+        tab_wg: "WireGuard",
         lbl_select_edit: "Выберите прокси для изменения:",
         warn_edit: "⚠️ Данные этого прокси будут полностью заменены новыми!",
         modal_new_prof: "Новый профиль",
@@ -794,7 +794,7 @@ const TR = {
         btn_close: "Закрити",
         btn_update: "Оновити",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard/AmneziaWG",
+        tab_wg: "WireGuard",
         lbl_select_edit: "Виберіть проксі для зміни:",
         warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
         modal_new_prof: "Новий профіль",
@@ -872,7 +872,7 @@ const TR = {
         btn_close: "Close",
         btn_update: "Update",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard/AmneziaWG",
+        tab_wg: "WireGuard",
         lbl_select_edit: "Select proxy to replace:",
         warn_edit: "⚠️ This proxy's data will be fully replaced!",
         modal_new_prof: "New Profile",
