@@ -124,6 +124,9 @@ def parse_wireguard(config_text):
 
         server, port = peer.get('Endpoint', ':').rsplit(':', 1)
         
+        # 3. `Address` из `.conf` файла должен быть разделен на `ip` и `prefix`
+        ip_address = interface.get("Address", "").split("/")[0]
+
         y = [
             f'- name: "{name}"',
             '  type: wireguard',
@@ -131,12 +134,21 @@ def parse_wireguard(config_text):
             f'  port: {port}',
             f'  private-key: "{interface.get("PrivateKey")}"',
             f'  public-key: "{peer.get("PublicKey")}"',
-            f'  ip: "{interface.get("Address").split("/")[0]}"'
+            f'  ip: {ip_address}'
         ]
-
+        
+        # 2. Значения для `dns` и `allowed-ips` должны быть представлены в виде списков
         if interface.get('DNS'):
             dns_servers = [d.strip() for d in interface.get('DNS').split(',')]
-            y.append(f'  dns: {dns_servers}')
+            y.append('  dns:')
+            for d in dns_servers:
+                y.append(f'    - {d}')
+
+        if peer.get('AllowedIPs'):
+            allowed_ips = [ip.strip() for ip in peer.get('AllowedIPs').split(',')]
+            y.append('  allowed-ips:')
+            for ip in allowed_ips:
+                y.append(f'    - "{ip}"')
 
         if peer.get('PresharedKey'):
             y.append(f'  preshared-key: "{peer.get("PresharedKey")}"')
@@ -144,23 +156,14 @@ def parse_wireguard(config_text):
         if peer.get('PersistentKeepalive'):
              y.append(f'  keep-alive: {peer.get("PersistentKeepalive")}')
 
-        amnezia_opts = {
-            'Jc': interface.get('Jc'),
-            'Jmin': interface.get('Jmin'),
-            'Jmax': interface.get('Jmax'),
-            'S1': interface.get('S1'),
-            'S2': interface.get('S2'),
-            'H1': interface.get('H1'),
-            'H2': interface.get('H2'),
-            'H3': interface.get('H3'),
-            'H4': interface.get('H4')
-        }
-        
-        if any(v is not None for v in amnezia_opts.values()):
-            y.append('  amnezia-wg-opts:')
+        # 1. Параметры AmneziaWG должны быть сгруппированы во вложенном словаре
+        amnezia_keys = ['Jc', 'Jmin', 'Jmax', 'S1', 'S2', 'H1', 'H2', 'H3', 'H4']
+        amnezia_opts = {key: interface.get(key) for key in amnezia_keys if interface.get(key) is not None}
+
+        if amnezia_opts:
+            y.append('  amnezia-wg-option:')
             for key, value in amnezia_opts.items():
-                if value is not None:
-                    y.append(f'    {key.lower()}: {value}')
+                y.append(f'    {key}: {value}')
 
         return {"yaml": "\n".join(y), "name": name}, None
 
