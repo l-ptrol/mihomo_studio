@@ -617,7 +617,7 @@ button:hover{filter:brightness(1.1)}
 
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
-        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard</button>
+        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard/AmneziaWG</button>
     </div>
 
     <div id="vlessTab" class="tab-content active">
