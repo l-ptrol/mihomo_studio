@@ -12,6 +12,7 @@ import time
 import shutil
 import glob
 import json
+import yaml
 from datetime import datetime
 
 # --- НАСТРОЙКИ ---
@@ -38,12 +39,17 @@ elif not os.path.exists(CONFIG_PATH):
 
 
 # --- ПАРСЕРЫ ---
-def parse_vless(link):
+def parse_vless(link, custom_name=None):
     try:
         if not link.startswith("vless://"): return None, "Link error"
         main = link[8:]
         name = "VLESS"
-        if '#' in main: main, n = main.split('#', 1); name = urllib.parse.unquote(n).strip()
+        if custom_name:
+            name = custom_name
+        elif '#' in main:
+            main, n = main.split('#', 1)
+            name = urllib.parse.unquote(n).strip()
+        
         name = re.sub(r'[\[\]\{\}\"\']', '', name)
         user_srv = main.split('?')[0]
         params = urllib.parse.parse_qs(main.split('?')[1]) if '?' in main else {}
@@ -90,7 +96,7 @@ def parse_vless(link):
         return None, str(e)
 
 
-def parse_wireguard(config_text):
+def parse_wireguard(config_text, custom_name=None):
     try:
         name = "WireGuard"
         params = {}
@@ -115,57 +121,64 @@ def parse_wireguard(config_text):
         interface = params.get('interface', {})
         peer = params.get('peer', {})
 
-        # Extract name from comment if exists
-        name_match = re.search(r'#\s*(.+)', config_text.splitlines()[0])
-        if name_match:
-            name = name_match.group(1).strip()
-        
-        name = f"WG-{name}"
+        server, port_str = peer.get('Endpoint', ':').rsplit(':', 1)
 
-        server, port = peer.get('Endpoint', ':').rsplit(':', 1)
+        if custom_name:
+            name = custom_name
+        else:
+            name_match = re.search(r'#\s*(.+)', config_text.splitlines()[0])
+            if name_match:
+                name = name_match.group(1).strip()
+            elif server:
+                 name = f"WG_{server}"
+            else:
+                 name = "WireGuard"
         
-        # 3. `Address` из `.conf` файла должен быть разделен на `ip` и `prefix`
+        # Преобразуем порт в int, если возможно, иначе оставляем как есть
+        try:
+            port = int(port_str)
+        except (ValueError, TypeError):
+            port = port_str
+
         ip_address = interface.get("Address", "").split("/")[0]
 
-        y = [
-            f'- name: "{name}"',
-            '  type: wireguard',
-            f'  server: {server}',
-            f'  port: {port}',
-            f'  private-key: "{interface.get("PrivateKey")}"',
-            f'  public-key: "{peer.get("PublicKey")}"',
-            f'  ip: {ip_address}'
-        ]
-        
-        # 2. Значения для `dns` и `allowed-ips` должны быть представлены в виде списков
+        proxy_dict = {
+            'name': name,
+            'type': 'wireguard',
+            'server': server,
+            'port': port,
+            'private-key': interface.get("PrivateKey"),
+            'public-key': peer.get("PublicKey"),
+            'ip': ip_address
+        }
+
         if interface.get('DNS'):
-            dns_servers = [d.strip() for d in interface.get('DNS').split(',')]
-            y.append('  dns:')
-            for d in dns_servers:
-                y.append(f'    - {d}')
+            proxy_dict['dns'] = [d.strip() for d in interface.get('DNS').split(',')]
 
         if peer.get('AllowedIPs'):
-            allowed_ips = [ip.strip() for ip in peer.get('AllowedIPs').split(',')]
-            y.append('  allowed-ips:')
-            for ip in allowed_ips:
-                y.append(f'    - "{ip}"')
+            proxy_dict['allowed-ips'] = [ip.strip() for ip in peer.get('AllowedIPs').split(',')]
 
         if peer.get('PresharedKey'):
-            y.append(f'  preshared-key: "{peer.get("PresharedKey")}"')
+            proxy_dict['preshared-key'] = peer.get("PresharedKey")
         
         if peer.get('PersistentKeepalive'):
-             y.append(f'  keep-alive: {peer.get("PersistentKeepalive")}')
+             proxy_dict['keep-alive'] = int(peer.get("PersistentKeepalive"))
 
-        # 1. Параметры AmneziaWG должны быть сгруппированы во вложенном словаре
         amnezia_keys = ['Jc', 'Jmin', 'Jmax', 'S1', 'S2', 'H1', 'H2', 'H3', 'H4']
         amnezia_opts = {key: interface.get(key) for key in amnezia_keys if interface.get(key) is not None}
 
         if amnezia_opts:
-            y.append('  amnezia-wg-option:')
-            for key, value in amnezia_opts.items():
-                y.append(f'    {key}: {value}')
+            proxy_dict['amnezia-wg-option'] = {k: v for k, v in amnezia_opts.items()}
 
-        return {"yaml": "\n".join(y), "name": name}, None
+        # Создаем YAML, который будет добавлен в `proxies:`
+        # Используем NoQuoteDumper для вывода без кавычек, где это возможно
+        yaml_string = yaml.dump([proxy_dict], default_flow_style=False, sort_keys=False, allow_unicode=True, indent=2)
+
+        # Удаляем `- ` с первой строки, т.к. мы добавляем только один прокси за раз
+        # и обертка в список нужна только для yaml.dump
+        final_yaml = yaml_string.replace('- ', '  ', 1).replace('  name:', '- name:')
+
+        return {"yaml": final_yaml.strip(), "name": name}, None
 
     except Exception as e:
         return None, str(e)
@@ -486,12 +499,16 @@ button:hover{filter:brightness(1.1)}
     <div id="vlessTab" class="tab-content active">
         <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Ссылка VLESS:</label>
         <input id="vlessLink" placeholder="vless://..." style="margin-bottom:10px;">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
+        <input id="vlessProxyName" placeholder="Автоматически из ссылки" style="margin-bottom:10px;">
         <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
     </div>
 
     <div id="wgTab" class="tab-content">
         <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Конфигурация WireGuard:</label>
         <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." style="width:100%; margin-bottom:10px;"></textarea>
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">Имя прокси (необязательно):</label>
+        <input id="wgProxyName" placeholder="Автоматически из Endpoint" style="margin-bottom:10px;">
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
         <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;">📂 Или загрузить .conf файл</button>
         <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;">Добавить</button>
@@ -518,6 +535,24 @@ function openPanel() {
     window.open(url, '_blank');
 }
 ed.setValue(initialConfig); ed.clearSelection();
+
+document.getElementById('vlessLink').addEventListener('input', function() {
+    var link = this.value;
+    if (link.startsWith("vless://") && link.includes("#")) {
+        var name = link.split('#')[1];
+        document.getElementById('vlessProxyName').value = decodeURIComponent(name).trim();
+    }
+});
+
+document.getElementById('wgConfig').addEventListener('input', function() {
+    var conf = this.value;
+    var nameField = document.getElementById('wgProxyName');
+    var endpointMatch = conf.match(/Endpoint\s*=\s*(.+)/);
+    if (endpointMatch && endpointMatch[1]) {
+        var server = endpointMatch[1].split(':')[0].trim();
+        if (server) nameField.value = 'WG_' + server;
+    }
+});
 
 function closeM(i){document.getElementById(i).style.display='none'}
 function showToast(msg){ var t=document.getElementById('toast'); t.innerText=msg||'✅ Выполнено'; t.style.display='block'; setTimeout(()=>{t.style.display='none'}, 2000); }
@@ -691,35 +726,48 @@ function openAddProxyModal() {
 
 function switchTab(evt, tabName) {
     var i, tabcontent, tablinks;
+
+    // Сначала скрываем все панели с контентом
     tabcontent = document.getElementsByClassName("tab-content");
     for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
         tabcontent[i].classList.remove("active");
     }
+
+    // Затем убираем активный класс со всех кнопок-вкладок
     tablinks = document.getElementsByClassName("modal-tabs")[0].getElementsByTagName("button");
     for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
+        tablinks[i].classList.remove("active");
     }
-    document.getElementById(tabName).style.display = "block";
+
+    // И только потом показываем нужную вкладку и делаем ее активной
     document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.className += " active";
+    evt.currentTarget.classList.add("active");
 }
 
 function loadWgFile(input) {
-    var f=input.files[0];
+    var f = input.files[0];
     if (!f) return;
-    var r=new FileReader();
-    r.onload=function(e){ document.getElementById('wgConfig').value = e.target.result; };
+    var r = new FileReader();
+    r.onload = function(e) {
+        var content = e.target.result;
+        document.getElementById('wgConfig').value = content;
+        // Trigger the input event to auto-fill the name
+        document.getElementById('wgConfig').dispatchEvent(new Event('input'));
+    };
     r.readAsText(f);
     input.value = '';
 }
 
 function addWireguard() {
     var conf = document.getElementById('wgConfig').value;
+    var name = document.getElementById('wgProxyName').value.trim();
     if (!conf) return alert("Конфигурация WireGuard не может быть пустой.");
     var p = new URLSearchParams();
     p.append('act', 'add_wireguard');
     p.append('config_text', conf);
+    if (name) {
+        p.append('proxy_name', name);
+    }
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
         .then(d => {
@@ -729,15 +777,35 @@ function addWireguard() {
                 pData = d;
                 closeM('addProxyModal');
                 document.getElementById('wgConfig').value = '';
+                document.getElementById('wgProxyName').value = '';
                 showG();
             }
         });
 }
 
 function parseVless(){
-    var l=document.getElementById('vlessLink').value;if(!l)return;
-    var p=new URLSearchParams();p.append('act','parse');p.append('link',l);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{pData=d; closeM('addProxyModal'); document.getElementById('vlessLink').value=''; showG();}})
+    var link = document.getElementById('vlessLink').value;
+    var name = document.getElementById('vlessProxyName').value.trim();
+    if (!link) return;
+    var p = new URLSearchParams();
+    p.append('act', 'parse');
+    p.append('link', link);
+    if (name) {
+        p.append('proxy_name', name);
+    }
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                pData = d;
+                closeM('addProxyModal');
+                document.getElementById('vlessLink').value = '';
+                document.getElementById('vlessProxyName').value = '';
+                showG();
+            }
+        });
 }
 function showG(){
     var txt=ed.getValue(); var ls=txt.split(/\\r?\\n/); var grps=[], inG=false;
@@ -1054,17 +1122,20 @@ class H(http.server.SimpleHTTPRequestHandler):
         # --- EXISTING ACTIONS ---
 
         if a == 'parse':
-            d, e = parse_vless(p.get('link', ''))
+            link = p.get('link', '')
+            custom_name = p.get('proxy_name')
+            d, e = parse_vless(link, custom_name)
             s.wfile.write(json.dumps(d if d else {'error': e}).encode('utf-8'));
             return
 
         if a == 'add_wireguard':
             config_text = p.get('config_text', '')
+            custom_name = p.get('proxy_name')
             if not config_text:
                 s.wfile.write(json.dumps({'error': 'Empty config'}).encode('utf-8'))
                 return
             
-            proxy_data, err = parse_wireguard(config_text)
+            proxy_data, err = parse_wireguard(config_text, custom_name)
             if err:
                 s.wfile.write(json.dumps({'error': err}).encode('utf-8'))
                 return
