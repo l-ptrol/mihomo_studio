@@ -19,9 +19,8 @@ PROJECT_FILES="main.py config.py parsers.py yaml_units.py server_handler.py temp
 PY_SCRIPT="main.py"
 INIT_SCRIPT="S95mihomo-web"
 
-# === [ИЗМЕНЕНИЕ 2] Список пакетов ===
-# Убрали python3-yaml (так как меняем библиотеку)
-# Добавили python3-pip (чтобы установить ruamel.yaml)
+# === ПАКЕТЫ ===
+# Используем python3-pip для установки ruamel.yaml
 PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs python3-pip"
 
 # === ФУНКЦИИ ===
@@ -99,12 +98,12 @@ install_dependencies() {
         fi
     done
 
-    # === [ИЗМЕНЕНИЕ 3] Установка ruamel.yaml через pip ===
+    # === [ВАЖНОЕ ИЗМЕНЕНИЕ] Установка ruamel.yaml без C-компиляции ===
     echo ">>> Проверка библиотек Python (ruamel.yaml)..."
-    # Проверяем наличие модуля, если нет - ставим
     if ! pip3 list 2>/dev/null | grep -q "ruamel.yaml"; then
-        echo "Устанавливаем ruamel.yaml..."
-        pip3 install ruamel.yaml
+        echo "Устанавливаем ruamel.yaml (Pure Python mode)..."
+        # Флаг --no-deps предотвращает попытку скачать и скомпилировать .clib (который требует gcc)
+        pip3 install ruamel.yaml --no-deps
         if [ $? -ne 0 ]; then
             echo "ОШИБКА: Не удалось установить ruamel.yaml через pip."
             exit 1
@@ -224,9 +223,6 @@ uninstall_service() {
 
     if [ "$mode" = "full" ]; then
         echo "[2/2] Удаление зависимостей..."
-        # Здесь мы не удаляем ruamel.yaml автоматически через pip uninstall,
-        # так как это может быть небезопасно для других скриптов,
-        # но удаляем системные пакеты opkg.
         echo "ВНИМАНИЕ: Следующие пакеты будут удалены: $PACKAGES"
         opkg remove $PACKAGES
     else
