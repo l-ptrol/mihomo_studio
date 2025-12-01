@@ -12,15 +12,7 @@ INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
 MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместимости и управления конфигами
 # Файлы проекта
-PROJECT_FILES=(
-    "main.py"
-    "config.py"
-    "parsers.py"
-    "yaml_units.py"
-    "server_handler.py"
-    "templates/index.html"
-    "version.txt"
-)
+PROJECT_FILES="main.py config.py parsers.py yaml_units.py server_handler.py templates/index.html version.txt"
 PY_SCRIPT="main.py"
 INIT_SCRIPT="S95mihomo-web"
 PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs"
@@ -119,7 +111,7 @@ create_dirs() {
 download_files() {
     echo ">>> Скачивание файлов..."
 
-    for file in "${PROJECT_FILES[@]}"; do
+    for file in $PROJECT_FILES; do
         local_path="$INSTALL_DIR/$file"
         remote_url="$BASE_URL/$file"
         
@@ -200,7 +192,7 @@ uninstall_service() {
         "$INIT_DIR/$INIT_SCRIPT" stop
     fi
     echo "Удаление файлов проекта..."
-    for file in "${PROJECT_FILES[@]}"; do
+    for file in $PROJECT_FILES; do
         rm -f "$INSTALL_DIR/$file"
     done
     rm -rf "$INSTALL_DIR/templates" # Удаляем директорию templates
