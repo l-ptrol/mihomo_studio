@@ -4,7 +4,7 @@
 # Ветка репозитория
 BRANCH="test"
 # URL до управляющего скрипта
-MHSTUDIO_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}/mhstudio.sh"
+MHSTUDIO_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test/mhstudio.sh"
 # Куда будет установлена команда
 INSTALL_PATH="/opt/bin/mhstudio"
 
