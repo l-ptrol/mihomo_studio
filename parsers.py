@@ -1,7 +1,7 @@
 # /opt/scripts/mihomo-studio/parsers.py
 import urllib.parse
 import re
-import json
+import yaml
 
 
 def parse_vless(link, custom_name=None):
@@ -36,29 +36,37 @@ def parse_vless(link, custom_name=None):
         def get(k):
             return params.get(k, [''])[0]
 
-        y = ['- name: "' + name + '"', '  type: vless', '  server: ' + srv, '  port: ' + port, '  uuid: ' + uuid,
-             '  udp: true']
-        y.append('  network: ' + (get('type') or 'tcp'))
-        if get('flow'): y.append('  flow: ' + get('flow'))
+        proxy = {
+            'name': name,
+            'type': 'vless',
+            'server': srv,
+            'port': int(port),
+            'uuid': uuid,
+            'udp': True,
+            'network': get('type') or 'tcp'
+        }
+        if get('flow'): proxy['flow'] = get('flow')
+        
         if get('security'):
-            y.append('  tls: true')
+            proxy['tls'] = True
             if get('security') == 'reality':
-                y.extend(['  servername: ' + get('sni'), '  client-fingerprint: ' + (get('fp') or 'chrome'),
-                          '  reality-opts:', '    public-key: ' + get('pbk')])
-                if get('sid'): y.append('    short-id: ' + get('sid'))
+                proxy['servername'] = get('sni')
+                proxy['client-fingerprint'] = get('fp') or 'chrome'
+                proxy['reality-opts'] = {'public-key': get('pbk')}
+                if get('sid'): proxy['reality-opts']['short-id'] = get('sid')
             else:
-                if get('sni'): y.append('  servername: ' + get('sni'))
-                if get('fp'): y.append('  client-fingerprint: ' + get('fp'))
-                if get('alpn'):
-                    av = get("alpn").replace(",", '", "')
-                    y.append('  alpn: ["' + av + '"]')
+                if get('sni'): proxy['servername'] = get('sni')
+                if get('fp'): proxy['client-fingerprint'] = get('fp')
+                if get('alpn'): proxy['alpn'] = [x.strip() for x in get('alpn').split(',')]
+
         if get('type') == 'ws':
-            y.append('  ws-opts:')
-            if get('path'): y.append('    path: ' + get('path'))
-            if get('host'): y.extend(['    headers:', '      Host: ' + get('host')])
+            proxy['ws-opts'] = {}
+            if get('path'): proxy['ws-opts']['path'] = get('path')
+            if get('host'): proxy['ws-opts']['headers'] = {'Host': get('host')}
         elif get('type') == 'grpc' and get('serviceName'):
-            y.extend(['  grpc-opts:', '    grpc-service-name: ' + get('serviceName')])
-        return {"yaml": "\n".join(y), "name": name}, None
+            proxy['grpc-opts'] = {'grpc-service-name': get('serviceName')}
+
+        return {"yaml": yaml.dump([proxy], allow_unicode=True, sort_keys=False), "name": name}, None
     except Exception as e:
         return None, str(e)
 
@@ -128,57 +136,37 @@ def parse_wireguard(config_text, custom_name=None):
         if not ip_v4 and not ip_v6:
             return None, "No valid IP address found"
 
-        y = []
-        y.append(f'- name: "{name}"')
-        y.append(f'  type: wireguard')
-        y.append(f'  server: {server}')
-        y.append(f'  port: {port}')
-
-        if ip_v4: y.append(f'  ip: {ip_v4}')
-        if ip_v6: y.append(f'  ipv6: {ip_v6}')
-
-        pk = iface.get('privatekey')
-        if pk: y.append(f'  private-key: {pk}')
-
-        pubk = peer.get('publickey')
-        if pubk: y.append(f'  public-key: {pubk}')
-
-        psk = peer.get('presharedkey')
-        if psk: y.append(f'  pre-shared-key: {psk}')
-
-        dns_raw = iface.get('dns')
-        if dns_raw:
-            dns_list = [d.strip() for d in dns_raw.split(',')]
-            y.append(f'  dns: {json.dumps(dns_list)}')
-
-        mtu = iface.get('mtu')
-        if mtu: y.append(f'  mtu: {mtu}')
-
-        y.append('  udp: true')
+        proxy = {
+            'name': name,
+            'type': 'wireguard',
+            'server': server,
+            'port': int(port),
+            'udp': True
+        }
+        if ip_v4: proxy['ip'] = ip_v4
+        if ip_v6: proxy['ipv6'] = ip_v6
+        if iface.get('privatekey'): proxy['private-key'] = iface.get('privatekey')
+        if peer.get('publickey'): proxy['public-key'] = peer.get('publickey')
+        if peer.get('presharedkey'): proxy['pre-shared-key'] = peer.get('presharedkey')
+        if iface.get('dns'): proxy['dns'] = [d.strip() for d in iface.get('dns').split(',')]
+        if iface.get('mtu'): proxy['mtu'] = int(iface.get('mtu'))
 
         amnezia_keys = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']
         amn_opts = {}
         for k in amnezia_keys:
-            if k in iface:
-                val = iface[k]
-                if val.isdigit():
-                    amn_opts[k] = int(val)
-
+            if k in iface and iface[k].isdigit():
+                amn_opts[k] = int(iface[k])
+        
         if amn_opts:
-            y.append('  amnezia-wg-option:')
-            for k, v in amn_opts.items():
-                y.append(f'    {k}: {v}')
+            proxy['amnezia-wg-option'] = amn_opts
 
-        allowed = peer.get('allowedips')
-        if allowed:
-            al_list = [x.strip() for x in allowed.split(',')]
-            y.append(f'  allowed-ips: {json.dumps(al_list)}')
+        if peer.get('allowedips'):
+            proxy['allowed-ips'] = [x.strip() for x in peer.get('allowedips').split(',')]
+        
+        if peer.get('persistentkeepalive'):
+            proxy['persistent-keepalive'] = int(peer.get('persistentkeepalive'))
 
-        ka = peer.get('persistentkeepalive')
-        if ka:
-            y.append(f'  persistent-keepalive: {ka}')
-
-        return {"yaml": "\n".join(y), "name": name}, None
+        return {"yaml": yaml.dump([proxy], allow_unicode=True, sort_keys=False), "name": name}, None
 
     except Exception as e:
         return None, str(e)
