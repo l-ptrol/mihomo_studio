@@ -15,7 +15,7 @@ MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместим�
 PROJECT_FILES="main.py config.py parsers.py yaml_units.py server_handler.py templates/index.html version.txt"
 PY_SCRIPT="main.py"
 INIT_SCRIPT="S95mihomo-web"
-PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs PyYAML"
+PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs python3-yaml"
 
 # === ФУНКЦИИ ===
 
