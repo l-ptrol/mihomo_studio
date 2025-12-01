@@ -75,11 +75,14 @@ display_header() {
 
 # --- Справка ---
 usage() {
-    echo "Использование: mhstudio {update|reinstall|uninstall|uninstall-full}"
+    echo "Использование: mhstudio {update|reinstall|uninstall|uninstall-full|start|stop|restart}"
     echo "  mhstudio -update          - Обновить сервис (если есть новая версия)"
     echo "  mhstudio -reinstall       - Принудительно переустановить/обновить сервис"
     echo "  mhstudio -uninstall       - Удалить сервис (сохранив зависимости)"
     echo "  mhstudio -uninstall-full  - Удалить сервис и все его зависимости"
+    echo "  mhstudio -start           - Запустить сервис"
+    echo "  mhstudio -stop            - Остановить сервис"
+    echo "  mhstudio -restart         - Перезапустить сервис"
 }
 
 # --- Установка зависимостей ---
@@ -121,6 +124,24 @@ set_permissions() {
     echo ">>> Установка прав доступа..."
     chmod +x "$INSTALL_DIR/$PY_SCRIPT"
     chmod +x "$INIT_DIR/$INIT_SCRIPT"
+}
+
+# --- Запуск сервиса ---
+start_service() {
+    if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
+        "$INIT_DIR/$INIT_SCRIPT" start
+    else
+        echo "ПРЕДУПРЕЖДЕНИЕ: Скрипт инициализации не найден. Не удалось запустить сервис."
+    fi
+}
+
+# --- Остановка сервиса ---
+stop_service() {
+    if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
+        "$INIT_DIR/$INIT_SCRIPT" stop
+    else
+        echo "ПРЕДУПРЕЖДЕНИЕ: Скрипт инициализации не найден. Не удалось остановить сервис."
+    fi
 }
 
 # --- Перезапуск сервиса ---
@@ -221,6 +242,15 @@ case "$1" in
         ;;
     -uninstall-full)
         uninstall_service "full"
+        ;;
+    -start)
+        start_service
+        ;;
+    -stop)
+        stop_service
+        ;;
+    -restart)
+        restart_service
         ;;
     *)
         echo "Неизвестная команда: $1"
