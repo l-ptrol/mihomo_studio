@@ -6,12 +6,22 @@
 
 # === КОНСТАНТЫ И ПЕРЕМЕННЫЕ ===
 SERVICE_NAME="Mihomo Studio"
-BRANCH="master"
+BRANCH="test"
 BASE_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}"
 INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
 MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместимости и управления конфигами
-PY_SCRIPT="mihomo_editor.py"
+# Файлы проекта
+PROJECT_FILES=(
+    "main.py"
+    "config.py"
+    "parsers.py"
+    "yaml_units.py"
+    "server_handler.py"
+    "templates/index.html"
+    "version.txt"
+)
+PY_SCRIPT="main.py"
 INIT_SCRIPT="S95mihomo-web"
 PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs"
 
@@ -19,10 +29,9 @@ PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs
 
 # --- Получение локальной версии ---
 get_local_version() {
-    local_py_path="$INSTALL_DIR/$PY_SCRIPT"
-    if [ -f "$local_py_path" ]; then
-        # Ищем строку с <title>, извлекаем 'v' и номер версии, затем удаляем 'v'
-        grep '<title>Mihomo Editor v' "$local_py_path" | sed -n 's/.*Mihomo Editor v\([^<]*\)<.*/\1/p'
+    local version_file="$INSTALL_DIR/version.txt"
+    if [ -f "$version_file" ]; then
+        cat "$version_file"
     else
         echo "0"
     fi
@@ -30,19 +39,16 @@ get_local_version() {
 
 # --- Получение удаленной версии ---
 get_remote_version() {
-    local remote_py_url="$BASE_URL/$PY_SCRIPT"
-    local temp_py_path="/tmp/$PY_SCRIPT.tmp"
+    local remote_version_url="$BASE_URL/version.txt"
+    local temp_version_file="/tmp/version.txt.tmp"
     
-    # Скачиваем удаленный скрипт во временный файл
-    wget --no-check-certificate -O "$temp_py_path" "$remote_py_url" >/dev/null 2>&1
+    wget --no-check-certificate -O "$temp_version_file" "$remote_version_url" >/dev/null 2>&1
     
-    if [ $? -eq 0 ] && [ -s "$temp_py_path" ]; then
-        # Извлекаем версию из временного файла
-        grep '<title>Mihomo Editor v' "$temp_py_path" | sed -n 's/.*Mihomo Editor v\([^<]*\)<.*/\1/p'
-        rm "$temp_py_path" # Удаляем временный файл
+    if [ $? -eq 0 ] && [ -s "$temp_version_file" ]; then
+        cat "$temp_version_file"
+        rm "$temp_version_file"
     else
-        # Если скачать не удалось, возвращаем 0 и удаляем пустой файл (если создался)
-        [ -f "$temp_py_path" ] && rm "$temp_py_path"
+        [ -f "$temp_version_file" ] && rm "$temp_version_file"
         echo "0"
     fi
 }
@@ -106,14 +112,27 @@ create_dirs() {
     mkdir -p "$INIT_DIR"
     mkdir -p "${MIHOMO_ETC_DIR}/profiles"
     mkdir -p "${MIHOMO_ETC_DIR}/backup"
+    mkdir -p "$INSTALL_DIR/templates"
 }
 
 # --- Скачивание файлов ---
 download_files() {
     echo ">>> Скачивание файлов..."
-    
-    wget --no-check-certificate -O "$INSTALL_DIR/$PY_SCRIPT" "${BASE_URL}/${PY_SCRIPT}"
-    if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $PY_SCRIPT."; exit 1; fi
+
+    for file in "${PROJECT_FILES[@]}"; do
+        local_path="$INSTALL_DIR/$file"
+        remote_url="$BASE_URL/$file"
+        
+        # Создаем директорию, если она не существует (для вложенных файлов)
+        mkdir -p "$(dirname "$local_path")"
+        
+        echo "Загрузка $file..."
+        wget --no-check-certificate -O "$local_path" "$remote_url"
+        if [ $? -ne 0 ]; then
+            echo "ОШИБКА: Не удалось скачать $file."
+            exit 1
+        fi
+    done
 
     wget --no-check-certificate -O "$INIT_DIR/$INIT_SCRIPT" "${BASE_URL}/${INIT_SCRIPT}"
     if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $INIT_SCRIPT."; exit 1; fi
@@ -180,7 +199,11 @@ uninstall_service() {
     if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
         "$INIT_DIR/$INIT_SCRIPT" stop
     fi
-    rm -f "$INSTALL_DIR/$PY_SCRIPT"
+    echo "Удаление файлов проекта..."
+    for file in "${PROJECT_FILES[@]}"; do
+        rm -f "$INSTALL_DIR/$file"
+    done
+    rm -rf "$INSTALL_DIR/templates" # Удаляем директорию templates
     rm -f "$INIT_DIR/$INIT_SCRIPT"
 
     if [ "$mode" = "full" ]; then

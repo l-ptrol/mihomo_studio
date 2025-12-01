@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PROG=/opt/scripts/mihomo_editor.py
+PROG=/opt/scripts/mihomo-studio/main.py
 PIDfile=/opt/var/run/mihomo_editor.pid
 
 case "$1" in
