@@ -11,6 +11,8 @@ CONFIG_PATH = os.path.join(CONFIG_DIR, "config.yaml")
 PROFILES_DIR = os.path.join(CONFIG_DIR, "profiles")
 BACKUP_DIR = os.path.join(CONFIG_DIR, "backup")
 
+VERSION_FILE = os.path.join(BASE_DIR, "version.txt")
+ 
 LOG_FILE = "/tmp/mihomo_last_restart.log"
 # Команда рестарта (важно для Keenetic)
 RESTART_CMD = f"xkeen -restart > {LOG_FILE} 2>&1"

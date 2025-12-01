@@ -124,10 +124,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-type', 'text/html;charset=utf-8')
         self.end_headers()
 
+        try:
+            with open(config.VERSION_FILE, "r") as f:
+                version = f.read().strip()
+        except FileNotFoundError:
+            version = ""
+
         out = html_template.replace('__JSON_CONTENT__', json.dumps(c)) \
             .replace('__BACKUPS__', self.get_bks()) \
             .replace('__PROFILES__', self.get_prof_opts()) \
-            .replace('__TIME__', datetime.now().strftime("%H:%M:%S"))
+            .replace('__TIME__', datetime.now().strftime("%H:%M:%S")) \
+            .replace('__VERSION__', version)
         self.wfile.write(out.encode('utf-8'))
 
     def do_POST(self):
