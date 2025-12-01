@@ -5,16 +5,28 @@ import subprocess
 import urllib.parse
 import urllib.request
 import urllib.error
-import re
 import shutil
 import glob
 import json
 from datetime import datetime
-import yaml
+from io import StringIO
+
+# Вместо PyYAML используем ruamel.yaml для сохранения комментариев
+from ruamel.yaml import YAML
 
 import config
 from parsers import parse_vless, parse_wireguard
 from yaml_units import insert_proxy_logic, replace_proxy_block
+
+
+# Настройка парсера YAML для сохранения стиля и комментариев
+def get_yaml():
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.width = 4096  # Предотвращаем перенос длинных строк
+    # Настраиваем отступы: 2 пробела везде
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    return yaml
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -58,10 +70,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         panel_port = ''
         try:
             with open(config.CONFIG_PATH, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
+                yml = get_yaml()
+                data = yml.load(f)
                 if data and 'external-controller' in data:
                     panel_port = str(data['external-controller']).split(':')[-1]
-        except (IOError, FileNotFoundError, yaml.YAMLError):
+        except Exception:
             pass
         return panel_port
 
@@ -214,7 +227,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return
 
             try:
-                data = yaml.safe_load(content)
+                yml = get_yaml()
+                data = yml.load(content)
 
                 if 'proxies' in data:
                     for proxy in data['proxies']:
@@ -226,10 +240,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     for group in data['proxy-groups']:
                         if 'proxies' in group:
                             group['proxies'] = [new_name if p == old_name else p for p in group['proxies']]
-                
-                new_content = yaml.dump(data, allow_unicode=True, sort_keys=False)
+
+                stream = StringIO()
+                yml.dump(data, stream)
+                new_content = stream.getvalue()
                 self.wfile.write(json.dumps({'status': 'ok', 'new_content': new_content}).encode('utf-8'))
-            except yaml.YAMLError as e:
+            except Exception as e:
                 self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
             return
 
@@ -261,25 +277,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             targets = json.loads(p.get('targets', '[]'))
 
             try:
-                data = yaml.safe_load(content) or {}
-                # Загружаем пришедшие данные
-                loaded_data = next(yaml.safe_load_all(p_yaml_str))
+                yml = get_yaml()
+                data = yml.load(content) or {}
+
+                # Загружаем новый прокси (это может быть список с одним элементом)
+                loaded_proxy = yml.load(p_yaml_str)
+
+                # ИСПРАВЛЕНИЕ: если это список, берем первый элемент
+                # Это убирает лишние дефисы и отступы
+                if isinstance(loaded_proxy, list) and len(loaded_proxy) > 0:
+                    proxy_to_add = loaded_proxy[0]
+                else:
+                    proxy_to_add = loaded_proxy
 
                 if 'proxies' not in data or data['proxies'] is None:
                     data['proxies'] = []
 
-                # ПРОВЕРКА: Если пришел список, расширяем текущий список.
-                # Если пришел одиночный объект (словарь), просто добавляем.
-                if isinstance(loaded_data, list):
-                    data['proxies'].extend(loaded_data)
-                else:
-                    data['proxies'].append(loaded_data)
+                data['proxies'].append(proxy_to_add)
 
                 updated_data = insert_proxy_logic(data, p_name, targets)
-                
-                new_content = yaml.dump(updated_data, allow_unicode=True, sort_keys=False)
+
+                stream = StringIO()
+                yml.dump(updated_data, stream)
+                new_content = stream.getvalue()
                 self.wfile.write(json.dumps({'new_content': new_content}).encode('utf-8'))
-            except yaml.YAMLError as e:
+            except Exception as e:
                 self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
             return
 
@@ -287,16 +309,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             target_name = p.get('target_name', '')
             new_yaml_str = p.get('new_yaml', '')
             content = p.get('content', '')
-            
-            try:
-                data = yaml.safe_load(content)
-                new_proxy_data = next(yaml.safe_load_all(new_yaml_str))
-                
-                updated_data = replace_proxy_block(data, target_name, new_proxy_data)
 
-                new_content = yaml.dump(updated_data, allow_unicode=True, sort_keys=False)
+            try:
+                yml = get_yaml()
+                data = yml.load(content)
+
+                loaded_proxy = yml.load(new_yaml_str)
+                # Аналогичное исправление для замены
+                if isinstance(loaded_proxy, list) and len(loaded_proxy) > 0:
+                    proxy_to_use = loaded_proxy[0]
+                else:
+                    proxy_to_use = loaded_proxy
+
+                updated_data = replace_proxy_block(data, target_name, proxy_to_use)
+
+                stream = StringIO()
+                yml.dump(updated_data, stream)
+                new_content = stream.getvalue()
                 self.wfile.write(json.dumps({'new_content': new_content}).encode('utf-8'))
-            except yaml.YAMLError as e:
+            except Exception as e:
                 self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
             return
 
@@ -347,11 +378,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
             with open(config.CONFIG_PATH, 'w', encoding='utf-8') as f:
                 try:
-                    # Проверяем, что YAML валидный, и пересохраняем его для форматирования
-                    data = yaml.safe_load(new_c)
-                    yaml.dump(data, f, allow_unicode=True, sort_keys=False)
-                except yaml.YAMLError:
-                    # Если YAML невалидный, сохраняем как есть
+                    # Валидируем и форматируем через ruamel, сохраняя комментарии
+                    yml = get_yaml()
+                    data = yml.load(new_c)
+                    yml.dump(data, f)
+                except Exception:
+                    # Если YAML сломан, пишем как есть
                     f.write(new_c)
                 f.flush()
                 os.fsync(f.fileno())

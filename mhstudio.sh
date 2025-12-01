@@ -13,14 +13,16 @@ BRANCH="test"
 BASE_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}"
 INSTALL_DIR="/opt/scripts/mihomo-studio"
 INIT_DIR="/opt/etc/init.d"
-MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместимости и управления конфигами
+MIHOMO_ETC_DIR="/opt/etc/mihomo"
 # Файлы проекта
 PROJECT_FILES="main.py config.py parsers.py yaml_units.py server_handler.py templates/index.html version.txt"
 PY_SCRIPT="main.py"
 INIT_SCRIPT="S95mihomo-web"
 
-# === [ИЗМЕНЕНИЕ 2] Добавлен пакет python3-yaml ===
-PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs python3-yaml"
+# === [ИЗМЕНЕНИЕ 2] Список пакетов ===
+# Убрали python3-yaml (так как меняем библиотеку)
+# Добавили python3-pip (чтобы установить ruamel.yaml)
+PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs python3-pip"
 
 # === ФУНКЦИИ ===
 
@@ -52,10 +54,6 @@ get_remote_version() {
 
 # --- Отображение заголовка ---
 display_header() {
-    # Переменные local_version и remote_version должны быть определены
-    # перед вызовом этой функции в глобальной области видимости.
-
-    # Коррекция отображения для пользователя
     if [ "$local_version" = "0" ]; then
         display_local="не установлено"
     else
@@ -90,7 +88,7 @@ usage() {
 
 # --- Установка зависимостей ---
 install_dependencies() {
-    echo ">>> Проверка и установка зависимостей..."
+    echo ">>> Проверка и установка системных пакетов..."
     opkg update
     for pkg in $PACKAGES; do
         if ! opkg list-installed | grep -q "^$pkg"; then
@@ -100,6 +98,20 @@ install_dependencies() {
             echo "$pkg уже установлен."
         fi
     done
+
+    # === [ИЗМЕНЕНИЕ 3] Установка ruamel.yaml через pip ===
+    echo ">>> Проверка библиотек Python (ruamel.yaml)..."
+    # Проверяем наличие модуля, если нет - ставим
+    if ! pip3 list 2>/dev/null | grep -q "ruamel.yaml"; then
+        echo "Устанавливаем ruamel.yaml..."
+        pip3 install ruamel.yaml
+        if [ $? -ne 0 ]; then
+            echo "ОШИБКА: Не удалось установить ruamel.yaml через pip."
+            exit 1
+        fi
+    else
+        echo "ruamel.yaml уже установлен."
+    fi
 }
 
 # --- Создание директорий ---
@@ -120,7 +132,6 @@ download_files() {
         local_path="$INSTALL_DIR/$file"
         remote_url="$BASE_URL/$file"
 
-        # Создаем директорию, если она не существует (для вложенных файлов)
         mkdir -p "$(dirname "$local_path")"
 
         echo "Загрузка $file..."
@@ -174,7 +185,6 @@ restart_service() {
 install_service() {
     echo ">>> Начинаем установку/обновление..."
 
-    # Остановка сервиса (если запущен)
     if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
         "$INIT_DIR/$INIT_SCRIPT" stop
     fi
@@ -185,22 +195,17 @@ install_service() {
     set_permissions
     restart_service
 
-    # === [ИЗМЕНЕНИЕ 3] Логика определения IP адреса ===
-    # Пробуем получить IP с интерфейса br0 (стандарт для Keenetic LAN)
+    # === Логика определения IP адреса ===
     CURRENT_IP=$(ip addr show br0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
-
-    # Если br0 пуст, пробуем eth0
     if [ -z "$CURRENT_IP" ]; then
         CURRENT_IP=$(ip addr show eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -n1)
     fi
-
-    # Если всё еще пусто, используем имя хоста
     if [ -z "$CURRENT_IP" ]; then
         CURRENT_IP=$(uname -n)
     fi
 
     echo "=== Установка/обновление завершено! ==="
-    echo "Веб-интерфейс (если запущен) доступен по адресу: http://${CURRENT_IP}:8888"
+    echo "Веб-интерфейс доступен по адресу: http://${CURRENT_IP}:8888"
 }
 
 # --- Удаление сервиса ---
@@ -214,13 +219,15 @@ uninstall_service() {
     for file in $PROJECT_FILES; do
         rm -f "$INSTALL_DIR/$file"
     done
-    rm -rf "$INSTALL_DIR/templates" # Удаляем директорию templates
+    rm -rf "$INSTALL_DIR/templates"
     rm -f "$INIT_DIR/$INIT_SCRIPT"
 
     if [ "$mode" = "full" ]; then
         echo "[2/2] Удаление зависимостей..."
+        # Здесь мы не удаляем ruamel.yaml автоматически через pip uninstall,
+        # так как это может быть небезопасно для других скриптов,
+        # но удаляем системные пакеты opkg.
         echo "ВНИМАНИЕ: Следующие пакеты будут удалены: $PACKAGES"
-        echo "Это может повлиять на работу других приложений."
         opkg remove $PACKAGES
     else
         echo "[2/2] Зависимости не были удалены."
@@ -232,7 +239,6 @@ uninstall_service() {
 
 # --- ТОЧКА ВХОДА ---
 
-# Проверяем, установлен ли сервис
 if [ ! -f "$INSTALL_DIR/$PY_SCRIPT" ]; then
     echo "Сервис Mihomo Studio не найден. Запускаю первичную установку..."
     install_service
@@ -241,12 +247,10 @@ if [ ! -f "$INSTALL_DIR/$PY_SCRIPT" ]; then
     exit 0
 fi
 
-# Если сервис уже установлен, обрабатываем аргументы
 local_version=$(get_local_version)
 remote_version=$(get_remote_version)
 display_header
 
-# Если аргументов нет, показать справку
 if [ -z "$1" ]; then
     usage
     exit 0
@@ -258,7 +262,6 @@ case "$1" in
             echo "Сервис не установлен. Используйте 'install'."
             exit 1
         fi
-        # Сравнение версий. `sort -V` корректно сравнивает номера версий.
         latest=$(printf "%s\n%s" "$local_version" "$remote_version" | sort -V | tail -n1)
         if [ "$local_version" = "$remote_version" ] || [ "$local_version" = "$latest" ]; then
             echo "У вас уже установлена последняя версия."
