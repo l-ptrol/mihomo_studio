@@ -262,11 +262,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
             try:
                 data = yaml.safe_load(content) or {}
-                proxy_to_add = next(yaml.safe_load_all(p_yaml_str))
+                # Загружаем пришедшие данные
+                loaded_data = next(yaml.safe_load_all(p_yaml_str))
 
                 if 'proxies' not in data or data['proxies'] is None:
                     data['proxies'] = []
-                data['proxies'].append(proxy_to_add)
+
+                # ПРОВЕРКА: Если пришел список, расширяем текущий список.
+                # Если пришел одиночный объект (словарь), просто добавляем.
+                if isinstance(loaded_data, list):
+                    data['proxies'].extend(loaded_data)
+                else:
+                    data['proxies'].append(loaded_data)
 
                 updated_data = insert_proxy_logic(data, p_name, targets)
                 
