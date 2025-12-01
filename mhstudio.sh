@@ -8,7 +8,7 @@
 SERVICE_NAME="Mihomo Studio"
 BRANCH="test"
 BASE_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}"
-INSTALL_DIR="/opt/scripts"
+INSTALL_DIR="/opt/scripts/mihomo-studio"
 INIT_DIR="/opt/etc/init.d"
 MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместимости и управления конфигами
 # Файлы проекта
