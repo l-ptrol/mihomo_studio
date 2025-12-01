@@ -2,7 +2,7 @@
 
 # === НАСТРОЙКИ ===
 # Ветка репозитория
-BRANCH="master"
+BRANCH="test"
 # URL до управляющего скрипта
 MHSTUDIO_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}/mhstudio.sh"
 # Куда будет установлена команда
