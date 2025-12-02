@@ -1,6 +1,5 @@
-# /opt/scripts/mihomo-studio/yaml_utils.py
-import yaml
-
+# /opt/scripts/mihomo-studio/yaml_units.py
+# -*- coding: utf-8 -*-
 
 def insert_proxy_logic(data, proxy_name, target_groups):
     """
@@ -15,6 +14,7 @@ def insert_proxy_logic(data, proxy_name, target_groups):
                 group['proxies'] = []
 
             if proxy_name not in group['proxies']:
+                # Логика вставки перед DIRECT/REJECT для красоты
                 inserted = False
                 for keyword in ['DIRECT', 'REJECT']:
                     if keyword in group['proxies']:
@@ -30,15 +30,37 @@ def insert_proxy_logic(data, proxy_name, target_groups):
 
 def insert_provider_logic(data, provider_name, provider_data, target_groups):
     """
-    Inserts a proxy provider into 'proxy-providers' and adds it to the 'use' list of target groups.
+    Inserts a proxy provider into 'proxy-providers' (BEFORE 'proxies')
+    and adds it to the 'use' list of target groups.
     """
-    # 1. Add to proxy-providers
-    if 'proxy-providers' not in data or data['proxy-providers'] is None:
-        data['proxy-providers'] = {}
 
-    data['proxy-providers'][provider_name] = provider_data
+    # 1. Добавляем в proxy-providers
+    if 'proxy-providers' not in data:
+        # Если секции нет, создаем её
+        # Чтобы вставить ПЕРЕД 'proxies', ищем индекс ключа 'proxies'
+        keys = list(data.keys())
+        insert_idx = len(keys)  # По умолчанию в конец
 
-    # 2. Add to target groups 'use' list
+        if 'proxies' in keys:
+            insert_idx = keys.index('proxies')
+
+        # Создаем новый словарь для провайдеров
+        # Используем insert(позиция, ключ, значение)
+        # data здесь - это CommentedMap из ruamel.yaml
+        try:
+            data.insert(insert_idx, 'proxy-providers', {provider_name: provider_data})
+        except AttributeError:
+            # Если вдруг data это обычный dict (fallback)
+            data['proxy-providers'] = {provider_name: provider_data}
+
+    else:
+        # Если секция уже есть, просто добавляем туда новый провайдер
+        # Порядок внутри proxy-providers не так важен, но добавится в конец секции
+        if data['proxy-providers'] is None:
+            data['proxy-providers'] = {}
+        data['proxy-providers'][provider_name] = provider_data
+
+    # 2. Добавляем ссылку на провайдер в поле 'use' групп
     if 'proxy-groups' in data and isinstance(data['proxy-groups'], list):
         for group in data['proxy-groups']:
             if isinstance(group, dict) and group.get('name') in target_groups:
@@ -60,6 +82,7 @@ def replace_proxy_block(data, target_name, new_proxy_data):
 
     for i, proxy in enumerate(data['proxies']):
         if isinstance(proxy, dict) and proxy.get('name') == target_name:
+            # Ensure the name in the new data matches the target name
             new_proxy_data['name'] = target_name
             data['proxies'][i] = new_proxy_data
             break

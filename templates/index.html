@@ -33,7 +33,8 @@ body.cyber {
 body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 * { box-sizing: border-box; }
 
-.hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;height:45px;flex-shrink:0}
+/* ИЗМЕНЕНИЕ: align-items:flex-end для выравнивания по нижнему краю */
+.hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:flex-end;height:45px;flex-shrink:0}
 .bar{background:var(--bg-ter);padding:8px 15px;display:flex;gap:10px;border-bottom:1px solid var(--bd);flex-wrap:wrap;flex-shrink:0}
 
 button, input, select, textarea {
@@ -828,8 +829,6 @@ function openEditProxyModal() {
     document.getElementById('edit-proxy-container').style.display = 'block';
     document.getElementById('vless-name-block').style.display = 'none';
     document.getElementById('wg-name-block').style.display = 'none';
-    // Редактирование подписок пока не поддерживается через этот интерфейс (только замена прокси)
-    // поэтому можно скрыть блок или оставить как есть, но это не критично, так как subTab создает новую.
 
     var prs = getProxiesList();
     var sel = document.getElementById('edit-proxy-sel');
