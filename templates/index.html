@@ -794,20 +794,26 @@ function getProxiesList() {
         // Поиск proxy-providers
         if (l.match(/^proxy-providers:/)) { inProv = 1; inP = 0; continue; }
 
-        // Сброс флага, если начался другой блок
+        // Сброс флага, если начался другой блок (строка начинается с буквы без отступа)
         if ((inP || inProv) && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/) && !l.match(/^proxy-providers:/)) {
             inP = 0; inProv = 0;
         }
 
         if (inP) {
+            // Для прокси ищем "- name: ..."
             var m = l.match(/^\s+-\s+name:\s+(.*)/);
             if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
         }
 
         if (inProv) {
-            // Провайдеры - это ключи словаря, а не список
-            var m = l.match(/^\s+([a-zA-Z0-9_-]+):/);
-            if (m) prs.push(m[1].trim());
+            // ИСПРАВЛЕНИЕ ЗДЕСЬ:
+            // Ищем строго 2 пробела в начале.
+            // Если пробелов 4 и больше - это параметр (url, type), его пропускаем.
+            var m = l.match(/^ {2}([a-zA-Z0-9_-]+):/);
+            // Дополнительная проверка: убеждаемся, что 3-й символ НЕ пробел
+            if (m && l.search(/^ {3,}/) === -1) {
+                prs.push(m[1].trim());
+            }
         }
     }
     return prs;
