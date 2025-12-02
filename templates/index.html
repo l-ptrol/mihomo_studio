@@ -33,7 +33,6 @@ body.cyber {
 body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 * { box-sizing: border-box; }
 
-/* ИЗМЕНЕНИЕ: align-items:flex-end для выравнивания по нижнему краю */
 .hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:flex-end;height:45px;flex-shrink:0}
 .bar{background:var(--bg-ter);padding:8px 15px;display:flex;gap:10px;border-bottom:1px solid var(--bd);flex-wrap:wrap;flex-shrink:0}
 
@@ -150,7 +149,7 @@ button:hover{filter:brightness(1.1)}
 <body>
 <div class="toast" id="toast" data-i18n="toast_saved">✅ Успешно сохранено</div>
 <div class="hdr">
-    <div style="display:flex;align-items:flex-end;gap:10px">
+    <div style="display:flex;align-items:baseline;gap:10px">
         <h2 style="margin:0;color:#4caf50" data-i18n="title">Mihomo Studio</h2>
         <span style="color:var(--txt-sec);font-size:12px; margin-left: 5px;">ver: __VERSION__</span>
     </div>
@@ -407,7 +406,7 @@ const TR = {
         title: "Mihomo Studio",
         save: "💾 Зберегти",
         restart: "🚀 Рестарт",
-        panel: "🌐 Панель",
+        panel: "🌐 Panel",
         profiles: "Профілі",
         create: "➕ Створити",
         delete: "🗑 Видалити",
@@ -785,14 +784,30 @@ function restoreBackup(fname){
 }
 
 function getProxiesList() {
-    var ls = ed.getValue().split(/\r?\n/);
-    var prs = [], inP = 0;
+    var txt = ed.getValue();
+    var ls = txt.split(/\r?\n/);
+    var prs = [], inP = 0, inProv = 0;
+
     for (var l of ls) {
-        if (l.match(/^proxies:/)) inP = 1;
-        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
+        // Поиск proxies
+        if (l.match(/^proxies:/)) { inP = 1; inProv = 0; continue; }
+        // Поиск proxy-providers
+        if (l.match(/^proxy-providers:/)) { inProv = 1; inP = 0; continue; }
+
+        // Сброс флага, если начался другой блок
+        if ((inP || inProv) && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/) && !l.match(/^proxy-providers:/)) {
+            inP = 0; inProv = 0;
+        }
+
         if (inP) {
             var m = l.match(/^\s+-\s+name:\s+(.*)/);
             if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
+        }
+
+        if (inProv) {
+            // Провайдеры - это ключи словаря, а не список
+            var m = l.match(/^\s+([a-zA-Z0-9_-]+):/);
+            if (m) prs.push(m[1].trim());
         }
     }
     return prs;
@@ -1046,40 +1061,31 @@ function showDel(){
     prs.forEach(p=>{var o=document.createElement('option');o.text=p;s.add(o)});
     document.getElementById('m-del').style.display='flex';
 }
+
 function doDel(){
-    var nm=document.getElementById('sel-del').value;if(!nm)return;if(!confirm(t('confirm_del_proxy')))return;closeM('m-del');
-    var ls=ed.getValue().split(/\r?\n/); var nls=[], inP=false, delB=false, bInd=-1;
-    for(var l of ls){
-        if(l.match(/^proxies:/)){inP=true;nls.push(l);continue} if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)){inP=false;delB=false}
-        if(inP){
-            var df=l.match(/^(\s+)-\s+name:\s+(.*)/);
-            if(df){
-                var ind=df[1].length, pn=df[2].trim().replace(/^['"]|['"]$/g,'');
-                if(pn===nm){delB=true;bInd=ind;continue}else if(delB)delB=false;
-            } else if(delB){
-                var ci=l.search(/\S/); if(l.trim()===''||ci>bInd)continue; else delB=false;
+    var nm=document.getElementById('sel-del').value;
+    if(!nm) return;
+    if(!confirm(t('confirm_del_proxy'))) return;
+    closeM('m-del');
+
+    var content = ed.getValue();
+    var params = new URLSearchParams();
+    params.append('act', 'delete_item');
+    params.append('name', nm);
+    params.append('content', content);
+
+    fetch('/', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert('Ошибка: ' + d.error);
+            } else {
+                ed.setValue(d.new_content);
+                ed.clearSelection();
+                showToast(t('toast_deleted'));
             }
-        }
-        if(delB)continue;
-
-        if(l.match(/^\s*proxies:\s*\[.*\]/)){
-             var st = l.indexOf('['); var en = l.lastIndexOf(']');
-             var pre = l.substring(0, st+1); var suf = l.substring(en);
-             var mid = l.substring(st+1, en);
-             var parts = mid.split(',');
-             var res = []; var changed = false;
-             for(var p of parts){
-                 var clean = p.trim().replace(/^['"]|['"]$/g, '');
-                 if(clean === nm){ changed = true; } else { res.push(p); }
-             }
-             if(changed){ nls.push(pre + res.join(',') + suf); continue; }
-        }
-
-        var rm=l.match(/^\s+-\s+(?:"([^"]+)"|'([^']+)'|([^"':]+))\s*$/);
-        if(rm){var rn=rm[1]||rm[2]||rm[3];if(rn&&rn.trim()===nm)continue}
-        nls.push(l);
-    }
-    ed.setValue(nls.join('\n'));
+        })
+        .catch(e => alert("Сетевая ошибка: " + e));
 }
 
 function showRename() {

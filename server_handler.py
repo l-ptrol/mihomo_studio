@@ -10,22 +10,18 @@ import glob
 import json
 from datetime import datetime
 from io import StringIO
-
-# Вместо PyYAML используем ruamel.yaml для сохранения комментариев
 from ruamel.yaml import YAML
 
 import config
 from parsers import parse_vless, parse_wireguard
-# Импортируем новую логику для провайдеров
-from yaml_units import insert_proxy_logic, replace_proxy_block, insert_provider_logic
+# ИМПОРТ ОБНОВЛЕН: добавлена delete_item_logic
+from yaml_units import insert_proxy_logic, replace_proxy_block, insert_provider_logic, delete_item_logic
 
 
-# Настройка парсера YAML для сохранения стиля и комментариев
 def get_yaml():
     yaml = YAML()
     yaml.preserve_quotes = True
-    yaml.width = 4096  # Предотвращаем перенос длинных строк
-    # Настраиваем отступы: 2 пробела везде
+    yaml.width = 4096
     yaml.indent(mapping=2, sequence=4, offset=2)
     return yaml
 
@@ -80,7 +76,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return panel_port
 
     def get_next_sub_name(self):
-        """Генерирует свободное имя вида sub_1, sub_2..."""
         try:
             with open(config.CONFIG_PATH, 'r', encoding='utf-8') as f:
                 yml = get_yaml()
@@ -92,7 +87,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 for k in providers.keys():
                     if k.startswith('sub_'):
                         try:
-                            # Извлекаем число после sub_
                             parts = k.split('_')
                             if len(parts) > 1 and parts[1].isdigit():
                                 idx = int(parts[1])
@@ -153,7 +147,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except (FileNotFoundError, IOError):
             c = "proxies:\n"
 
-        # Читаем шаблон из файла
         template_path = os.path.join(config.TEMPLATE_DIR, "index.html")
         try:
             with open(template_path, "r", encoding="utf-8") as f:
@@ -193,7 +186,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.end_headers()
 
-        # PROFILE ACTIONS
         if a == 'switch_prof':
             n = p.get('name')
             target = os.path.join(config.PROFILES_DIR, n + ".yaml")
@@ -274,7 +266,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
             return
 
-        # PARSING & PROXY ACTIONS
         if a == 'parse':
             link = p.get('link', '')
             custom_name = p.get('proxy_name')
@@ -295,19 +286,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(proxy_data).encode('utf-8'))
             return
 
-        # --- NEW SUBSCRIPTION LOGIC ---
         if a == 'add_subscription':
             url = p.get('url', '')
             custom_name = p.get('name', '').strip()
-
             if not url:
                 self.wfile.write(json.dumps({'error': 'URL is required'}).encode('utf-8'))
                 return
 
-            # Авто-нейминг, если имя не задано
             final_name = custom_name if custom_name else self.get_next_sub_name()
 
-            # Формируем объект провайдера
             provider_data = {
                 'type': 'http',
                 'url': url,
@@ -320,7 +307,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 }
             }
 
-            # Сериализуем provider_data в YAML строку для унификации с apply_insert
             yml = get_yaml()
             stream = StringIO()
             yml.dump(provider_data, stream)
@@ -332,7 +318,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 'is_provider': True
             }).encode('utf-8'))
             return
-        # ------------------------------
 
         if a == 'apply_insert':
             content = p.get('content', '')
@@ -346,21 +331,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 data = yml.load(content) or {}
 
                 loaded_obj = yml.load(p_yaml_str)
-                # Если это список прокси, берем первый (для совместимости с обычными proxy)
-                # Если это провайдер, это обычно dict
                 obj_to_add = loaded_obj
                 if isinstance(loaded_obj, list) and len(loaded_obj) > 0:
                     obj_to_add = loaded_obj[0]
 
                 if is_provider:
-                    # Вставка провайдера
                     updated_data = insert_provider_logic(data, p_name, obj_to_add, targets)
                 else:
-                    # Вставка обычного прокси
                     if 'proxies' not in data or data['proxies'] is None:
                         data['proxies'] = []
 
-                    # Проверяем, нет ли такого имени уже (грубая проверка)
                     exists = False
                     for existing in data['proxies']:
                         if existing.get('name') == p_name:
@@ -404,7 +384,29 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
             return
 
-        # BACKUPS
+        # --- NEW DELETE LOGIC ---
+        if a == 'delete_item':
+            name_to_del = p.get('name')
+            content = p.get('content', '')
+            if not name_to_del:
+                self.wfile.write(json.dumps({'error': 'Name is required'}).encode('utf-8'))
+                return
+
+            try:
+                yml = get_yaml()
+                data = yml.load(content)
+
+                updated_data = delete_item_logic(data, name_to_del)
+
+                stream = StringIO()
+                yml.dump(updated_data, stream)
+                new_content = stream.getvalue()
+                self.wfile.write(json.dumps({'new_content': new_content}).encode('utf-8'))
+            except Exception as e:
+                self.wfile.write(json.dumps({'error': f"YAML Error: {e}"}).encode('utf-8'))
+            return
+        # ------------------------
+
         if a == 'clean_backups':
             limit = int(p.get('limit', 5))
             files = sorted(glob.glob(config.BACKUP_DIR + "/*.yaml"), key=os.path.getmtime, reverse=True)
@@ -440,7 +442,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'error': 'File not found'}).encode('utf-8'))
             return
 
-        # SAVE & RESTART
         new_c = p.get('content', '').replace('\r\n', '\n')
         if a in ['save', 'restart']:
             if os.path.exists(config.CONFIG_PATH):
@@ -451,12 +452,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
             with open(config.CONFIG_PATH, 'w', encoding='utf-8') as f:
                 try:
-                    # Валидируем и форматируем через ruamel, сохраняя комментарии
                     yml = get_yaml()
                     data = yml.load(new_c)
                     yml.dump(data, f)
                 except Exception:
-                    # Если YAML сломан, пишем как есть
                     f.write(new_c)
                 f.flush()
                 os.fsync(f.fileno())
