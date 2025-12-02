@@ -16,7 +16,8 @@ from ruamel.yaml import YAML
 
 import config
 from parsers import parse_vless, parse_wireguard
-from yaml_units import insert_proxy_logic, replace_proxy_block
+# Импортируем новую логику для провайдеров
+from yaml_units import insert_proxy_logic, replace_proxy_block, insert_provider_logic
 
 
 # Настройка парсера YAML для сохранения стиля и комментариев
@@ -77,6 +78,30 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             pass
         return panel_port
+
+    def get_next_sub_name(self):
+        """Генерирует свободное имя вида sub_1, sub_2..."""
+        try:
+            with open(config.CONFIG_PATH, 'r', encoding='utf-8') as f:
+                yml = get_yaml()
+                data = yml.load(f) or {}
+                providers = data.get('proxy-providers', {})
+                if not providers: return "sub_1"
+
+                max_idx = 0
+                for k in providers.keys():
+                    if k.startswith('sub_'):
+                        try:
+                            # Извлекаем число после sub_
+                            parts = k.split('_')
+                            if len(parts) > 1 and parts[1].isdigit():
+                                idx = int(parts[1])
+                                if idx > max_idx: max_idx = idx
+                        except ValueError:
+                            pass
+                return f"sub_{max_idx + 1}"
+        except Exception:
+            return "sub_1"
 
     def proxy_pass(self, method):
         panel_port = self.get_panel_port()
@@ -270,32 +295,81 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(proxy_data).encode('utf-8'))
             return
 
+        # --- NEW SUBSCRIPTION LOGIC ---
+        if a == 'add_subscription':
+            url = p.get('url', '')
+            custom_name = p.get('name', '').strip()
+
+            if not url:
+                self.wfile.write(json.dumps({'error': 'URL is required'}).encode('utf-8'))
+                return
+
+            # Авто-нейминг, если имя не задано
+            final_name = custom_name if custom_name else self.get_next_sub_name()
+
+            # Формируем объект провайдера
+            provider_data = {
+                'type': 'http',
+                'url': url,
+                'interval': 3600,
+                'path': f"./profiles/{final_name}.yaml",
+                'health-check': {
+                    'enable': True,
+                    'interval': 600,
+                    'url': 'http://cp.cloudflare.com/generate_204'
+                }
+            }
+
+            # Сериализуем provider_data в YAML строку для унификации с apply_insert
+            yml = get_yaml()
+            stream = StringIO()
+            yml.dump(provider_data, stream)
+            prov_yaml_str = stream.getvalue()
+
+            self.wfile.write(json.dumps({
+                'name': final_name,
+                'yaml': prov_yaml_str,
+                'is_provider': True
+            }).encode('utf-8'))
+            return
+        # ------------------------------
+
         if a == 'apply_insert':
             content = p.get('content', '')
             p_name = p.get('proxy_name', '')
             p_yaml_str = p.get('proxy_yaml', '')
             targets = json.loads(p.get('targets', '[]'))
+            is_provider = p.get('is_provider') == 'true'
 
             try:
                 yml = get_yaml()
                 data = yml.load(content) or {}
 
-                # Загружаем новый прокси (это может быть список с одним элементом)
-                loaded_proxy = yml.load(p_yaml_str)
+                loaded_obj = yml.load(p_yaml_str)
+                # Если это список прокси, берем первый (для совместимости с обычными proxy)
+                # Если это провайдер, это обычно dict
+                obj_to_add = loaded_obj
+                if isinstance(loaded_obj, list) and len(loaded_obj) > 0:
+                    obj_to_add = loaded_obj[0]
 
-                # ИСПРАВЛЕНИЕ: если это список, берем первый элемент
-                # Это убирает лишние дефисы и отступы
-                if isinstance(loaded_proxy, list) and len(loaded_proxy) > 0:
-                    proxy_to_add = loaded_proxy[0]
+                if is_provider:
+                    # Вставка провайдера
+                    updated_data = insert_provider_logic(data, p_name, obj_to_add, targets)
                 else:
-                    proxy_to_add = loaded_proxy
+                    # Вставка обычного прокси
+                    if 'proxies' not in data or data['proxies'] is None:
+                        data['proxies'] = []
 
-                if 'proxies' not in data or data['proxies'] is None:
-                    data['proxies'] = []
+                    # Проверяем, нет ли такого имени уже (грубая проверка)
+                    exists = False
+                    for existing in data['proxies']:
+                        if existing.get('name') == p_name:
+                            exists = True
+                            break
+                    if not exists:
+                        data['proxies'].append(obj_to_add)
 
-                data['proxies'].append(proxy_to_add)
-
-                updated_data = insert_proxy_logic(data, p_name, targets)
+                    updated_data = insert_proxy_logic(data, p_name, targets)
 
                 stream = StringIO()
                 yml.dump(updated_data, stream)
@@ -315,7 +389,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 data = yml.load(content)
 
                 loaded_proxy = yml.load(new_yaml_str)
-                # Аналогичное исправление для замены
                 if isinstance(loaded_proxy, list) and len(loaded_proxy) > 0:
                     proxy_to_use = loaded_proxy[0]
                 else:

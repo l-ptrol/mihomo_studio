@@ -264,6 +264,7 @@ button:hover{filter:brightness(1.1)}
     <div class="modal-tabs">
         <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
         <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard|AmneziaWG</button>
+        <button onclick="switchTab(event, 'subTab')" data-i18n="tab_sub">Подписка</button>
     </div>
 
     <div id="vlessTab" class="tab-content active">
@@ -290,6 +291,18 @@ button:hover{filter:brightness(1.1)}
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
         <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
         <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
+    </div>
+
+    <div id="subTab" class="tab-content">
+        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)">URL подписки:</label>
+        <input id="subUrl" placeholder="http://..." style="margin-bottom:10px;">
+
+        <div id="sub-name-block">
+            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name">Имя (необязательно, авто: sub_x):</label>
+            <input id="subName" placeholder="Автоматически" style="margin-bottom:10px;">
+        </div>
+
+        <button onclick="addSubscription()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
     </div>
 </div></div>
 
@@ -349,11 +362,11 @@ const TR = {
         error_invalid_name: "Недопустимое имя!",
         error_exists: "Профиль с таким именем уже существует",
         error_no_proxy_edit: "Выберите прокси для редактирования",
-        error_empty_wg: "Конфигурація WireGuard не може бути порожньою.",
+        error_empty_wg: "Конфигурация WireGuard не может быть пустой.",
         modal_add_proxy: "Добавить прокси",
         modal_edit_proxy: "Изменить прокси",
         lbl_vless_link: "Ссылка VLESS:",
-        lbl_proxy_name: "Имя прокси (необязательно):",
+        lbl_proxy_name: "Имя (необязательно):",
         lbl_wg_conf: "Конфигурация WireGuard:",
         btn_add: "Добавить",
         btn_save: "Сохранить",
@@ -362,7 +375,8 @@ const TR = {
         btn_close: "Закрыть",
         btn_update: "Обновить",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
+        tab_wg: "WireGuard",
+        tab_sub: "Подписка",
         lbl_select_edit: "Выберите прокси для изменения:",
         warn_edit: "⚠️ Данные этого прокси будут полностью заменены новыми!",
         modal_new_prof: "Новый профиль",
@@ -440,7 +454,8 @@ const TR = {
         btn_close: "Закрити",
         btn_update: "Оновити",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
+        tab_wg: "WireGuard",
+        tab_sub: "Підписка",
         lbl_select_edit: "Виберіть проксі для зміни:",
         warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
         modal_new_prof: "Новий профіль",
@@ -518,7 +533,8 @@ const TR = {
         btn_close: "Close",
         btn_update: "Update",
         tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
+        tab_wg: "WireGuard",
+        tab_sub: "Subscription",
         lbl_select_edit: "Select proxy to replace:",
         warn_edit: "⚠️ This proxy's data will be fully replaced!",
         modal_new_prof: "New Profile",
@@ -786,14 +802,20 @@ function openAddProxyModal() {
     document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
     document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
     document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
+    document.querySelector('[data-i18n="tab_sub"]').innerText = t('tab_sub') || "Подписка";
     document.getElementById('edit-proxy-container').style.display = 'none';
     document.getElementById('vless-name-block').style.display = 'block';
     document.getElementById('wg-name-block').style.display = 'block';
+    document.getElementById('sub-name-block').style.display = 'block';
 
     document.getElementById('vlessLink').value = '';
     document.getElementById('vlessProxyName').value = '';
     document.getElementById('wgConfig').value = '';
     document.getElementById('wgProxyName').value = '';
+
+    // Сброс полей подписки
+    document.getElementById('subUrl').value = '';
+    document.getElementById('subName').value = '';
 
     document.getElementById('addProxyModal').style.display = 'flex';
 }
@@ -806,6 +828,8 @@ function openEditProxyModal() {
     document.getElementById('edit-proxy-container').style.display = 'block';
     document.getElementById('vless-name-block').style.display = 'none';
     document.getElementById('wg-name-block').style.display = 'none';
+    // Редактирование подписок пока не поддерживается через этот интерфейс (только замена прокси)
+    // поэтому можно скрыть блок или оставить как есть, но это не критично, так как subTab создает новую.
 
     var prs = getProxiesList();
     var sel = document.getElementById('edit-proxy-sel');
@@ -927,6 +951,30 @@ function parseVless(){
         });
 }
 
+function addSubscription() {
+    var url = document.getElementById('subUrl').value.trim();
+    var name = document.getElementById('subName').value.trim();
+
+    if (!url) return alert("URL обязателен");
+
+    var p = new URLSearchParams();
+    p.append('act', 'add_subscription');
+    p.append('url', url);
+    if (name) p.append('name', name);
+
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                pData = d;
+                closeM('addProxyModal');
+                showG();
+            }
+        });
+}
+
 function replaceProxyData(targetName, newYaml) {
     if(!confirm(t('confirm_replace', targetName))) return;
     var content = ed.getValue();
@@ -962,13 +1010,37 @@ function showG(){
     document.getElementById('m-grp').style.display='flex';
 }
 function tgGrp(s){document.querySelectorAll('#g-cnt input').forEach(c=>c.checked=s)}
+
 function applyVless(){
-    closeM('m-grp'); var txt=ed.getValue(); var sels=[];
+    closeM('m-grp');
+    var txt=ed.getValue();
+    var sels=[];
     document.querySelectorAll('#g-cnt input:checked').forEach(c=>sels.push(c.value));
     localStorage.setItem(GRP_KEY, JSON.stringify(sels));
-    var p=new URLSearchParams(); p.append('act','apply_insert'); p.append('content',txt); p.append('proxy_name',pData.name); p.append('proxy_yaml',pData.yaml); p.append('targets',JSON.stringify(sels));
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{ed.setValue(d.new_content);ed.clearSelection();showToast(t('toast_added'))}});
+
+    var p=new URLSearchParams();
+    p.append('act','apply_insert');
+    p.append('content',txt);
+    p.append('proxy_name',pData.name);
+    p.append('proxy_yaml',pData.yaml);
+
+    // Передаем флаг, если это провайдер
+    if (pData.is_provider) {
+        p.append('is_provider', 'true');
+    }
+
+    p.append('targets',JSON.stringify(sels));
+
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
+        if(d.error) alert(d.error);
+        else{
+            ed.setValue(d.new_content);
+            ed.clearSelection();
+            showToast(t('toast_added'));
+        }
+    });
 }
+
 function showDel(){
     var prs = getProxiesList();
     var s=document.getElementById('sel-del');s.innerHTML='';
