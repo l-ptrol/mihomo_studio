@@ -115,19 +115,24 @@ download_files() {
     echo ">>> Скачивание файлов..."
     
     # Скачиваем основной скрипт сервиса
+    echo "Скачивание $PY_SCRIPT..."
     wget --no-check-certificate -O "$INSTALL_DIR/$PY_SCRIPT" "${BASE_URL}/${PY_SCRIPT}"
     if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $PY_SCRIPT."; exit 1; fi
 
     # Скачиваем скрипт инициализации
+    echo "Скачивание $INIT_SCRIPT..."
     wget --no-check-certificate -O "$INIT_DIR/$INIT_SCRIPT" "${BASE_URL}/${INIT_SCRIPT}"
     if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $INIT_SCRIPT."; exit 1; fi
 
+    # Проверка наличия файла
+    if [ ! -f "$INIT_DIR/$INIT_SCRIPT" ]; then
+        echo "ОШИБКА: Файл $INIT_DIR/$INIT_SCRIPT не был создан после скачивания."
+        exit 1
+    fi
+
     # Обновляем сам управляющий скрипт (mhstudio.sh)
-    # Проверяем, запущен ли скрипт из /opt/bin/mhstudio, чтобы не перезаписать файл, который сейчас выполняется,
-    # если это вызовет ошибку (хотя в Linux это обычно допустимо).
-    # Но лучше просто скачать и заменить.
     echo ">>> Обновление управляющего скрипта..."
-    wget --no-check-certificate -O "$BIN_DIR/$MAIN_SCRIPT" "${BASE_URL}/${MAIN_SCRIPT}.sh"
+    wget --no-check-certificate -O "$BIN_DIR/$MAIN_SCRIPT" "${BASE_URL}/mhstudio.sh"
     if [ $? -ne 0 ]; then
         echo "ПРЕДУПРЕЖДЕНИЕ: Не удалось обновить $MAIN_SCRIPT. Продолжаем..."
     else
@@ -150,6 +155,17 @@ service_control() {
         "$INIT_DIR/$INIT_SCRIPT" "$action"
     else
         echo "ОШИБКА: Скрипт инициализации не найден ($INIT_DIR/$INIT_SCRIPT)."
+        # Попытка восстановить, если это не удаление
+        if [ "$action" != "stop" ]; then
+             echo "Попытка восстановления..."
+             download_files
+             set_permissions
+             if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
+                 "$INIT_DIR/$INIT_SCRIPT" "$action"
+             else
+                 echo "Не удалось восстановить."
+             fi
+        fi
     fi
 }
 
