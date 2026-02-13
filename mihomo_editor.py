@@ -190,9 +190,10 @@ def parse_wireguard(config_text, custom_name=None):
         y.append('  udp: true')
 
         # AmneziaWG options
-        std_wg_keys = ['privatekey', 'address', 'dns', 'mtu', 'listenport', 'table', 'preup', 'postup', 'predown', 'postdown']
+        std_wg_keys = ['privatekey', 'address', 'dns', 'mtu', 'listenport', 'table', 'preup', 'postup', 'predown',
+                       'postdown']
         amn_opts = {}
-        
+
         for k, v in iface.items():
             if k not in std_wg_keys:
                 # Проверяем, является ли значение числом
@@ -206,12 +207,12 @@ def parse_wireguard(config_text, custom_name=None):
             y.append('  amnezia-wg-option:')
             for k, v in amn_opts.items():
                 if isinstance(v, str):
-                     if not v: # Пустая строка
-                         y.append(f'    {k}: ""')
-                     else:
-                         y.append(f'    {k}: {v}')
+                    if not v:  # Пустая строка
+                        y.append(f'    {k}: ""')
+                    else:
+                        y.append(f'    {k}: {v}')
                 else:
-                     y.append(f'    {k}: {v}')
+                    y.append(f'    {k}: {v}')
 
         allowed = peer.get('allowedips')
         if allowed:
@@ -552,6 +553,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
         <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.3</span>
     </div>
     <div style="display:flex; gap:8px; align-items:center;">
+        <button onclick="restartService()" class="btn-r" style="height:28px; padding:0 10px; font-size:12px;" title="Перезапустить сервис" data-i18n="restart_service">🔄 Рестарт</button>
         <button onclick="updateStudio()" class="btn-u" style="height:28px; padding:0 10px; font-size:12px;" title="Проверить обновления" data-i18n="update_btn">🔄 Проверить обновления</button>
         <div id="last-load" data-i18n="last_load_lbl">Loaded: __TIME__</div>
     </div>
@@ -607,12 +609,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
                 <button onclick="cleanBackups()" class="btn-g" data-i18n="clean">Очистить</button>
             </div>
             <div id="bk-list">__BACKUPS__</div>
-        </div>
-        <div class="sec">
-            <h3>Mihomo Studio</h3>
-            <div class="proxy-grid">
-                <button onclick="restartService()" class="btn-r" title="Перезапустить сервис" data-i18n="restart_service">🔄 Рестарт</button>
-            </div>
         </div>
         <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 15px; border-bottom: none; margin-top: auto;">
             Mihomo Studio &copy; 2025
@@ -988,7 +984,7 @@ function setLang(l) {
     // Update dynamic parts
     if(isEditMode) document.getElementById('proxyModalTitle').innerText = TR[l].modal_edit_proxy;
     else document.getElementById('proxyModalTitle').innerText = TR[l].modal_add_proxy;
-    
+
     // Update last load label with time
     var timeElem = document.getElementById('last-load');
     var timeText = timeElem.innerText.split(': ')[1] || '';
