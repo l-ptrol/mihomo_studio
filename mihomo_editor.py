@@ -22,6 +22,7 @@ PROFILES_DIR = os.path.join(CONFIG_DIR, "profiles")
 BACKUP_DIR = os.path.join(CONFIG_DIR, "backup")
 LOG_FILE = "/tmp/mihomo_last_restart.log"
 RESTART_CMD = "xkeen -restart > " + LOG_FILE + " 2>&1"
+UPDATE_CMD = "/opt/bin/mhstudio -update"
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
 if not os.path.exists(BACKUP_DIR): os.makedirs(BACKUP_DIR)
@@ -199,14 +200,11 @@ def parse_wireguard(config_text, custom_name=None):
                     amn_opts[k] = int(v)
                 else:
                     # Если не число, сохраняем как есть (строкой)
-                    # Это важно для параметров типа I1, которые могут быть строками или hex
                     amn_opts[k] = v
 
         if amn_opts:
             y.append('  amnezia-wg-option:')
             for k, v in amn_opts.items():
-                # Если значение строка, НЕ оборачиваем в кавычки, если это не пустое значение
-                # Если значение пустое, то лучше вообще не добавлять или добавить как ""
                 if isinstance(v, str):
                      if not v: # Пустая строка
                          y.append(f'    {k}: ""')
@@ -375,7 +373,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v1.2</title>
+<title>Mihomo Studio v1.3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
@@ -551,7 +549,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
 <div class="hdr">
     <div style="display:flex;align-items:center;gap:12px">
         <div class="logo" data-i18n="title">Mihomo Studio</div>
-        <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.2</span>
+        <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.3</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -559,6 +557,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
     <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
     <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
     <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo" data-i18n="panel">🌐 Панель</button>
+    <button onclick="updateStudio()" class="btn-u" title="Обновить Mihomo Studio" data-i18n="update_btn">🔄 Обновить</button>
 
     <div style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
         <select id="lang-sel" onchange="setLang(this.value)" style="width:auto; min-width: 80px;">
@@ -706,6 +705,7 @@ const TR = {
         save: "💾 Сохранить",
         restart: "🚀 Рестарт",
         panel: "🌐 Панель",
+        update_btn: "🔄 Обновить",
         profiles: "Профили",
         create: "➕ Создать",
         delete: "🗑 Удалить",
@@ -729,6 +729,7 @@ const TR = {
         toast_added: "✅ Добавлено",
         toast_renamed: "✏️ Прокси переименован",
         toast_updated: "✏️ Данные прокси обновлены",
+        toast_checking: "🔍 Проверка обновлений...",
         confirm_switch: "Переключиться на профиль {0}?",
         confirm_del_prof: "Удалить профиль {0}? Это действие необратимо.",
         confirm_del_bk: "Удалить бэкап {0}?",
@@ -736,11 +737,13 @@ const TR = {
         confirm_restore: "Восстановить {0}? Текущий конфиг будет перезаписан.",
         confirm_del_proxy: "Удалить?",
         confirm_replace: "Заменить данные прокси '{0}'?",
+        confirm_update: "Проверить обновления и установить?",
         prompt_enter_name: "Введите имя!",
         error_invalid_name: "Недопустимое имя!",
         error_exists: "Профиль с таким именем уже существует",
         error_no_proxy_edit: "Выберите прокси для редактирования",
         error_empty_wg: "Конфигурация WireGuard не может быть пустой.",
+        alert_updating: "Обновление запущено. Сервис перезапускается...",
         modal_add_proxy: "Добавить прокси",
         modal_edit_proxy: "Изменить прокси",
         lbl_vless_link: "Ссылка VLESS:",
@@ -784,6 +787,7 @@ const TR = {
         save: "💾 Зберегти",
         restart: "🚀 Рестарт",
         panel: "🌐 Панель",
+        update_btn: "🔄 Оновити",
         profiles: "Профілі",
         create: "➕ Створити",
         delete: "🗑 Видалити",
@@ -807,6 +811,7 @@ const TR = {
         toast_added: "✅ Додано",
         toast_renamed: "✏️ Проксі перейменовано",
         toast_updated: "✏️ Дані проксі оновлено",
+        toast_checking: "🔍 Перевірка оновлень...",
         confirm_switch: "Переключитися на профіль {0}?",
         confirm_del_prof: "Видалити профіль {0}? Ця дія незворотна.",
         confirm_del_bk: "Видалити бекап {0}?",
@@ -814,11 +819,13 @@ const TR = {
         confirm_restore: "Відновити {0}? Поточний конфіг буде перезаписано.",
         confirm_del_proxy: "Видалити?",
         confirm_replace: "Замінити дані проксі '{0}'?",
+        confirm_update: "Перевірити оновлення та встановити?",
         prompt_enter_name: "Введіть ім'я!",
         error_invalid_name: "Неприпустиме ім'я!",
         error_exists: "Профіль з таким ім'ям вже існує",
         error_no_proxy_edit: "Виберіть проксі для редагування",
         error_empty_wg: "Конфігурація WireGuard не може бути порожньою.",
+        alert_updating: "Оновлення запущено. Сервіс перезапускається...",
         modal_add_proxy: "Додати проксі",
         modal_edit_proxy: "Змінити проксі",
         lbl_vless_link: "Посилання VLESS:",
@@ -862,6 +869,7 @@ const TR = {
         save: "💾 Save",
         restart: "🚀 Restart",
         panel: "🌐 Panel",
+        update_btn: "🔄 Update",
         profiles: "Profiles",
         create: "➕ Create",
         delete: "🗑 Delete",
@@ -885,6 +893,7 @@ const TR = {
         toast_added: "✅ Added",
         toast_renamed: "✏️ Proxy renamed",
         toast_updated: "✏️ Proxy data updated",
+        toast_checking: "🔍 Checking for updates...",
         confirm_switch: "Switch to profile {0}?",
         confirm_del_prof: "Delete profile {0}? This action is irreversible.",
         confirm_del_bk: "Delete backup {0}?",
@@ -892,11 +901,13 @@ const TR = {
         confirm_restore: "Restore {0}? Current config will be overwritten.",
         confirm_del_proxy: "Delete?",
         confirm_replace: "Replace data for proxy '{0}'?",
+        confirm_update: "Check for updates and install?",
         prompt_enter_name: "Enter name!",
         error_invalid_name: "Invalid name!",
         error_exists: "Profile with this name already exists",
         error_no_proxy_edit: "Select a proxy to edit",
         error_empty_wg: "WireGuard configuration cannot be empty.",
+        alert_updating: "Update started. Service is restarting...",
         modal_add_proxy: "Add Proxy",
         modal_edit_proxy: "Edit Proxy",
         lbl_vless_link: "VLESS Link:",
@@ -1164,6 +1175,22 @@ function restoreBackup(fname){
     fetch('/',{method:'POST',body:p}).then(r=>r.text()).then(()=>{
         window.location.reload();
     });
+}
+
+function updateStudio() {
+    if(!confirm(t('confirm_update'))) return;
+    showToast(t('toast_checking'));
+    var p = new URLSearchParams(); p.append('act', 'update_service');
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            alert(d.log);
+            if(d.log.includes("Установка/обновление завершено")) location.reload(); 
+        })
+        .catch(e => {
+            alert(t('alert_updating'));
+            setTimeout(() => location.reload(), 5000);
+        });
 }
 
 function getProxiesList() {
@@ -1759,6 +1786,17 @@ class H(http.server.SimpleHTTPRequestHandler):
                 s.wfile.write(json.dumps({'content': content}).encode('utf-8'))
             else:
                 s.wfile.write(json.dumps({'error': 'File not found'}).encode('utf-8'))
+            return
+
+        if a == 'update_service':
+            try:
+                output = subprocess.check_output(UPDATE_CMD, shell=True, stderr=subprocess.STDOUT)
+                log = output.decode('utf-8', 'ignore')
+            except subprocess.CalledProcessError as e:
+                log = e.output.decode('utf-8', 'ignore')
+            except Exception as e:
+                log = str(e)
+            s.wfile.write(json.dumps({'log': log}).encode('utf-8'))
             return
 
         new_c = p.get('content', '').replace('\r\n', '\n')
