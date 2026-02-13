@@ -10,9 +10,11 @@ BRANCH="master"
 BASE_URL="https://raw.githubusercontent.com/l-ptrol/mihomo_studio/${BRANCH}"
 INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
+BIN_DIR="/opt/bin"
 MIHOMO_ETC_DIR="/opt/etc/mihomo" # Добавлено для совместимости и управления конфигами
 PY_SCRIPT="mihomo_editor.py"
 INIT_SCRIPT="S95mihomo-web"
+MAIN_SCRIPT="mhstudio"
 PACKAGES="python3-base python3-light python3-email python3-urllib python3-codecs"
 
 # === ФУНКЦИИ ===
@@ -112,11 +114,25 @@ create_dirs() {
 download_files() {
     echo ">>> Скачивание файлов..."
     
+    # Скачиваем основной скрипт сервиса
     wget --no-check-certificate -O "$INSTALL_DIR/$PY_SCRIPT" "${BASE_URL}/${PY_SCRIPT}"
     if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $PY_SCRIPT."; exit 1; fi
 
+    # Скачиваем скрипт инициализации
     wget --no-check-certificate -O "$INIT_DIR/$INIT_SCRIPT" "${BASE_URL}/${INIT_SCRIPT}"
     if [ $? -ne 0 ]; then echo "ОШИБКА: Не удалось скачать $INIT_SCRIPT."; exit 1; fi
+
+    # Обновляем сам управляющий скрипт (mhstudio.sh)
+    # Проверяем, запущен ли скрипт из /opt/bin/mhstudio, чтобы не перезаписать файл, который сейчас выполняется,
+    # если это вызовет ошибку (хотя в Linux это обычно допустимо).
+    # Но лучше просто скачать и заменить.
+    echo ">>> Обновление управляющего скрипта..."
+    wget --no-check-certificate -O "$BIN_DIR/$MAIN_SCRIPT" "${BASE_URL}/${MAIN_SCRIPT}.sh"
+    if [ $? -ne 0 ]; then
+        echo "ПРЕДУПРЕЖДЕНИЕ: Не удалось обновить $MAIN_SCRIPT. Продолжаем..."
+    else
+        chmod +x "$BIN_DIR/$MAIN_SCRIPT"
+    fi
 }
 
 # --- Установка прав доступа ---
