@@ -188,18 +188,32 @@ def parse_wireguard(config_text, custom_name=None):
 
         y.append('  udp: true')
 
-        amnezia_keys = ['jc', 'jmin', 'jmax', 's1', 's2', 'h1', 'h2', 'h3', 'h4']
+        # AmneziaWG options
+        std_wg_keys = ['privatekey', 'address', 'dns', 'mtu', 'listenport', 'table', 'preup', 'postup', 'predown', 'postdown']
         amn_opts = {}
-        for k in amnezia_keys:
-            if k in iface:
-                val = iface[k]
-                if val.isdigit():
-                    amn_opts[k] = int(val)
+        
+        for k, v in iface.items():
+            if k not in std_wg_keys:
+                # Проверяем, является ли значение числом
+                if v.isdigit() or (v.startswith('-') and v[1:].isdigit()):
+                    amn_opts[k] = int(v)
+                else:
+                    # Если не число, сохраняем как есть (строкой)
+                    # Это важно для параметров типа I1, которые могут быть строками или hex
+                    amn_opts[k] = v
 
         if amn_opts:
             y.append('  amnezia-wg-option:')
             for k, v in amn_opts.items():
-                y.append(f'    {k}: {v}')
+                # Если значение строка, НЕ оборачиваем в кавычки, если это не пустое значение
+                # Если значение пустое, то лучше вообще не добавлять или добавить как ""
+                if isinstance(v, str):
+                     if not v: # Пустая строка
+                         y.append(f'    {k}: ""')
+                     else:
+                         y.append(f'    {k}: {v}')
+                else:
+                     y.append(f'    {k}: {v}')
 
         allowed = peer.get('allowedips')
         if allowed:
@@ -361,154 +375,183 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Editor v1.1</title>
+<title>Mihomo Studio v1.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 :root {
-    --bg: #1a1a1a; --bg-sec: #252526; --bg-ter: #2d2d2d;
-    --txt: #e0e0e0; --txt-sec: #aaa; --bd: #333;
-    --btn-s: #007acc; --btn-r: #2e7d32; --btn-d: #d32f2f; --btn-u: #e6a23c; --btn-g: #555;
-    --log-bg: #111; --log-txt: #ccc;
-    --comp-h: 36px;
+    --bg: #f0f2f5; --bg-sec: #ffffff; --bg-ter: #f7f9fc;
+    --txt: #1c1e21; --txt-sec: #65676b; --bd: #e4e6eb;
+    --btn-s: #1877f2; --btn-r: #42b72a; --btn-d: #fa383e; --btn-u: #f7b928; --btn-g: #e4e6eb;
+    --btn-g-txt: #050505;
+    --log-bg: #242526; --log-txt: #e4e6eb;
+    --comp-h: 40px;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
-body.light {
-    --bg: #f5f5f5; --bg-sec: #ffffff; --bg-ter: #e0e0e0;
-    --txt: #333; --txt-sec: #666; --bd: #ccc;
-    --btn-s: #0078d4; --btn-g: #777; --log-bg: #fff; --log-txt: #222;
+body.dark {
+    --bg: #18191a; --bg-sec: #242526; --bg-ter: #3a3b3c;
+    --txt: #e4e6eb; --txt-sec: #b0b3b8; --bd: #3e4042;
+    --btn-s: #2d88ff; --btn-r: #45bd62; --btn-d: #f02849; --btn-u: #f7b928; --btn-g: #3a3b3c;
+    --btn-g-txt: #e4e6eb;
+    --log-bg: #18191a; --log-txt: #e4e6eb;
 }
 body.midnight {
     --bg: #0f172a; --bg-sec: #1e293b; --bg-ter: #334155;
     --txt: #f1f5f9; --txt-sec: #94a3b8; --bd: #475569;
-    --btn-s: #3b82f6; --btn-u: #f59e0b;
+    --btn-s: #3b82f6; --btn-r: #10b981; --btn-d: #ef4444; --btn-u: #f59e0b; --btn-g: #334155;
+    --btn-g-txt: #f1f5f9;
 }
 body.cyber {
     --bg: #000000; --bg-sec: #111111; --bg-ter: #222222;
     --txt: #00ff00; --txt-sec: #00cc00; --bd: #004400;
     --btn-s: #007700; --btn-r: #00aa00; --btn-d: #aa0000; --btn-u: #aaaa00; --btn-g: #333;
+    --btn-g-txt: #00ff00;
+    --radius: 0px;
 }
 
-body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+body{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;background:var(--bg);color:var(--txt);margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 * { box-sizing: border-box; }
 
-.hdr{background:var(--bg-sec);padding:10px 15px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;height:45px;flex-shrink:0}
-.bar{background:var(--bg-ter);padding:8px 15px;display:flex;gap:10px;border-bottom:1px solid var(--bd);flex-wrap:wrap;flex-shrink:0}
+.hdr{background:var(--bg-sec);padding:0 20px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;height:60px;flex-shrink:0;box-shadow:var(--shadow);z-index:10;}
+.bar{background:var(--bg-sec);padding:10px 20px;display:flex;gap:10px;border-bottom:1px solid var(--bd);flex-wrap:wrap;flex-shrink:0;align-items:center;}
 
 button, input, select, textarea {
-    font-family: inherit; font-size: 13px; color: var(--txt);
-    border: 1px solid var(--bd); border-radius: 4px;
+    font-family: inherit; font-size: 14px; color: var(--txt);
+    border: 1px solid var(--bd); border-radius: var(--radius);
     background: var(--bg-ter);
-    transition: 0.2s; outline: none;
+    transition: all 0.2s ease; outline: none;
 }
 button { 
-    height: var(--comp-h); padding: 0 15px; cursor: pointer; color: #fff; font-weight: 600; 
-    display: flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; border: none;
+    height: var(--comp-h); padding: 0 20px; cursor: pointer; color: #fff; font-weight: 600; 
+    display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; border: none;
+    box-shadow: var(--shadow);
 }
+button:active { transform: translateY(1px); box-shadow: none; }
 input, select {
-    height: var(--comp-h); padding: 0 10px; width: 100%;
+    height: var(--comp-h); padding: 0 12px; width: 100%;
 }
-button:hover{filter:brightness(1.1)}
-.btn-s{background:var(--btn-s)}.btn-r{background:var(--btn-r)}.btn-d{background:var(--btn-d)}.btn-u{background:var(--btn-u)}.btn-g{background:var(--btn-g)}
+input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2); }
 
-.main{display:flex;flex:1;overflow:hidden}
-#ed{flex:1;font-size:14px}
-.sb{width:320px;background:var(--bg-sec);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
-.sec{padding:15px;border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:8px;}
-.sec h3{margin:0 0 5px 0;font-size:14px;color:var(--txt-sec)}
+.btn-s{background:var(--btn-s)}.btn-r{background:var(--btn-r)}.btn-d{background:var(--btn-d)}.btn-u{background:var(--btn-u)}
+.btn-g{background:var(--btn-g); color:var(--btn-g-txt);}
 
-.ovl{position:fixed;top:0;left:0;width:100%;height:100%;background:#000000b3;z-index:999;display:none;justify-content:center;align-items:center;padding:10px}
-.mod{background:var(--bg-sec);padding:20px;border-radius:8px;width:100%;max-width:600px;border:1px solid var(--bd);display:flex;flex-direction:column;max-height:90vh}
-.mod h3{margin-top:0;color:var(--txt);border-bottom:1px solid var(--bd);padding-bottom:10px}
+.main{display:flex;flex:1;overflow:hidden; position:relative;}
+#ed{flex:1;font-size:14px;}
+.sb{width:340px;background:var(--bg-sec);border-left:1px solid var(--bd);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;box-shadow: -2px 0 5px rgba(0,0,0,0.05);}
+.sec{padding:20px;border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:12px;}
+.sec h3{margin:0 0 8px 0;font-size:16px;font-weight:700;color:var(--txt);}
 
-.bk-item{background:var(--bg-ter);padding:5px 8px;margin-bottom:5px;border:1px solid var(--bd);border-radius:4px;display:flex;justify-content:space-between;align-items:center;height: auto; min-height: 38px;}
-.bk-item div:first-child { flex: 1; min-width: 0; padding-right: 5px; display: flex; flex-direction: column; justify-content: center; }
-.bk-item b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-.bk-btns { display: flex; gap: 4px; flex-shrink: 0; }
-.bk-btns button { width: 28px; padding: 0; height: 28px; font-size: 14px; }
+.ovl{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:999;display:none;justify-content:center;align-items:center;padding:20px;backdrop-filter: blur(2px);}
+.mod{background:var(--bg-sec);padding:24px;border-radius:var(--radius);width:100%;max-width:600px;border:1px solid var(--bd);display:flex;flex-direction:column;max-height:90vh;box-shadow: 0 10px 25px rgba(0,0,0,0.2);}
+.mod h3{margin-top:0;color:var(--txt);border-bottom:1px solid var(--bd);padding-bottom:15px;margin-bottom:20px;font-size:18px;}
+
+.bk-item{background:var(--bg-ter);padding:10px 12px;margin-bottom:8px;border:1px solid var(--bd);border-radius:var(--radius);display:flex;justify-content:space-between;align-items:center;height: auto; min-height: 44px; transition: background 0.2s;}
+.bk-item:hover { background: var(--bg); }
+.bk-item div:first-child { flex: 1; min-width: 0; padding-right: 10px; display: flex; flex-direction: column; justify-content: center; }
+.bk-item b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-size: 14px; margin-bottom: 2px;}
+.bk-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.bk-btns button { width: 32px; padding: 0; height: 32px; font-size: 16px; border-radius: 50%; }
 
 #bk-content {
     background: var(--log-bg);
     color: var(--log-txt);
-    font-family: 'Consolas', monospace;
-    padding: 10px;
-    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    padding: 15px;
+    border-radius: var(--radius);
     border: 1px solid var(--bd);
     white-space: pre-wrap;
     overflow-y: auto;
     flex-grow: 1;
     min-height: 200px;
     max-height: 60vh;
+    font-size: 13px;
 }
 
-.bk-controls {display:flex; gap:8px; align-items:center; background:var(--bg-ter); padding:5px 10px; border-radius:4px; border: 1px solid var(--bd);}
-.bk-controls input {width: 50px !important; text-align: center; margin:0; height: 28px; padding: 0;}
-.bk-controls span {font-size:12px; color:var(--txt-sec); white-space: nowrap;}
-.bk-controls button { height: 28px; font-size: 11px; padding: 0 10px; margin-left: auto; }
+.bk-controls {display:flex; gap:10px; align-items:center; background:var(--bg-ter); padding:8px 12px; border-radius:var(--radius); border: 1px solid var(--bd);}
+.bk-controls input {width: 60px !important; text-align: center; margin:0; height: 32px; padding: 0;}
+.bk-controls span {font-size:13px; color:var(--txt-sec); white-space: nowrap;}
+.bk-controls button { height: 32px; font-size: 12px; padding: 0 12px; margin-left: auto; }
 
-.prof-row {display:flex; gap:8px; align-items:center;}
-#prof-sel { flex: 1; }
-.prof-btns { display: flex; gap: 8px; margin-top: 5px; }
+#bk-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.prof-row {display:flex; gap:10px; align-items:center;}
+#prof-sel { flex: 1; font-weight: 500;}
+.prof-btns { display: flex; gap: 10px; margin-top: 5px; }
 .prof-btns button { flex: 1; }
 
-.proxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.proxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 #last-load {
-    font-size: 11px;
-    color: var(--txt);
+    font-size: 12px;
+    color: var(--txt-sec);
     background: var(--bg-ter);
     border: 1px solid var(--bd);
-    padding: 2px 10px;
-    border-radius: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
     display: inline-flex;
     align-items: center;
-    height: 24px;
-    font-weight: 600;
+    height: 28px;
+    font-weight: 500;
 }
 
-#cons{background:var(--log-bg);color:var(--log-txt);font-family:'Consolas',monospace;padding:10px;height:350px;overflow:auto;white-space:pre-wrap;font-size:12px;border:1px solid var(--bd);border-radius:4px}
-.g-list {display: grid;grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));gap: 8px;overflow-y: auto;padding: 5px;margin-top: 5px;}
+#cons{background:var(--log-bg);color:var(--log-txt);font-family:'Consolas', 'Monaco', monospace;padding:15px;height:350px;overflow:auto;white-space:pre-wrap;font-size:13px;border:1px solid var(--bd);border-radius:var(--radius)}
+.g-list {display: grid;grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));gap: 10px;overflow-y: auto;padding: 5px;margin-top: 5px; max-height: 300px;}
 .g-item { position: relative; }
 .g-item input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
-.g-item label {display: flex;align-items: center;justify-content: center;background: var(--bg-ter);border: 1px solid var(--bd);border-radius: 4px;padding: 10px 5px;font-size: 12px;color: var(--txt-sec);cursor: pointer;transition: all 0.2s;text-align: center;user-select: none;word-break: break-word;min-height: 35px;}
-.g-item input:checked + label {background: var(--btn-s);color: white;border-color: var(--btn-s);font-weight: bold;}
-.toast {position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--btn-r); color: white; padding: 10px 20px; border-radius: 5px; z-index: 3000; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.5);}
+.g-item label {display: flex;align-items: center;justify-content: center;background: var(--bg-ter);border: 1px solid var(--bd);border-radius: var(--radius);padding: 10px 5px;font-size: 13px;color: var(--txt);cursor: pointer;transition: all 0.2s;text-align: center;user-select: none;word-break: break-word;min-height: 40px; font-weight: 500;}
+.g-item input:checked + label {background: var(--btn-s);color: white;border-color: var(--btn-s);font-weight: bold; box-shadow: 0 2px 5px rgba(24, 119, 242, 0.3);}
+.toast {position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--bg-sec); color: var(--txt); padding: 12px 24px; border-radius: 30px; z-index: 3000; display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.2); border: 1px solid var(--bd); font-weight: 500; align-items: center; gap: 10px;}
+.toast-icon { font-size: 18px; }
 
-.modal-tabs { display: flex; border-bottom: 1px solid var(--bd); margin-bottom: 15px; }
+.modal-tabs { display: flex; border-bottom: 1px solid var(--bd); margin-bottom: 20px; gap: 20px;}
 .modal-tabs button {
-   flex: 1; justify-content: center; background: none; border: none; border-bottom: 2px solid transparent;
-   border-radius: 0; padding: 10px; font-size: 14px; color: var(--txt-sec); height: auto;
+   flex: 1; justify-content: center; background: none; border: none; border-bottom: 3px solid transparent;
+   border-radius: 0; padding: 10px; font-size: 15px; color: var(--txt-sec); height: auto; box-shadow: none;
 }
-.modal-tabs button.active { color: var(--txt); border-bottom-color: var(--btn-s); font-weight: bold; }
-.tab-content { display: none; }
+.modal-tabs button:hover { color: var(--txt); background: none; }
+.modal-tabs button.active { color: var(--btn-s); border-bottom-color: var(--btn-s); font-weight: bold; }
+.tab-content { display: none; animation: fadeIn 0.2s ease-out; }
 .tab-content.active { display: block; }
-.file-drop-zone {
-   border: 2px dashed var(--bd); border-radius: 4px; padding: 20px; text-align: center;
-   color: var(--txt-sec); cursor: pointer; transition: 0.2s; margin-bottom: 10px;
-}
-.file-drop-zone:hover { background: var(--bg-ter); border-color: var(--btn-s); }
-.file-drop-zone.dragover { background: var(--bg-ter); border-color: var(--btn-s); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-.log-time { color: #888; margin-right: 8px; }
+.file-drop-zone {
+   border: 2px dashed var(--bd); border-radius: var(--radius); padding: 30px; text-align: center;
+   color: var(--txt-sec); cursor: pointer; transition: 0.2s; margin-bottom: 15px; background: var(--bg-ter);
+}
+.file-drop-zone:hover { background: var(--bg); border-color: var(--btn-s); color: var(--btn-s); }
+.file-drop-zone.dragover { background: var(--bg); border-color: var(--btn-s); }
+
+.log-time { color: #888; margin-right: 8px; font-size: 0.9em; }
 .log-info { color: #2196f3; font-weight: bold; }
 .log-warn { color: #ff9800; font-weight: bold; }
 .log-err { color: #f44336; font-weight: bold; }
 .log-green { color: #4caf50; }
 .log-yellow { color: #ffc107; }
 
+.logo { font-size: 20px; font-weight: 800; background: linear-gradient(45deg, var(--btn-s), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+
 @media (max-width: 768px) {
     .main { flex-direction: column; }
-    .sb { width: 100%; border-left: none; border-top: 1px solid var(--bd); height: auto; max-height: 45vh; }
+    .sb { width: 100%; border-left: none; border-top: 1px solid var(--bd); height: auto; max-height: 50vh; }
     #ed { flex: 1; min-height: 40vh; }
-    .bar button, .bar select { flex: 1; justify-content: center; }
-    .mod { width: 95%; max-height: 95vh; padding: 15px; }
+    .bar { padding: 10px; gap: 8px; }
+    .bar button, .bar select { flex: 1; justify-content: center; font-size: 13px; padding: 0 10px; }
+    .mod { width: 95%; max-height: 95vh; padding: 20px; }
+    .hdr { padding: 0 15px; height: 50px; }
+    .logo { font-size: 18px; }
 }
 </style>
 </head>
 <body>
-<div class="toast" id="toast" data-i18n="toast_saved">✅ Успешно сохранено</div>
+<div class="toast" id="toast"><span class="toast-icon">✅</span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
 <div class="hdr">
-    <div style="display:flex;align-items:center;gap:10px">
-        <h2 style="margin:0;color:#4caf50" data-i18n="title">Mihomo Studio</h2>
-        <span style="color:var(--txt-sec);font-size:12px">v1.1 Auto-Panel</span>
+    <div style="display:flex;align-items:center;gap:12px">
+        <div class="logo" data-i18n="title">Mihomo Studio</div>
+        <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.2</span>
     </div>
     <div id="last-load">Loaded: __TIME__</div>
 </div>
@@ -517,13 +560,13 @@ button:hover{filter:brightness(1.1)}
     <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
     <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo" data-i18n="panel">🌐 Панель</button>
 
-    <div style="display:flex; gap:5px; margin-left:auto;">
-        <select id="lang-sel" onchange="setLang(this.value)" style="width:100px; padding:0 5px;">
+    <div style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
+        <select id="lang-sel" onchange="setLang(this.value)" style="width:auto; min-width: 80px;">
             <option value="ru">🇷🇺 RU</option>
             <option value="en">🇺🇸 EN</option>
             <option value="uk">🇺🇦 UA</option>
         </select>
-        <select id="theme-sel" onchange="setTheme(this.value)" style="width:120px; padding:0 5px;">
+        <select id="theme-sel" onchange="setTheme(this.value)" style="width:auto; min-width: 100px;">
             <option value="dark" data-i18n="theme_dark">🌑 Dark</option>
             <option value="light" data-i18n="theme_light">☀️ Light</option>
             <option value="midnight" data-i18n="theme_midnight">🌃 Midnight</option>
@@ -538,8 +581,8 @@ button:hover{filter:brightness(1.1)}
             <h3><span data-i18n="profiles">Профили</span></h3>
             <div class="prof-row">
                 <select id="prof-sel">__PROFILES__</select>
-                <button onclick="switchProf()" class="btn-s" style="padding:0; width:36px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
-                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:36px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
+                <button onclick="switchProf()" class="btn-s" style="padding:0; width:40px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
+                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:40px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
             </div>
             <div class="prof-btns">
                  <button onclick="openAddProf()" class="btn-u" data-i18n="create">➕ Создать</button>
@@ -564,27 +607,27 @@ button:hover{filter:brightness(1.1)}
             </div>
             <div id="bk-list">__BACKUPS__</div>
         </div>
-        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 10px 15px; border-bottom: none;">
-            Copyright (c) 2025 Peter Lobanok
+        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 15px; border-bottom: none; margin-top: auto;">
+            Mihomo Studio &copy; 2025
         </div>
     </div>
 </div>
 
 <div id="m-grp" class="ovl"><div class="mod"><h3 data-i18n="modal_groups">Добавить в группы:</h3>
-<div style="display:flex; gap:10px; margin-bottom:10px"><button onclick="tgGrp(true)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_all">☑ Выбрать все</button><button onclick="tgGrp(false)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_none">☐ Снять все</button></div>
+<div style="display:flex; gap:10px; margin-bottom:15px"><button onclick="tgGrp(true)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_all">☑ Выбрать все</button><button onclick="tgGrp(false)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_none">☐ Снять все</button></div>
 <div id="g-cnt" class="g-list"></div>
-<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px;padding-top:10px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
+<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
 
-<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
-<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
+<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
+<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
 
 <div id="m-ren" class="ovl"><div class="mod">
     <h3 data-i18n="modal_ren_proxy">Переименовать прокси</h3>
-    <p style="margin-top:0;font-size:13px;color:var(--txt-sec)" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
+    <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
     <select id="sel-ren-proxy"></select>
-    <p style="margin-top:15px;font-size:13px;color:var(--txt-sec)" data-i18n="lbl_new_name">Новое имя:</p>
+    <p style="margin-top:15px;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_new_name">Новое имя:</p>
     <input id="inp-ren-newname" placeholder="Введите новое имя" data-i18n-ph="ph_new_name">
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:25px">
         <button onclick="doRename()" class="btn-s" data-i18n="btn_rename">Переименовать</button>
         <button onclick="closeM('m-ren')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
     </div>
@@ -592,30 +635,30 @@ button:hover{filter:brightness(1.1)}
 
 <div id="m-add-prof" class="ovl"><div class="mod">
     <h3 data-i18n="modal_new_prof">Новый профиль</h3>
-    <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_prof_name">Имя (англ, без пробелов):</label>
-    <input id="np-name" placeholder="my_config" style="margin-bottom:10px">
-    <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_content">Содержимое:</label>
-    <div style="display:flex; gap:5px; margin-bottom:5px">
+    <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_prof_name">Имя (англ, без пробелов):</label>
+    <input id="np-name" placeholder="my_config" style="margin-bottom:15px">
+    <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
+    <div style="display:flex; gap:5px; margin-bottom:10px">
         <button onclick="document.getElementById('np-file').click()" class="btn-u" style="flex:1;justify-content:center" data-i18n="btn_load_file">📂 Загрузить файл</button>
     </div>
     <input type="file" id="np-file" style="display:none" onchange="loadProfFile(this)">
     <textarea id="np-content" rows="10" placeholder="Вставьте YAML конфиг сюда..." data-i18n-ph="ph_paste_yaml"></textarea>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px">
+    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
         <button onclick="saveNewProf()" class="btn-s" data-i18n="btn_save">Сохранить</button>
         <button onclick="closeM('m-add-prof')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
 
 <div id="addProxyModal" class="ovl"><div class="mod">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:10px; margin-bottom:0;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:15px; margin-bottom:20px;">
        <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;" data-i18n="modal_add_proxy">Добавить прокси</h3>
-       <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:var(--bg-ter); color:var(--txt); font-size:18px;">✕</button>
+       <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:transparent; color:var(--txt-sec); font-size:20px; box-shadow:none;">✕</button>
     </div>
 
-    <div id="edit-proxy-container" style="display:none; margin-bottom:10px;">
-        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
+    <div id="edit-proxy-container" style="display:none; margin-bottom:15px;">
+        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
         <select id="edit-proxy-sel"></select>
-        <div style="font-size:11px; color:var(--btn-u); margin-top:5px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
+        <div style="font-size:12px; color:var(--btn-u); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
     </div>
 
     <div class="modal-tabs">
@@ -624,38 +667,29 @@ button:hover{filter:brightness(1.1)}
     </div>
 
     <div id="vlessTab" class="tab-content active">
-        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
-        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:10px;">
+        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
+        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:15px;">
 
         <div id="vless-name-block">
-            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:10px;">
+            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
+            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:15px;">
         </div>
 
         <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
     </div>
 
     <div id="wgTab" class="tab-content">
-        <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
-        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:10px;"></textarea>
+        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
+        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:15px;"></textarea>
 
         <div id="wg-name-block">
-            <label style="font-size:12px; margin-bottom:5px; color:var(--txt-sec)" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:10px;">
+            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
+            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:15px;">
         </div>
 
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
-        <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:10px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
+        <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:15px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
         <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
-    </div>
-</div></div>
-
-<div id="m-view-bk" class="ovl"><div class="mod">
-    <h3 data-i18n="modal_view_bk">Просмотр бэкапа</h3>
-    <pre id="bk-content" style="flex-grow:1; overflow-y:auto; min-height: 200px; max-height:60vh;"></pre>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:15px;padding-top:10px;border-top:1px solid var(--bd)">
-        <button id="bk-restore-btn" class="btn-r" data-i18n="btn_restore">Восстановить</button>
-        <button onclick="closeM('m-view-bk')" class="btn-g" data-i18n="btn_close">Закрыть</button>
     </div>
 </div></div>
 
@@ -706,7 +740,7 @@ const TR = {
         error_invalid_name: "Недопустимое имя!",
         error_exists: "Профиль с таким именем уже существует",
         error_no_proxy_edit: "Выберите прокси для редактирования",
-        error_empty_wg: "Конфигурація WireGuard не може бути порожньою.",
+        error_empty_wg: "Конфигурация WireGuard не может быть пустой.",
         modal_add_proxy: "Добавить прокси",
         modal_edit_proxy: "Изменить прокси",
         lbl_vless_link: "Ссылка VLESS:",
@@ -738,7 +772,7 @@ const TR = {
         lbl_sel_ren: "Выберите прокси для переименования:",
         lbl_new_name: "Новое имя:",
         ph_new_name: "Введите новое имя",
-        btn_rename: "Переименовать",
+        btn_rename: "Перейменувати",
         modal_console: "Консоль",
         modal_view_bk: "Просмотр бэкапа",
         log_loading: "⏳ Выполнение xkeen -restart...",
@@ -956,7 +990,13 @@ document.getElementById('wgConfig').addEventListener('input', function() {
 });
 
 function closeM(i){document.getElementById(i).style.display='none'}
-function showToast(msg){ var tBox=document.getElementById('toast'); tBox.innerText=msg||t('toast_saved'); tBox.style.display='block'; setTimeout(()=>{tBox.style.display='none'}, 2000); }
+function showToast(msg){ 
+    var tBox=document.getElementById('toast'); 
+    var tMsg=document.getElementById('toast-msg');
+    tMsg.innerText=msg||t('toast_saved'); 
+    tBox.style.display='flex'; 
+    setTimeout(()=>{tBox.style.display='none'}, 2500); 
+}
 
 function switchProf() {
     var p = document.getElementById('prof-sel').value;
@@ -1433,18 +1473,19 @@ class H(http.server.SimpleHTTPRequestHandler):
 
     def get_bks(s):
         b = ""
-        for f in sorted(glob.glob(BACKUP_DIR + "/*.yaml"), key=os.path.getmtime, reverse=True)[:10]:
+        # Теперь берем ВСЕ бэкапы, а не только первые 10
+        for f in sorted(glob.glob(BACKUP_DIR + "/*.yaml"), key=os.path.getmtime, reverse=True):
             n = os.path.basename(f);
             t = datetime.fromtimestamp(os.path.getmtime(f)).strftime("%d.%m %H:%M")
             b += f'''<div class="bk-item">
-                    <div><b>{n}</b><span style="font-size:10px;color:var(--txt-sec)">{t}</span></div>
+                    <div><b>{n}</b><span style="font-size:11px;color:var(--txt-sec)">{t}</span></div>
                     <div class="bk-btns">
                         <button onclick="viewBackup('{n}')" class="btn-u" title="Просмотр">👁️</button>
                         <button onclick="restoreBackup('{n}')" class="btn-g" title="Восстановить">↺</button>
                         <button onclick="delBackup('{n}')" class="btn-d" title="Удалить">✕</button>
                     </div>
                    </div>'''
-        if not b: b = '<div style="color:var(--txt-sec);font-size:12px;text-align:center;padding:10px">Нет бэкапов</div>'
+        if not b: b = '<div style="color:var(--txt-sec);font-size:13px;text-align:center;padding:15px">Нет бэкапов</div>'
         return b
 
     def get_prof_opts(s):
