@@ -551,13 +551,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
         <div class="logo" data-i18n="title">Mihomo Studio</div>
         <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.3</span>
     </div>
-    <div id="last-load">Loaded: __TIME__</div>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <button onclick="updateStudio()" class="btn-u" style="height:28px; padding:0 10px; font-size:12px;" title="Проверить обновления" data-i18n="update_btn">🔄 Проверить обновления</button>
+        <div id="last-load" data-i18n="last_load_lbl">Loaded: __TIME__</div>
+    </div>
 </div>
 <div class="bar">
     <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
     <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
     <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo" data-i18n="panel">🌐 Панель</button>
-    <button onclick="updateStudio()" class="btn-u" title="Обновить Mihomo Studio" data-i18n="update_btn">🔄 Обновить</button>
 
     <div style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
         <select id="lang-sel" onchange="setLang(this.value)" style="width:auto; min-width: 80px;">
@@ -605,6 +607,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--btn-s); box-shad
                 <button onclick="cleanBackups()" class="btn-g" data-i18n="clean">Очистить</button>
             </div>
             <div id="bk-list">__BACKUPS__</div>
+        </div>
+        <div class="sec">
+            <h3>Mihomo Studio</h3>
+            <div class="proxy-grid">
+                <button onclick="restartService()" class="btn-r" title="Перезапустить сервис" data-i18n="restart_service">🔄 Рестарт</button>
+            </div>
         </div>
         <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 15px; border-bottom: none; margin-top: auto;">
             Mihomo Studio &copy; 2025
@@ -705,7 +713,8 @@ const TR = {
         save: "💾 Сохранить",
         restart: "🚀 Рестарт",
         panel: "🌐 Панель",
-        update_btn: "🔄 Обновить",
+        update_btn: "🔄 Проверить обновления",
+        restart_service: "🔄 Рестарт",
         profiles: "Профили",
         create: "➕ Создать",
         delete: "🗑 Удалить",
@@ -730,6 +739,7 @@ const TR = {
         toast_renamed: "✏️ Прокси переименован",
         toast_updated: "✏️ Данные прокси обновлены",
         toast_checking: "🔍 Проверка обновлений...",
+        toast_restarting: "🔄 Перезапуск сервиса...",
         confirm_switch: "Переключиться на профиль {0}?",
         confirm_del_prof: "Удалить профиль {0}? Это действие необратимо.",
         confirm_del_bk: "Удалить бэкап {0}?",
@@ -738,6 +748,7 @@ const TR = {
         confirm_del_proxy: "Удалить?",
         confirm_replace: "Заменить данные прокси '{0}'?",
         confirm_update: "Проверить обновления и установить?",
+        confirm_restart_service: "Перезапустить веб-сервис Mihomo Studio?",
         prompt_enter_name: "Введите имя!",
         error_invalid_name: "Недопустимое имя!",
         error_exists: "Профиль с таким именем уже существует",
@@ -779,7 +790,7 @@ const TR = {
         modal_console: "Консоль",
         modal_view_bk: "Просмотр бэкапа",
         log_loading: "⏳ Выполнение xkeen -restart...",
-        last_load: "Загружено:",
+        last_load_lbl: "Загружено: __TIME__",
         last_saved: "Сохранено:"
     },
     uk: {
@@ -787,7 +798,8 @@ const TR = {
         save: "💾 Зберегти",
         restart: "🚀 Рестарт",
         panel: "🌐 Панель",
-        update_btn: "🔄 Оновити",
+        update_btn: "🔄 Перевірити оновлення",
+        restart_service: "🔄 Рестарт",
         profiles: "Профілі",
         create: "➕ Створити",
         delete: "🗑 Видалити",
@@ -812,6 +824,7 @@ const TR = {
         toast_renamed: "✏️ Проксі перейменовано",
         toast_updated: "✏️ Дані проксі оновлено",
         toast_checking: "🔍 Перевірка оновлень...",
+        toast_restarting: "🔄 Перезапуск сервісу...",
         confirm_switch: "Переключитися на профіль {0}?",
         confirm_del_prof: "Видалити профіль {0}? Ця дія незворотна.",
         confirm_del_bk: "Видалити бекап {0}?",
@@ -820,6 +833,7 @@ const TR = {
         confirm_del_proxy: "Видалити?",
         confirm_replace: "Замінити дані проксі '{0}'?",
         confirm_update: "Перевірити оновлення та встановити?",
+        confirm_restart_service: "Перезапустити веб-сервіс Mihomo Studio?",
         prompt_enter_name: "Введіть ім'я!",
         error_invalid_name: "Неприпустиме ім'я!",
         error_exists: "Профіль з таким ім'ям вже існує",
@@ -861,7 +875,7 @@ const TR = {
         modal_console: "Консоль",
         modal_view_bk: "Перегляд бекапу",
         log_loading: "⏳ Виконання xkeen -restart...",
-        last_load: "Завантажено:",
+        last_load_lbl: "Завантажено: __TIME__",
         last_saved: "Збережено:"
     },
     en: {
@@ -869,7 +883,8 @@ const TR = {
         save: "💾 Save",
         restart: "🚀 Restart",
         panel: "🌐 Panel",
-        update_btn: "🔄 Update",
+        update_btn: "🔄 Check for updates",
+        restart_service: "🔄 Restart",
         profiles: "Profiles",
         create: "➕ Create",
         delete: "🗑 Delete",
@@ -894,6 +909,7 @@ const TR = {
         toast_renamed: "✏️ Proxy renamed",
         toast_updated: "✏️ Proxy data updated",
         toast_checking: "🔍 Checking for updates...",
+        toast_restarting: "🔄 Restarting service...",
         confirm_switch: "Switch to profile {0}?",
         confirm_del_prof: "Delete profile {0}? This action is irreversible.",
         confirm_del_bk: "Delete backup {0}?",
@@ -902,6 +918,7 @@ const TR = {
         confirm_del_proxy: "Delete?",
         confirm_replace: "Replace data for proxy '{0}'?",
         confirm_update: "Check for updates and install?",
+        confirm_restart_service: "Restart Mihomo Studio web service?",
         prompt_enter_name: "Enter name!",
         error_invalid_name: "Invalid name!",
         error_exists: "Profile with this name already exists",
@@ -943,7 +960,7 @@ const TR = {
         modal_console: "Console",
         modal_view_bk: "View Backup",
         log_loading: "⏳ Running xkeen -restart...",
-        last_load: "Loaded:",
+        last_load_lbl: "Loaded: __TIME__",
         last_saved: "Saved:"
     }
 };
@@ -971,6 +988,11 @@ function setLang(l) {
     // Update dynamic parts
     if(isEditMode) document.getElementById('proxyModalTitle').innerText = TR[l].modal_edit_proxy;
     else document.getElementById('proxyModalTitle').innerText = TR[l].modal_add_proxy;
+    
+    // Update last load label with time
+    var timeElem = document.getElementById('last-load');
+    var timeText = timeElem.innerText.split(': ')[1] || '';
+    timeElem.innerText = TR[l].last_load_lbl.replace('__TIME__', timeText);
 }
 
 // Открываем панель через наш локальный прокси (безопасно для PNA/CORS)
@@ -1190,6 +1212,23 @@ function updateStudio() {
         .catch(e => {
             alert(t('alert_updating'));
             setTimeout(() => location.reload(), 5000);
+        });
+}
+
+function restartService() {
+    if(!confirm(t('confirm_restart_service'))) return;
+    showToast(t('toast_restarting'));
+    var p = new URLSearchParams(); p.append('act', 'restart_service');
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            // Сервис перезапускается, поэтому ответ может не прийти или прийти с задержкой
+            // Но мы все равно попробуем перезагрузить страницу через некоторое время
+            setTimeout(() => location.reload(), 3000);
+        })
+        .catch(e => {
+            // Ошибка ожидаема, так как сервер убивает сам себя
+            setTimeout(() => location.reload(), 3000);
         });
 }
 
@@ -1797,6 +1836,13 @@ class H(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 log = str(e)
             s.wfile.write(json.dumps({'log': log}).encode('utf-8'))
+            return
+
+        if a == 'restart_service':
+            # Отправляем ответ клиенту сразу, так как после перезапуска сервер умрет
+            s.wfile.write(json.dumps({'status': 'restarting'}).encode('utf-8'))
+            # Запускаем перезапуск в фоне с небольшой задержкой, чтобы успеть отправить ответ
+            subprocess.Popen("/opt/etc/init.d/S95mihomo-web restart", shell=True)
             return
 
         new_c = p.get('content', '').replace('\r\n', '\n')
