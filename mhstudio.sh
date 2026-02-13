@@ -22,7 +22,7 @@ get_local_version() {
     local_py_path="$INSTALL_DIR/$PY_SCRIPT"
     if [ -f "$local_py_path" ]; then
         # Ищем строку с <title>, извлекаем 'v' и номер версии, затем удаляем 'v'
-        grep '<title>Mihomo Editor v' "$local_py_path" | sed -n 's/.*Mihomo Editor v\([^<]*\)<.*/\1/p'
+        grep '<title>Mihomo Studio v' "$local_py_path" | sed -n 's/.*Mihomo Studio v\([^<]*\)<.*/\1/p'
     else
         echo "0"
     fi
@@ -38,7 +38,7 @@ get_remote_version() {
     
     if [ $? -eq 0 ] && [ -s "$temp_py_path" ]; then
         # Извлекаем версию из временного файла
-        grep '<title>Mihomo Editor v' "$temp_py_path" | sed -n 's/.*Mihomo Editor v\([^<]*\)<.*/\1/p'
+        grep '<title>Mihomo Studio v' "$temp_py_path" | sed -n 's/.*Mihomo Studio v\([^<]*\)<.*/\1/p'
         rm "$temp_py_path" # Удаляем временный файл
     else
         # Если скачать не удалось, возвращаем 0 и удаляем пустой файл (если создался)
@@ -75,7 +75,10 @@ display_header() {
 
 # --- Справка ---
 usage() {
-    echo "Использование: mhstudio {update|reinstall|uninstall|uninstall-full}"
+    echo "Использование: mhstudio {start|stop|restart|update|reinstall|uninstall|uninstall-full}"
+    echo "  mhstudio -start           - Запустить сервис"
+    echo "  mhstudio -stop            - Остановить сервис"
+    echo "  mhstudio -restart         - Перезапустить сервис"
     echo "  mhstudio -update          - Обновить сервис (если есть новая версия)"
     echo "  mhstudio -reinstall       - Принудительно переустановить/обновить сервис"
     echo "  mhstudio -uninstall       - Удалить сервис (сохранив зависимости)"
@@ -123,13 +126,14 @@ set_permissions() {
     chmod +x "$INIT_DIR/$INIT_SCRIPT"
 }
 
-# --- Перезапуск сервиса ---
-restart_service() {
+# --- Управление сервисом ---
+service_control() {
+    local action=$1
     if [ -f "$INIT_DIR/$INIT_SCRIPT" ]; then
-        echo ">>> Перезапуск сервиса..."
-        "$INIT_DIR/$INIT_SCRIPT" restart
+        echo ">>> Выполнение: $action..."
+        "$INIT_DIR/$INIT_SCRIPT" "$action"
     else
-        echo "ПРЕДУПРЕЖДЕНИЕ: Скрипт инициализации не найден. Не удалось перезапустить сервис."
+        echo "ОШИБКА: Скрипт инициализации не найден ($INIT_DIR/$INIT_SCRIPT)."
     fi
 }
 
@@ -146,7 +150,7 @@ install_service() {
     create_dirs
     download_files
     set_permissions
-    restart_service
+    service_control "restart"
 
     echo "=== Установка/обновление завершено! ==="
     echo "Веб-интерфейс (если запущен) доступен по адресу: http://$(uname -n):8888"
@@ -198,6 +202,15 @@ if [ -z "$1" ]; then
 fi
 
 case "$1" in
+    -start)
+        service_control "start"
+        ;;
+    -stop)
+        service_control "stop"
+        ;;
+    -restart)
+        service_control "restart"
+        ;;
     -update)
         if [ "$local_version" = "0" ]; then
             echo "Сервис не установлен. Используйте 'install'."
