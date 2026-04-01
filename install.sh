@@ -84,6 +84,11 @@ mkdir -p "$INIT_DIR"
 mkdir -p "${MIHOMO_ETC_DIR}/profiles"
 mkdir -p "${MIHOMO_ETC_DIR}/backup"
 
+# Остановка старой версии для предотвращения ошибки "Text file busy"
+echo ">>> Остановка старой версии (если запущена)..."
+[ -f "${INIT_DIR}/S95mihomo-web" ] && "${INIT_DIR}/S95mihomo-web" stop 2>/dev/null || true
+pkill -9 -f mhstudio 2>/dev/null || true
+
 # Скачиваем бинарник
 BINARY_NAME="mhstudio-${TARGET_ARCH}"
 echo ">>> Скачивание бинарника ${BINARY_NAME}..."
