@@ -1,0 +1,31 @@
+#!/bin/sh
+
+PROG=/opt/bin/mhstudio
+PIDfile=/opt/var/run/mhstudio.pid
+
+case "$1" in
+  start)
+    echo "Starting Mihomo Studio (Go)..."
+    $PROG > /dev/null 2>&1 &
+    echo $! > $PIDfile
+    ;;
+  stop)
+    echo "Stopping Mihomo Studio..."
+    if [ -f $PIDfile ]; then
+        kill $(cat $PIDfile)
+        rm $PIDfile
+    else
+        pkill -f "mhstudio"
+    fi
+    ;;
+  restart)
+    $0 stop
+    sleep 1
+    $0 start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
