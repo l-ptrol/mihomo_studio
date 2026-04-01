@@ -11,6 +11,7 @@ const (
 	UpdateCmd  = "/opt/bin/mhstudio -update"
 	LogFile    = "/tmp/mihomo_last_restart.log"
 	InitScript = "/opt/etc/init.d/S95mihomo-web"
+	PidFile    = "/opt/var/run/mhstudio.pid"
 )
 
 var (

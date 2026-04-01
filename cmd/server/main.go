@@ -1,11 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/l-ptrol/mhstudio-go/internal/config"
@@ -13,17 +18,48 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-func main() {
-	// Инициализация конфигурации
-	config.Init()
+var Version = "2.1.0"
 
-	// Загрузка шаблона
-	tmplData, err := web.TemplateFS.ReadFile("templates/index.html")
-	if err != nil {
-		log.Fatalf("Не удалось загрузить шаблон: %v", err)
+func main() {
+	fStop := flag.Bool("stop", false, "Stop the server")
+	fRestart := flag.Bool("restart", false, "Restart the server")
+	fUpdate := flag.Bool("update", false, "Update the service")
+	fVersion := flag.Bool("v", false, "Show version")
+	flag.Parse()
+
+	if *fVersion || (len(os.Args) > 1 && os.Args[1] == "-version") {
+		fmt.Printf("Mihomo Studio v%s\n", Version)
+		return
 	}
 
-	// Создание хендлера
+	if *fStop {
+		stopService()
+		return
+	}
+
+	if *fRestart {
+		runCmd(config.InitScript + " restart")
+		return
+	}
+
+	if *fUpdate {
+		fmt.Println(">>> Starting update...")
+		runCmd("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh")
+		return
+	}
+
+	// Default or explicit -start
+	startServer()
+}
+
+func startServer() {
+	config.Init()
+
+	tmplData, err := web.TemplateFS.ReadFile("templates/index.html")
+	if err != nil {
+		log.Fatalf("Ошибка: %v", err)
+	}
+
 	h := handler.New()
 	h.LoadTemplate(string(tmplData))
 
@@ -33,17 +69,48 @@ func main() {
 		Handler: h,
 	}
 
-	// Graceful shutdown
+	// Write PID file
+	err = ioutil.WriteFile(config.PidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
+	if err != nil {
+		log.Printf("Предупреждение: не удалось записать PID файл: %v", err)
+	}
+
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
 		log.Println("Остановка сервера...")
+		os.Remove(config.PidFile)
 		srv.Close()
 	}()
 
-	log.Printf("Mihomo Studio v2.1 запущен на http://0.0.0.0%s", addr)
+	log.Printf("Mihomo Studio v%s запущен на http://0.0.0.0%s", Version, addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Ошибка сервера: %v", err)
 	}
 }
+
+func stopService() {
+	data, err := ioutil.ReadFile(config.PidFile)
+	if err != nil {
+		// FALLBACK: pkill if no pid file
+		exec.Command("pkill", "-f", "mhstudio").Run()
+		fmt.Println("Service stop requested (via pkill).")
+		return
+	}
+	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
+	process, err := os.FindProcess(pid)
+	if err == nil {
+		process.Signal(syscall.SIGTERM)
+		fmt.Printf("Stopped Mihomo Studio (PID %d)\n", pid)
+	}
+	os.Remove(config.PidFile)
+}
+
+func runCmd(c string) {
+	cmd := exec.Command("sh", "-c", c)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Run()
+}
+
