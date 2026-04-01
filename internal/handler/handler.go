@@ -360,13 +360,13 @@ func (h *Handler) renderBackups() string {
 			</div>
 			<div class="bk-btns">
 				<button onclick="viewBackup('%s')" class="btn-icon btn-ghost" title="Просмотр">
-					<svg class="ico"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+					<svg class="ico" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 				</button>
 				<button onclick="restoreBackup('%s')" class="btn-icon btn-ghost" title="Восстановить">
-					<svg class="ico"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+					<svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
 				</button>
 				<button onclick="delBackup('%s')" class="btn-icon btn-ghost" style="color:var(--danger)" title="Удалить">
-					<svg class="ico"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+					<svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 				</button>
 			</div>
 		   </div>`, bk.Name, t, bk.Name, bk.Name, bk.Name))

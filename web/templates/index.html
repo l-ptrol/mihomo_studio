@@ -136,7 +136,7 @@ body {
 button {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     font-weight: 500; cursor: pointer; white-space: nowrap;
-    height: 36px; padding: 0 16px; border: 1px solid transparent;
+    height: 36px; padding: 0 16px; border: 1px solid transparent; border-radius: var(--radius-sm);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 input, select, textarea {
@@ -316,23 +316,23 @@ button:active { transform: scale(0.97); }
             </div>
         </div>
         
-        <button onclick="save('save')" class="btn-success" data-i18n="save">
-            <svg class="ico"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        <button onclick="save('save')" class="btn-success" >
+            <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span data-i18n="save">Сохранить</span>
         </button>
-        <button onclick="save('restart')" class="btn-danger" data-i18n="restart">
-            <svg class="ico"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <button onclick="save('restart')" class="btn-danger" >
+            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span data-i18n="restart">Рестарт</span>
         </button>
-        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" data-i18n="panel">
-            <svg class="ico"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
         </button>
         <button onclick="updateStudio()" class="btn-ghost btn-icon" title="Проверить обновления">
-            <svg class="ico"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
         <button onclick="restartService()" class="btn-ghost btn-icon" title="Перезапустить сервис">
-            <svg class="ico"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/></svg>
+            <svg class="ico" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/></svg>
         </button>
     </div>
 </header>
@@ -352,19 +352,19 @@ button:active { transform: scale(0.97); }
                     <div class="cs-options"></div>
                 </div>
                 <button onclick="switchProf()" class="btn-primary btn-icon" title="Выбрать">
-                    <svg class="ico" style="stroke-width: 3;"><polyline points="20 6 9 17 4 12"/></svg>
+                    <svg class="ico" viewBox="0 0 24 24" style="stroke-width: 3;"><polyline points="20 6 9 17 4 12"/></svg>
                 </button>
                 <button onclick="downloadProf()" class="btn-ghost btn-icon" title="Скачать">
-                    <svg class="ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
             </div>
             <div class="grid-2" style="margin-top:4px;">
-                 <button onclick="openAddProf()" class="btn-outline" data-i18n="create">
-                    <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                 <button onclick="openAddProf()" class="btn-outline" >
+                    <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span data-i18n="create">Создать</span>
                  </button>
-                 <button onclick="delProf()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">
-                    <svg class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                 <button onclick="delProf()" class="btn-ghost" style="color: var(--danger);" >
+                    <svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     <span data-i18n="delete">Удалить</span>
                  </button>
             </div>
@@ -373,22 +373,22 @@ button:active { transform: scale(0.97); }
         <div class="card">
             <h3 class="card-title"><span data-i18n="proxy_mgmt">Управление</span></h3>
             <div class="grid-2">
-                <button onclick="openAddProxyModal()" class="btn-primary" data-i18n="add">
-                    <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <button onclick="openAddProxyModal()" class="btn-primary" >
+                    <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span data-i18n="add">Добавить</span>
                 </button>
-                <button onclick="openEditProxyModal()" class="btn-outline" data-i18n="edit">
-                    <svg class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <button onclick="openEditProxyModal()" class="btn-outline" >
+                    <svg class="ico" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     <span data-i18n="edit">Заменить</span>
                 </button>
             </div>
             <div class="grid-2">
-                <button onclick="showRename()" class="btn-ghost" data-i18n="rename">
-                    <svg class="ico"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                <button onclick="showRename()" class="btn-ghost" >
+                    <svg class="ico" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                     <span data-i18n="rename">Переименовать</span>
                 </button>
-                <button onclick="showDel()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">
-                    <svg class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <button onclick="showDel()" class="btn-ghost" style="color: var(--danger);" >
+                    <svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     <span data-i18n="delete">Удалить</span>
                 </button>
             </div>
@@ -409,7 +409,7 @@ button:active { transform: scale(0.97); }
         </div>
         
         <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.5;">
-            Mihomo Studio &copy; 2025 - 2026<br>Premium UI Design
+            Mihomo Studio &copy; 2025 - 2026
         </div>
     </div>
 </div>
@@ -462,8 +462,8 @@ button:active { transform: scale(0.97); }
     <input id="np-name" placeholder="my_config" style="margin-bottom:15px">
     <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
     <div style="display:flex; gap:5px; margin-bottom:10px">
-        <button onclick="document.getElementById('np-file').click()" class="btn-outline" style="flex:1" data-i18n="btn_load_file">
-            <svg class="ico"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        <button onclick="document.getElementById('np-file').click()" class="btn-outline" style="flex:1" >
+            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
             <span data-i18n="btn_load_file">Загрузить файл</span>
         </button>
     </div>
@@ -479,7 +479,7 @@ button:active { transform: scale(0.97); }
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd-color); padding-bottom:15px; margin-bottom:20px;">
        <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;" data-i18n="modal_add_proxy">Добавить прокси</h3>
        <button onclick="closeM('addProxyModal')" class="btn-icon btn-ghost" style="border-radius: 50%;">
-          <svg class="ico"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
        </button>
     </div>
 
@@ -491,7 +491,7 @@ button:active { transform: scale(0.97); }
             <div class="cs-options"></div>
         </div>
         <div style="font-size:12px; color:var(--warn); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px; display: flex; align-items: center; gap: 8px;" data-i18n="warn_edit">
-            <svg class="ico" style="width:14px; height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span data-i18n="warn_edit">Данные этого прокси будут полностью заменены новыми!</span>
         </div>
     </div>
@@ -523,8 +523,8 @@ button:active { transform: scale(0.97); }
         </div>
 
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
-        <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="width:100%; margin-bottom:15px;" data-i18n="btn_load_file">
-            <svg class="ico"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+        <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="width:100%; margin-bottom:15px;" >
+            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
             <span data-i18n="btn_load_file">Или загрузить .conf файл</span>
         </button>
         <button onclick="addWireguard()" class="btn-success" style="width:100%" data-i18n="btn_save">Сохранить</button>
@@ -630,36 +630,36 @@ document.addEventListener('click', closeAllCS);
 const TR = {
     ru: {
         title: "Mihomo Studio",
-        save: "💾 Сохранить",
-        restart: "🚀 Рестарт",
-        panel: "🌐 Панель",
-        update_btn: "🔄 Проверить обновления",
-        restart_service: "🔄 Рестарт",
+        save: "Сохранить",
+        restart: "Рестарт",
+        panel: "Панель",
+        update_btn: "Проверить обновления",
+        restart_service: "Рестарт",
         profiles: "Профили",
-        create: "➕ Создать",
-        delete: "🗑 Удалить",
-        select: "✔",
-        download: "💾",
+        create: "Создать",
+        delete: "Удалить",
+        select: "",
+        download: "",
         proxy_mgmt: "Управление",
-        add: "➕ Добавить",
-        edit: "✏️ Заменить",
+        add: "Добавить",
+        edit: "Заменить",
         rename: "Переименовать",
         backups: "Бэкапы",
         clean: "Очистить",
         keep: "Оставить:",
-        theme_dark: "🌑 Тёмная",
-        theme_light: "☀️ Светлая",
-        theme_midnight: "🌃 Полночь",
-        theme_cyber: "👾 Кибер",
-        toast_saved: "✅ Успешно сохранено",
-        toast_cleaned: "🧹 Очищено",
-        toast_deleted: "🗑 Удалено",
-        toast_restored: "♻️ Восстановлено",
-        toast_added: "✅ Добавлено",
-        toast_renamed: "✏️ Прокси переименован",
-        toast_updated: "✏️ Данные прокси обновлены",
-        toast_checking: "🔍 Проверка обновлений...",
-        toast_restarting: "🔄 Перезапуск сервиса...",
+        theme_dark: "Тёмная",
+        theme_light: "Светлая",
+        theme_midnight: "Полночь",
+        theme_cyber: "Кибер",
+        toast_saved: "Успешно сохранено",
+        toast_cleaned: "Очищено",
+        toast_deleted: "Удалено",
+        toast_restored: "Восстановлено",
+        toast_added: "Добавлено",
+        toast_renamed: "Прокси переименован",
+        toast_updated: "Данные прокси обновлены",
+        toast_checking: "Проверка обновлений...",
+        toast_restarting: "Перезапуск сервиса...",
         confirm_switch: "Переключиться на профиль {0}?",
         confirm_del_prof: "Удалить профиль {0}? Это действие необратимо.",
         confirm_del_bk: "Удалить бэкап {0}?",
@@ -689,18 +689,18 @@ const TR = {
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Выберите прокси для изменения:",
-        warn_edit: "⚠️ Данные этого прокси будут полностью заменены новыми!",
+        warn_edit: "Данные этого прокси будут полностью заменены новыми!",
         modal_new_prof: "Новый профиль",
         lbl_prof_name: "Имя (англ, без пробелов):",
         lbl_content: "Содержимое:",
-        btn_load_file: "📂 Загрузить файл",
+        btn_load_file: "Загрузить файл",
         ph_paste_yaml: "Вставьте YAML конфиг сюда...",
         ph_auto_vless: "Автоматически из ссылки",
         ph_auto_wg: "Автоматически из Endpoint",
         ph_paste_conf: "Вставьте содержимое .conf файла сюда...",
         modal_groups: "Добавить в группы:",
-        btn_sel_all: "☑ Выбрать все",
-        btn_sel_none: "☐ Снять все",
+        btn_sel_all: "Выбрать все",
+        btn_sel_none: "Снять все",
         modal_del_proxy: "Удалить прокси",
         modal_ren_proxy: "Переименовать прокси",
         lbl_sel_ren: "Выберите прокси для переименования:",
@@ -709,45 +709,45 @@ const TR = {
         btn_rename: "Переименовать",
         modal_console: "Консоль",
         modal_view_bk: "Просмотр бэкапа",
-        log_loading: "⏳ Выполнение xkeen -restart...",
+        log_loading: "Выполнение xkeen -restart...",
         last_load_lbl: "Загружено: __TIME__",
         last_saved: "Сохранено:",
-        restart_service_short: "🔄 Рестарт",
-        update_btn_short: "🔄 Обновить",
+        restart_service_short: "Рестарт",
+        update_btn_short: "Обновить",
         btn_ok: "ОК"
     },
     uk: {
         title: "Mihomo Studio",
-        save: "💾 Зберегти",
-        restart: "🚀 Перезапуск",
-        panel: "🌐 Панель",
-        update_btn: "🔄 Перевірити оновлення",
-        restart_service: "🔄 Перезапуск",
+        save: "Зберегти",
+        restart: "Перезапуск",
+        panel: "Панель",
+        update_btn: "Перевірити оновлення",
+        restart_service: "Перезапуск",
         profiles: "Профілі",
-        create: "➕ Створити",
-        delete: "🗑 Видалити",
-        select: "✔",
-        download: "💾",
+        create: "Створити",
+        delete: "Видалити",
+        select: "",
+        download: "",
         proxy_mgmt: "Керування",
-        add: "➕ Додати",
-        edit: "✏️ Замінити",
+        add: "Додати",
+        edit: "Замінити",
         rename: "Перейменувати",
         backups: "Бекапи",
         clean: "Очистити",
         keep: "Залишити:",
-        theme_dark: "🌑 Темна",
-        theme_light: "☀️ Світла",
-        theme_midnight: "🌃 Північ",
-        theme_cyber: "👾 Кібер",
-        toast_saved: "✅ Успішно збережено",
-        toast_cleaned: "🧹 Очищено",
-        toast_deleted: "🗑 Видалено",
-        toast_restored: "♻️ Відновлено",
-        toast_added: "✅ Додано",
-        toast_renamed: "✏️ Проксі перейменовано",
-        toast_updated: "✏️ Дані проксі оновлено",
-        toast_checking: "🔍 Перевірка оновлень...",
-        toast_restarting: "🔄 Перезапуск сервісу...",
+        theme_dark: "Темна",
+        theme_light: "Світла",
+        theme_midnight: "Північ",
+        theme_cyber: "Кібер",
+        toast_saved: "Успішно збережено",
+        toast_cleaned: "Очищено",
+        toast_deleted: "Видалено",
+        toast_restored: "Відновлено",
+        toast_added: "Додано",
+        toast_renamed: "Проксі перейменовано",
+        toast_updated: "Дані проксі оновлено",
+        toast_checking: "Перевірка оновлень...",
+        toast_restarting: "Перезапуск сервісу...",
         confirm_switch: "Переключитися на профіль {0}?",
         confirm_del_prof: "Видалити профіль {0}? Ця дія незворотна.",
         confirm_del_bk: "Видалити бекап {0}?",
@@ -777,18 +777,18 @@ const TR = {
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Виберіть проксі для зміни:",
-        warn_edit: "⚠️ Дані цього проксі будуть повністю замінені новими!",
+        warn_edit: "Дані цього проксі будуть повністю замінені новими!",
         modal_new_prof: "Новий профіль",
         lbl_prof_name: "Ім'я (англ, без пробілів):",
         lbl_content: "Вміст:",
-        btn_load_file: "📂 Завантажити файл",
+        btn_load_file: "Завантажити файл",
         ph_paste_yaml: "Вставте YAML конфіг сюди...",
         ph_auto_vless: "Автоматично з посилання",
         ph_auto_wg: "Автоматично з Endpoint",
         ph_paste_conf: "Вставте вміст .conf файлу сюди...",
         modal_groups: "Додати в групи:",
-        btn_sel_all: "☑ Обрати всі",
-        btn_sel_none: "☐ Зняти всі",
+        btn_sel_all: "Обрати всі",
+        btn_sel_none: "Зняти всі",
         modal_del_proxy: "Видалити проксі",
         modal_ren_proxy: "Перейменувати проксі",
         lbl_sel_ren: "Виберіть проксі для перейменування:",
@@ -797,45 +797,45 @@ const TR = {
         btn_rename: "Перейменувати",
         modal_console: "Консоль",
         modal_view_bk: "Перегляд бекапу",
-        log_loading: "⏳ Виконання xkeen -restart...",
+        log_loading: "Виконання xkeen -restart...",
         last_load_lbl: "Завантажено: __TIME__",
         last_saved: "Збережено:",
-        restart_service_short: "🔄 Перезапуск",
-        update_btn_short: "🔄 Оновити",
+        restart_service_short: "Перезапуск",
+        update_btn_short: "Оновити",
         btn_ok: "ОК"
     },
     en: {
         title: "Mihomo Studio",
-        save: "💾 Save",
-        restart: "🚀 Restart",
-        panel: "🌐 Panel",
-        update_btn: "🔄 Check for updates",
-        restart_service: "🔄 Restart",
+        save: "Save",
+        restart: "Restart",
+        panel: "Panel",
+        update_btn: "Check for updates",
+        restart_service: "Restart",
         profiles: "Profiles",
-        create: "➕ Create",
-        delete: "🗑 Delete",
-        select: "✔",
-        download: "💾",
+        create: "Create",
+        delete: "Delete",
+        select: "",
+        download: "",
         proxy_mgmt: "Management",
-        add: "➕ Add",
-        edit: "✏️ Replace",
+        add: "Add",
+        edit: "Replace",
         rename: "Rename",
         backups: "Backups",
         clean: "Clean",
         keep: "Keep:",
-        theme_dark: "🌑 Dark",
-        theme_light: "☀️ Light",
-        theme_midnight: "🌃 Midnight",
-        theme_cyber: "👾 Cyber",
-        toast_saved: "✅ Saved successfully",
-        toast_cleaned: "🧹 Cleaned",
-        toast_deleted: "🗑 Deleted",
-        toast_restored: "♻️ Restored",
-        toast_added: "✅ Added",
-        toast_renamed: "✏️ Proxy renamed",
-        toast_updated: "✏️ Proxy data updated",
-        toast_checking: "🔍 Checking for updates...",
-        toast_restarting: "🔄 Restarting service...",
+        theme_dark: "Dark",
+        theme_light: "Light",
+        theme_midnight: "Midnight",
+        theme_cyber: "Cyber",
+        toast_saved: "Saved successfully",
+        toast_cleaned: "Cleaned",
+        toast_deleted: "Deleted",
+        toast_restored: "Restored",
+        toast_added: "Added",
+        toast_renamed: "Proxy renamed",
+        toast_updated: "Proxy data updated",
+        toast_checking: "Checking for updates...",
+        toast_restarting: "Restarting service...",
         confirm_switch: "Switch to profile {0}?",
         confirm_del_prof: "Delete profile {0}? This action is irreversible.",
         confirm_del_bk: "Delete backup {0}?",
@@ -865,18 +865,18 @@ const TR = {
         tab_vless: "VLESS",
         tab_wg: "WireGuard|AmneziaWG",
         lbl_select_edit: "Select proxy to replace:",
-        warn_edit: "⚠️ This proxy's data will be fully replaced!",
+        warn_edit: "This proxy's data will be fully replaced!",
         modal_new_prof: "New Profile",
         lbl_prof_name: "Name (English, no spaces):",
         lbl_content: "Content:",
-        btn_load_file: "📂 Upload File",
+        btn_load_file: "Upload File",
         ph_paste_yaml: "Paste YAML config here...",
         ph_auto_vless: "Automatically from link",
         ph_auto_wg: "Automatically from Endpoint",
         ph_paste_conf: "Paste .conf file content here...",
         modal_groups: "Add to groups:",
-        btn_sel_all: "☑ Select All",
-        btn_sel_none: "☐ Select None",
+        btn_sel_all: "Select All",
+        btn_sel_none: "Select None",
         modal_del_proxy: "Delete Proxy",
         modal_ren_proxy: "Rename Proxy",
         lbl_sel_ren: "Select proxy to rename:",
@@ -885,11 +885,11 @@ const TR = {
         btn_rename: "Rename",
         modal_console: "Console",
         modal_view_bk: "View Backup",
-        log_loading: "⏳ Running xkeen -restart...",
+        log_loading: "Running xkeen -restart...",
         last_load_lbl: "Loaded: __TIME__",
         last_saved: "Saved:",
-        restart_service_short: "🔄 Restart",
-        update_btn_short: "🔄 Update",
+        restart_service_short: "Restart",
+        update_btn_short: "Update",
         btn_ok: "OK"
     }
 };
@@ -1018,7 +1018,7 @@ async function downloadProf() {
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                showToast('💾');
+                showToast('');
             }
         });
 }
