@@ -4,7 +4,9 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Mihomo Studio v2.1.2</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+<script src="https://unpkg.com/yaml@2.3.4/browser/index.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -256,6 +258,15 @@ button:active { transform: scale(0.97); }
     box-shadow: var(--shadow-lg); align-items: center; gap: 8px;
 }
 
+.main-tabs { display: flex; gap: 8px; margin-bottom: 12px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
+.main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
+.main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
+.main-tabs button:hover:not(.active) { color: var(--txt-main); }
+.tab-pane { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
+.tab-pane.active { display: flex; }
+
+.builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+
 @media (max-width: 768px) {
     .app-header { flex-direction: column; padding: 16px; align-items: stretch; }
     .header-actions { justify-content: space-between; margin-top: 12px; }
@@ -338,8 +349,34 @@ button:active { transform: scale(0.97); }
 </header>
 
 <div class="app-content">
-    <div class="editor-wrapper">
-        <div id="ed"></div>
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+        <div class="main-tabs">
+            <button class="active" onclick="switchMainTab(event, 'tab-editor')">YAML Редактор</button>
+            <button onclick="switchMainTab(event, 'tab-routes')">Маршруты (Routes)</button>
+            <button onclick="switchMainTab(event, 'tab-rules')">Сервисы (Rules)</button>
+        </div>
+        
+        <div id="tab-editor" class="tab-pane active">
+            <div class="editor-wrapper">
+                <div id="ed"></div>
+            </div>
+        </div>
+        
+        <div id="tab-routes" class="tab-pane">
+            <div class="builder-section">
+                <h3>Умные Маршруты</h3>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;">Создавайте пулы балансировки (Fastest, Failover) и распределяйте прокси.</p>
+                <div id="routes-container">Загрузка...</div>
+            </div>
+        </div>
+        
+        <div id="tab-rules" class="tab-pane">
+            <div class="builder-section">
+                <h3>Правила для сервисов</h3>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;">Управляйте направлением трафика для конкретных приложений.</p>
+                <div id="rules-container">Загрузка...</div>
+            </div>
+        </div>
     </div>
     
     <div class="sidebar">
@@ -921,6 +958,93 @@ function setLang(l) {
     var timeText = timeElem.innerText.split(': ')[1] || '';
     if (timeText.includes('__TIME__')) timeText = ''; // Первичный запуск
     timeElem.innerText = (TR[l].last_load_lbl || 'Loaded: __TIME__').replace('__TIME__', timeText);
+}
+
+function switchMainTab(e, tabId) {
+    document.querySelectorAll('.main-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    if (tabId === 'tab-editor') ed.resize();
+    if (tabId === 'tab-routes') renderRoutes();
+    if (tabId === 'tab-rules') renderRules();
+}
+
+function renderRoutes() {
+    var yamlText = ed.getValue();
+    var container = document.getElementById('routes-container');
+    try {
+        var doc = YAML.parseDocument(yamlText);
+        var groups = doc.get('proxy-groups');
+        var proxies = doc.get('proxies');
+        if (!groups || !groups.items) { container.innerHTML = '<p style="color:var(--txt-mut)">proxy-groups не найдены в конфиге.</p>'; return; }
+        
+        var proxyNames = [];
+        if (proxies && proxies.items) {
+            proxies.items.forEach(p => {
+                var name = p.get ? p.get('name') : null;
+                if (name) proxyNames.push(name);
+            });
+        }
+        
+        var html = '';
+        groups.items.forEach((g, idx) => {
+            var name = g.get ? g.get('name') : '?';
+            var type = g.get ? g.get('type') : '?';
+            var pxList = g.get ? g.get('proxies') : null;
+            var members = [];
+            if (pxList && pxList.items) pxList.items.forEach(i => members.push(i.value || i));
+            
+            var typeBadge = type === 'url-test' ? 'Fastest' : type === 'fallback' ? 'Failover' : type === 'select' ? 'Manual' : type;
+            var badgeColor = type === 'url-test' ? 'var(--success)' : type === 'fallback' ? 'var(--warn, orange)' : 'var(--primary)';
+            
+            html += '<div style="background:var(--bg-app);border:1px solid var(--bd-color);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+            html += '<strong style="font-size:14px;">' + name + '</strong>';
+            html += '<span style="background:' + badgeColor + ';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">' + typeBadge + '</span>';
+            html += '</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+            members.forEach(m => {
+                html += '<span style="background:var(--bg-card);border:1px solid var(--bd-color);padding:3px 8px;border-radius:4px;font-size:11px;">' + m + '</span>';
+            });
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = '<p style="color:var(--danger)">Ошибка парсинга YAML: ' + e.message + '</p>';
+    }
+}
+
+function renderRules() {
+    var yamlText = ed.getValue();
+    var container = document.getElementById('rules-container');
+    try {
+        var doc = YAML.parseDocument(yamlText);
+        var rules = doc.get('rules');
+        if (!rules || !rules.items) { container.innerHTML = '<p style="color:var(--txt-mut)">rules не найдены в конфиге.</p>'; return; }
+        
+        var serviceMap = {};
+        rules.items.forEach(r => {
+            var val = r.value || r;
+            var parts = val.split(',');
+            var target = parts[parts.length - 1].trim();
+            if (!serviceMap[target]) serviceMap[target] = [];
+            serviceMap[target].push(val);
+        });
+        
+        var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">';
+        Object.keys(serviceMap).forEach(svc => {
+            var count = serviceMap[svc].length;
+            html += '<div style="background:var(--bg-app);border:1px solid var(--bd-color);border-radius:var(--radius-md);padding:12px;">';
+            html += '<div style="font-weight:600;font-size:14px;margin-bottom:4px;">' + svc + '</div>';
+            html += '<div style="font-size:11px;color:var(--txt-mut);">' + count + ' правил(а)</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = '<p style="color:var(--danger)">Ошибка парсинга YAML: ' + e.message + '</p>';
+    }
 }
 
 function openPanel() {
