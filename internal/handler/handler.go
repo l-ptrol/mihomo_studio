@@ -23,10 +23,11 @@ import (
 
 type Handler struct {
 	template string
+	Version  string
 }
 
-func New() *Handler {
-	return &Handler{}
+func New(version string) *Handler {
+	return &Handler{Version: version}
 }
 
 func (h *Handler) LoadTemplate(tmpl string) {
@@ -126,6 +127,8 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		h.handleViewBackup(w, params)
 	case "update_service":
 		h.handleUpdateService(w)
+	case "check_update":
+		h.handleCheckUpdate(w)
 	case "restart_service":
 		h.handleRestartService(w)
 	case "save", "restart":
@@ -266,11 +269,38 @@ func (h *Handler) handleViewBackup(w http.ResponseWriter, params map[string]stri
 func (h *Handler) handleUpdateService(w http.ResponseWriter) {
 	cmd := exec.Command("sh", "-c", config.UpdateCmd)
 	output, err := cmd.CombinedOutput()
-	log := string(output)
+	logStr := string(output)
 	if err != nil {
-		log = string(output)
+		logStr = fmt.Sprintf("Error: %v\nOutput: %s", err, logStr)
 	}
-	json.NewEncoder(w).Encode(map[string]string{"log": log})
+	json.NewEncoder(w).Encode(map[string]string{"log": logStr})
+}
+
+func (h *Handler) handleCheckUpdate(w http.ResponseWriter) {
+	latest := h.GetLatestVersion()
+	json.NewEncoder(w).Encode(map[string]string{
+		"current": h.Version,
+		"latest":  latest,
+		"update":  strconv.FormatBool(latest != "" && latest != h.Version),
+	})
+}
+
+func (h *Handler) GetLatestVersion() string {
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/cmd/server/main.go")
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	content := string(body)
+
+	re := regexp.MustCompile(`var Version = "([^"]+)"`)
+	m := re.FindStringSubmatch(content)
+	if len(m) > 1 {
+		return m[1]
+	}
+	return ""
 }
 
 func (h *Handler) handleRestartService(w http.ResponseWriter) {

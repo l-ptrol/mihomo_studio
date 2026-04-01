@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.4</title>
+<title>Mihomo Studio v2.1.6</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
-<script src="https://unpkg.com/yaml@2.3.4/browser/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -198,7 +199,29 @@ button:active { transform: scale(0.97); }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
 
 .btn-icon { width: 36px; padding: 0; flex-shrink: 0; }
-.btn-icon svg { width: 18px; height: 18px; }
+.btn-icon .ico { width: 18px; height: 18px; }
+
+#update-btn.has-update {
+    position: relative;
+    color: var(--warn);
+}
+#update-btn.has-update::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: var(--danger);
+    border-radius: 50%;
+    box-shadow: 0 0 5px var(--danger);
+    animation: pulse-warn 1.5s infinite;
+}
+@keyframes pulse-warn {
+    0% { transform: scale(0.8); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.5; }
+    100% { transform: scale(0.8); opacity: 1; }
+}
 
 .ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -295,7 +318,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.4</div>
+            <div class="brand-version">v2.1.6</div>
         </div>
     </div>
     
@@ -339,7 +362,7 @@ button:active { transform: scale(0.97); }
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
         </button>
-        <button onclick="updateStudio()" class="btn-ghost btn-icon" title="Проверить обновления">
+        <button id="update-btn" onclick="checkUpdates(false)" class="btn-ghost btn-icon" title="Проверить обновления">
             <svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
         <button onclick="restartService()" class="btn-ghost btn-icon" title="Перезапустить сервис">
@@ -364,7 +387,13 @@ button:active { transform: scale(0.97); }
         
         <div id="tab-routes" class="tab-pane">
             <div class="builder-section">
-                <h3 data-i18n="routes_title">Умные Маршруты</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                   <h3 data-i18n="routes_title" style="margin:0;">Умные Маршруты</h3>
+                   <button onclick="openEditGroup()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
+                       <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                       <span data-i18n="btn_add_group">Добавить группу</span>
+                   </button>
+                </div>
                 <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="routes_desc">Создавайте пулы балансировки и распределяйте прокси.</p>
                 <div id="routes-container">Загрузка...</div>
             </div>
@@ -372,7 +401,13 @@ button:active { transform: scale(0.97); }
         
         <div id="tab-rules" class="tab-pane">
             <div class="builder-section">
-                <h3 data-i18n="rules_title">Правила для сервисов</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                   <h3 data-i18n="rules_title" style="margin:0;">Правила для сервисов</h3>
+                   <button onclick="openAddRule()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
+                       <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                       <span data-i18n="btn_add_rule">Добавить правило</span>
+                   </button>
+                </div>
                 <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="rules_desc">Управляйте направлением трафика для приложений.</p>
                 <div id="rules-container">Загрузка...</div>
             </div>
@@ -584,6 +619,88 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
+<!-- Модалка редактирования/добавления Группы -->
+<div id="m-route-edit" class="ovl"><div class="mod">
+    <h3 id="route-edit-title" data-i18n="modal_edit_group">Настройка группы</h3>
+    <div style="margin-bottom:15px;">
+        <label class="card-title" data-i18n="lbl_group_name">Имя группы:</label>
+        <input id="rg-name" placeholder="MyGroup">
+    </div>
+    <div style="margin-bottom:15px;">
+        <label class="card-title" data-i18n="lbl_group_type">Тип:</label>
+        <div class="cs-wrap" id="cs-rg-type">
+            <select id="rg-type" style="display:none">
+                <option value="select">select</option>
+                <option value="url-test">url-test</option>
+                <option value="fallback">fallback</option>
+                <option value="load-balance">load-balance</option>
+            </select>
+            <div class="cs-trigger"><span>select</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+            <div class="cs-options"></div>
+        </div>
+    </div>
+    <div id="url-test-params" style="display:none; margin-bottom:15px;" class="grid-2">
+        <div>
+            <label class="card-title">URL:</label>
+            <input id="rg-url" value="http://www.gstatic.com/generate_204">
+        </div>
+        <div>
+            <label class="card-title">Interval:</label>
+            <input id="rg-interval" type="number" value="300">
+        </div>
+    </div>
+    <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <label class="card-title" data-i18n="lbl_group_proxies" style="margin:0;">Прокси и группы:</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <input id="rg-filter" placeholder="Search..." style="height:24px; font-size:11px; width:100px; padding:0 8px;" oninput="filterRgProxies()">
+            <div style="font-size:11px; color:var(--primary); cursor:pointer;" onclick="toggleAllRg(true)" data-i18n="btn_sel_all">Выбрать все</div>
+        </div>
+    </div>
+    <div id="rg-proxies-list" class="g-list" style="max-height:200px; margin-bottom:20px;"></div>
+    
+    <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--bd-color); padding-top:15px;">
+        <button onclick="saveGroup()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+        <button onclick="closeM('m-route-edit')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
+    </div>
+</div></div>
+
+<!-- Модалка добавления Правила -->
+<div id="m-rule-add" class="ovl"><div class="mod">
+    <h3 data-i18n="btn_add_rule">Добавить правило</h3>
+    <div style="margin-bottom:15px;">
+        <label class="card-title" data-i18n="lbl_rule_type">Тип правила:</label>
+        <div class="cs-wrap" id="cs-rl-type">
+            <select id="rl-type" style="display:none">
+                <option value="DOMAIN">DOMAIN</option>
+                <option value="DOMAIN-SUFFIX">DOMAIN-SUFFIX</option>
+                <option value="DOMAIN-KEYWORD">DOMAIN-KEYWORD</option>
+                <option value="IP-CIDR">IP-CIDR</option>
+                <option value="GEOIP">GEOIP</option>
+                <option value="MATCH">MATCH</option>
+            </select>
+            <div class="cs-trigger"><span>DOMAIN</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+            <div class="cs-options"></div>
+        </div>
+    </div>
+    <div id="rule-val-block" style="margin-bottom:15px;">
+        <label class="card-title" data-i18n="lbl_rule_val">Значение:</label>
+        <input id="rl-val" placeholder="google.com">
+    </div>
+    <div style="margin-bottom:20px;">
+        <label class="card-title" data-i18n="lbl_rule_target">Цель (Группа):</label>
+        <div class="cs-wrap" id="cs-rl-target">
+            <select id="rl-target" style="display:none"></select>
+            <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+            <div class="cs-options"></div>
+        </div>
+    </div>
+    
+    <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--bd-color); padding-top:15px;">
+        <button onclick="saveRule()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+        <button onclick="closeM('m-rule-add')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
+    </div>
+</div></div>
+
 <script>
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
@@ -762,7 +879,16 @@ const TR = {
         rules_title: "Правила для сервисов",
         rules_desc: "Управляйте направлением трафика для приложений.",
         rules_no_rules: "rules не найдены в конфиге.",
-        rules_count: "правил(а)"
+        rules_count: "правил(а)",
+        btn_add_group: "Добавить группу",
+        btn_add_rule: "Добавить правило",
+        modal_edit_group: "Настройка группы",
+        lbl_group_name: "Имя группы:",
+        lbl_group_type: "Тип:",
+        lbl_group_proxies: "Прокси и группы:",
+        lbl_rule_type: "Тип правила:",
+        lbl_rule_val: "Значение:",
+        lbl_rule_target: "Цель (Группа):"
     },
     uk: {
         title: "Mihomo Studio",
@@ -861,7 +987,16 @@ const TR = {
         rules_title: "Правила для сервісів",
         rules_desc: "Керуйте напрямком трафіку для додатків.",
         rules_no_rules: "rules не знайдено в конфігу.",
-        rules_count: "правил(а)"
+        rules_count: "правил(а)",
+        btn_add_group: "Додати групу",
+        btn_add_rule: "Додати правило",
+        modal_edit_group: "Налаштування групи",
+        lbl_group_name: "Ім'я групи:",
+        lbl_group_type: "Тип:",
+        lbl_group_proxies: "Проксі та групи:",
+        lbl_rule_type: "Тип правила:",
+        lbl_rule_val: "Значення:",
+        lbl_rule_target: "Ціль (Група):"
     },
     en: {
         title: "Mihomo Studio",
@@ -960,7 +1095,16 @@ const TR = {
         rules_title: "Service Rules",
         rules_desc: "Manage traffic direction for applications.",
         rules_no_rules: "No rules found in config.",
-        rules_count: "rule(s)"
+        rules_count: "rule(s)",
+        btn_add_group: "Add Group",
+        btn_add_rule: "Add Rule",
+        modal_edit_group: "Group Settings",
+        lbl_group_name: "Group Name:",
+        lbl_group_type: "Type:",
+        lbl_group_proxies: "Proxies & Groups:",
+        lbl_rule_type: "Rule Type:",
+        lbl_rule_val: "Value:",
+        lbl_rule_target: "Target (Group):"
     }
 };
 
@@ -1004,15 +1148,12 @@ function switchMainTab(e, tabId) {
 }
 
 function renderRoutes() {
-    if (typeof YAML === 'undefined') {
-        document.getElementById('routes-container').innerHTML = '<p style="color:var(--danger)">Библиотека YAML не загружена.</p>';
-        return;
-    }
-    var yamlText = ed.getValue();
     var container = document.getElementById('routes-container');
+    var lib = window.jsyaml || window.YAML || window.yaml;
+    if (!lib) return;
+    var yamlText = ed.getValue();
     try {
-        // Используем parse для надежного чтения данных
-        var data = YAML.parse(yamlText);
+        var data = lib.load ? lib.load(yamlText) : (lib.parse ? lib.parse(yamlText) : null);
         if (!data || !data['proxy-groups']) { 
             container.innerHTML = '<p style="color:var(--txt-mut)">' + t('routes_no_groups') + '</p>'; 
             return; 
@@ -1028,14 +1169,24 @@ function renderRoutes() {
             var typeBadge = type === 'url-test' ? 'Fastest' : type === 'fallback' ? 'Failover' : type === 'select' ? 'Manual' : type;
             var badgeColor = type === 'url-test' ? 'var(--success)' : type === 'fallback' ? 'var(--warn, orange)' : 'var(--primary)';
             
-            html += '<div style="background:var(--bg-app);border:1px solid var(--bd-color);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">';
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-            html += '<strong style="font-size:14px;">' + name + '</strong>';
-            html += '<span style="background:' + badgeColor + ';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">' + typeBadge + '</span>';
-            html += '</div>';
-            html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+            html += `<div class="card" style="margin-bottom:12px; padding:12px; background:var(--bg-app);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <strong style="font-size:14px; color:var(--txt-main);">${name}</strong>
+                        <span style="background:${badgeColor}; color:#fff; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:700; text-transform:uppercase;">${typeBadge}</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="openEditGroup('${name}')" class="btn-icon btn-ghost" style="width:28px; height:28px;" title="Edit">
+                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button onclick="deleteGroup('${name}')" class="btn-icon btn-ghost" style="width:28px; height:28px; color:var(--danger);" title="Delete">
+                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
             members.forEach(m => {
-                html += '<span style="background:var(--bg-card);border:1px solid var(--bd-color);padding:3px 8px;border-radius:4px;font-size:11px;">' + m + '</span>';
+                html += `<span style="background:var(--bg-card); border:1px solid var(--bd-color); padding:2px 8px; border-radius:4px; font-size:11px; color:var(--txt-sec);">${m}</span>`;
             });
             html += '</div></div>';
         });
@@ -1046,36 +1197,54 @@ function renderRoutes() {
 }
 
 function renderRules() {
-    if (typeof YAML === 'undefined') return;
-    var yamlText = ed.getValue();
     var container = document.getElementById('rules-container');
+    var lib = window.jsyaml || window.YAML || window.yaml;
+    if (!lib) return;
+    var yamlText = ed.getValue();
     try {
-        var data = YAML.parse(yamlText);
+        var data = lib.load ? lib.load(yamlText) : (lib.parse ? lib.parse(yamlText) : null);
         if (!data || !data['rules']) { 
             container.innerHTML = '<p style="color:var(--txt-mut)">' + t('rules_no_rules') + '</p>'; 
             return; 
         }
         
         var rules = data['rules'];
-        var serviceMap = {};
-        rules.forEach(val => {
+        var html = '<div id="rules-list" style="display:flex; flex-direction:column; gap:8px;">';
+        rules.forEach((val, idx) => {
             if (typeof val !== 'string') return;
             var parts = val.split(',');
-            var target = parts[parts.length - 1].trim();
-            if (!serviceMap[target]) serviceMap[target] = [];
-            serviceMap[target].push(val);
-        });
-        
-        var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">';
-        Object.keys(serviceMap).forEach(svc => {
-            var count = serviceMap[svc].length;
-            html += '<div style="background:var(--bg-app);border:1px solid var(--bd-color);border-radius:var(--radius-md);padding:12px;">';
-            html += '<div style="font-weight:600;font-size:14px;margin-bottom:4px;">' + svc + '</div>';
-            html += '<div style="font-size:11px;color:var(--txt-mut);">' + count + ' ' + t('rules_count') + '</div>';
-            html += '</div>';
+            var type = parts[0];
+            var value = parts.length > 2 ? parts[1] : '';
+            var target = parts[parts.length - 1];
+            
+            html += `<div class="rule-item card" data-idx="${idx}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-app); cursor:grab;">
+                <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                    <svg class="ico" viewBox="0 0 24 24" style="width:16px; height:16px; color:var(--txt-mut); flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <div style="min-width:0;">
+                       <div style="font-weight:700; font-size:13px; color:var(--txt-main); display:flex; align-items:center; gap:6px;">
+                          <span>${type}</span>
+                          ${value ? `<span style="font-weight:400; color:var(--txt-mut); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${value}</span>` : ''}
+                       </div>
+                       <div style="font-size:11px; color:var(--primary); font-weight:600;">➔ ${target}</div>
+                    </div>
+                </div>
+                <button onclick="deleteRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px; color:var(--danger); flex-shrink:0;">
+                    <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+            </div>`;
         });
         html += '</div>';
         container.innerHTML = html;
+
+        if (window.Sortable && rules.length > 0) {
+            Sortable.create(document.getElementById('rules-list'), {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    reorderRules();
+                }
+            });
+        }
     } catch(e) {
         container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
     }
@@ -1287,6 +1456,24 @@ async function restoreBackup(fname){
     });
 }
 
+async function checkUpdates(isAuto = false) {
+    const p = new URLSearchParams(); p.append('act', 'check_update');
+    try {
+        const r = await fetch('/', { method: 'POST', body: p });
+        const d = await r.json();
+        if (d.update === "true") {
+            document.getElementById('update-btn').classList.add('has-update');
+            if (!isAuto) {
+                updateStudio();
+            }
+        } else if (!isAuto) {
+            showToast(currLang === 'ru' ? 'У вас последняя версия' : 'Latest version installed');
+        }
+    } catch (e) {
+        console.error("Update check failed", e);
+    }
+}
+
 async function updateStudio() {
     if(!await ask(t('confirm_update'))) return;
     showToast(t('toast_checking'));
@@ -1295,7 +1482,7 @@ async function updateStudio() {
         .then(r => r.json())
         .then(async d => {
             await ask(d.log, false, (currLang==='ru'?'Результат обновления':(currLang==='uk'?'Результат оновлення':'Update Result')));
-            if(d.log.includes("Установка/обновление завершено")) location.reload(); 
+            if(d.log.includes("Установка завершена")) location.reload(); 
         })
         .catch(async e => {
             await ask(t('alert_updating'), false);
@@ -1561,7 +1748,181 @@ async function doDel(){
     ed.setValue(nls.join('\n'));
 }
 
-var upDel, upRen, upEdit;
+var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget;
+
+function updateYamlPart(key, newData) {
+    var lib = window.jsyaml || window.YAML;
+    var yamlText = ed.getValue();
+    try {
+        var data = lib.load(yamlText);
+        data[key] = newData;
+        var newYaml = lib.dump(data, { indent: 2, lineWidth: -1, noRefs: true });
+        ed.setValue(newYaml);
+        ed.clearSelection();
+        return true;
+    } catch(e) {
+        ask("YAML Error: " + e.message, false);
+        return false;
+    }
+}
+
+// GROUPS LOGIC
+function openEditGroup(name = "") {
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    var proxies = data['proxies'] || [];
+    var groupNames = groups.map(g => g.name);
+    
+    var group = name ? groups.find(g => g.name === name) : null;
+    
+    document.getElementById('route-edit-title').innerText = name ? t('modal_edit_group') : t('btn_add_group');
+    document.getElementById('rg-name').value = name || "";
+    document.getElementById('rg-type').value = group ? group.type : "select";
+    document.getElementById('rg-type').dispatchEvent(new Event('change'));
+    
+    if (group && group.type === 'url-test') {
+        document.getElementById('rg-url').value = group.url || "http://www.gstatic.com/generate_204";
+        document.getElementById('rg-interval').value = group.interval || 300;
+    }
+
+    var list = document.getElementById('rg-proxies-list');
+    list.innerHTML = "";
+    
+    // Union of all possible members: physical proxies + other groups
+    var allOptions = [...proxies.map(p => p.name), ...groupNames];
+    
+    allOptions.forEach(opt => {
+        if (opt === name) return; // Cannot add itself
+        var isChecked = group && group.proxies && group.proxies.includes(opt);
+        list.innerHTML += `<div class="g-item"><input type="checkbox" id="rgp_${opt}" value="${opt}" ${isChecked?'checked':''}><label for="rgp_${opt}">${opt}</label></div>`;
+    });
+    
+    document.getElementById('m-route-edit').style.display = 'flex';
+}
+
+function toggleAllRg(s) {
+    document.querySelectorAll('#rg-proxies-list input').forEach(c => {
+        if (c.parentElement.style.display !== 'none') c.checked = s;
+    });
+}
+
+function filterRgProxies() {
+    var val = document.getElementById('rg-filter').value.toLowerCase();
+    document.querySelectorAll('#rg-proxies-list .g-item').forEach(el => {
+        var txt = el.innerText.toLowerCase();
+        el.style.display = txt.includes(val) ? 'block' : 'none';
+    });
+}
+
+function saveGroup() {
+    var name = document.getElementById('rg-name').value.trim();
+    var type = document.getElementById('rg-type').value;
+    if (!name) return ask(t('prompt_enter_name'), false);
+    
+    var selProxies = [];
+    document.querySelectorAll('#rg-proxies-list input:checked').forEach(c => selProxies.push(c.value));
+    
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    
+    var newGroup = { name: name, type: type, proxies: selProxies };
+    if (type === 'url-test') {
+        newGroup.url = document.getElementById('rg-url').value;
+        newGroup.interval = parseInt(document.getElementById('rg-interval').value);
+    }
+    
+    var idx = groups.findIndex(g => g.name === name);
+    if (idx > -1) groups[idx] = newGroup;
+    else groups.push(newGroup);
+    
+    if (updateYamlPart('proxy-groups', groups)) {
+        closeM('m-route-edit');
+        renderRoutes();
+        showToast(t('toast_saved'));
+    }
+}
+
+async function deleteGroup(name) {
+    if (!await ask(t('confirm_del_proxy') + " " + name)) return;
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    var newGroups = groups.filter(g => g.name !== name);
+    
+    if (updateYamlPart('proxy-groups', newGroups)) {
+        renderRoutes();
+        showToast(t('toast_deleted'));
+    }
+}
+
+// RULES LOGIC
+function openAddRule() {
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    
+    var sel = document.getElementById('rl-target');
+    sel.innerHTML = "";
+    groups.forEach(g => {
+        var o = document.createElement('option');
+        o.value = g.name;
+        o.text = g.name;
+        sel.add(o);
+    });
+    if (upRlTarget) upRlTarget();
+    
+    document.getElementById('rl-val').value = "";
+    document.getElementById('m-rule-add').style.display = 'flex';
+}
+
+function saveRule() {
+    var type = document.getElementById('rl-type').value;
+    var val = document.getElementById('rl-val').value.trim();
+    var target = document.getElementById('rl-target').value;
+    
+    var ruleStr = type === 'MATCH' ? `MATCH,${target}` : `${type},${val},${target}`;
+    
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var rules = data['rules'] || [];
+    rules.push(ruleStr);
+    
+    if (updateYamlPart('rules', rules)) {
+        closeM('m-rule-add');
+        renderRules();
+        showToast(t('toast_added'));
+    }
+}
+
+async function deleteRule(idx) {
+    if (!await ask(t('confirm_del_proxy'))) return;
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var rules = data['rules'] || [];
+    rules.splice(idx, 1);
+    
+    if (updateYamlPart('rules', rules)) {
+        renderRules();
+        showToast(t('toast_deleted'));
+    }
+}
+
+function reorderRules() {
+    var newOrder = [];
+    document.querySelectorAll('.rule-item').forEach(el => {
+        newOrder.push(parseInt(el.getAttribute('data-idx')));
+    });
+    
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var rules = data['rules'] || [];
+    var reordered = newOrder.map(i => rules[i]);
+    
+    updateYamlPart('rules', reordered);
+    renderRules();
+}
 
 function showRename() {
     var prs = getProxiesList();
@@ -1628,6 +1989,17 @@ async function doRename() {
     upDel = initCS('cs-del-m');
     upRen = initCS('cs-ren-m');
     upEdit = initCS('cs-edit-m');
+    upRgType = initCS('cs-rg-type');
+    upRlType = initCS('cs-rl-type');
+    upRlTarget = initCS('cs-rl-target');
+
+    document.getElementById('rg-type').addEventListener('change', function() {
+        document.getElementById('url-test-params').style.display = this.value === 'url-test' ? 'grid' : 'none';
+    });
+    
+    document.getElementById('rl-type').addEventListener('change', function() {
+        document.getElementById('rule-val-block').style.display = this.value === 'MATCH' ? 'none' : 'block';
+    });
 
     // Наблюдатель за изменениями в prof-sel (так как он наполняется сервером)
     var observer = new MutationObserver(upProf);
@@ -1636,6 +2008,13 @@ async function doRename() {
     new MutationObserver(upDel).observe(document.getElementById('sel-del'), { childList: true });
     new MutationObserver(upRen).observe(document.getElementById('sel-ren-proxy'), { childList: true });
     new MutationObserver(upEdit).observe(document.getElementById('edit-proxy-sel'), { childList: true });
+    
+    setTimeout(() => {
+        renderRoutes();
+        renderRules();
+        checkUpdates(true);
+    }, 1500);
+    setInterval(() => checkUpdates(true), 3600000);
 })();
 
 

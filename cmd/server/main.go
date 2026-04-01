@@ -18,7 +18,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.1.3"
+var Version = "2.1.6"
 
 func main() {
 	fStop := flag.Bool("stop", false, "Stop the server")
@@ -60,7 +60,7 @@ func startServer() {
 		log.Fatalf("Ошибка: %v", err)
 	}
 
-	h := handler.New()
+	h := handler.New(Version)
 	h.LoadTemplate(string(tmplData))
 
 	addr := fmt.Sprintf(":%d", config.Port)
