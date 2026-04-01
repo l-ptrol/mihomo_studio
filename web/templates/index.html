@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.2</title>
+<title>Mihomo Studio v2.1.3</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://unpkg.com/yaml@2.3.4/browser/index.js"></script>
@@ -295,7 +295,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.2</div>
+            <div class="brand-version">v2.1.3</div>
         </div>
     </div>
     
@@ -351,9 +351,9 @@ button:active { transform: scale(0.97); }
 <div class="app-content">
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
         <div class="main-tabs">
-            <button class="active" onclick="switchMainTab(event, 'tab-editor')">YAML Редактор</button>
-            <button onclick="switchMainTab(event, 'tab-routes')">Маршруты (Routes)</button>
-            <button onclick="switchMainTab(event, 'tab-rules')">Сервисы (Rules)</button>
+            <button class="active" onclick="switchMainTab(event, 'tab-editor')" data-i18n="tab_yaml">YAML Редактор</button>
+            <button onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
+            <button onclick="switchMainTab(event, 'tab-rules')" data-i18n="tab_services">Сервисы</button>
         </div>
         
         <div id="tab-editor" class="tab-pane active">
@@ -364,16 +364,16 @@ button:active { transform: scale(0.97); }
         
         <div id="tab-routes" class="tab-pane">
             <div class="builder-section">
-                <h3>Умные Маршруты</h3>
-                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;">Создавайте пулы балансировки (Fastest, Failover) и распределяйте прокси.</p>
+                <h3 data-i18n="routes_title">Умные Маршруты</h3>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="routes_desc">Создавайте пулы балансировки и распределяйте прокси.</p>
                 <div id="routes-container">Загрузка...</div>
             </div>
         </div>
         
         <div id="tab-rules" class="tab-pane">
             <div class="builder-section">
-                <h3>Правила для сервисов</h3>
-                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;">Управляйте направлением трафика для конкретных приложений.</p>
+                <h3 data-i18n="rules_title">Правила для сервисов</h3>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="rules_desc">Управляйте направлением трафика для приложений.</p>
                 <div id="rules-container">Загрузка...</div>
             </div>
         </div>
@@ -751,7 +751,18 @@ const TR = {
         last_saved: "Сохранено:",
         restart_service_short: "Рестарт",
         update_btn_short: "Обновить",
-        btn_ok: "ОК"
+        btn_ok: "ОК",
+        tab_yaml: "YAML Редактор",
+        tab_routes: "Маршруты",
+        tab_services: "Сервисы",
+        routes_title: "Умные Маршруты",
+        routes_desc: "Создавайте пулы балансировки и распределяйте прокси.",
+        routes_no_groups: "proxy-groups не найдены в конфиге.",
+        routes_parse_err: "Ошибка парсинга YAML: ",
+        rules_title: "Правила для сервисов",
+        rules_desc: "Управляйте направлением трафика для приложений.",
+        rules_no_rules: "rules не найдены в конфиге.",
+        rules_count: "правил(а)"
     },
     uk: {
         title: "Mihomo Studio",
@@ -839,7 +850,18 @@ const TR = {
         last_saved: "Збережено:",
         restart_service_short: "Перезапуск",
         update_btn_short: "Оновити",
-        btn_ok: "ОК"
+        btn_ok: "ОК",
+        tab_yaml: "YAML Редактор",
+        tab_routes: "Маршрути",
+        tab_services: "Сервіси",
+        routes_title: "Розумні Маршрути",
+        routes_desc: "Створюйте пули балансування та розподіляйте проксі.",
+        routes_no_groups: "proxy-groups не знайдено в конфігу.",
+        routes_parse_err: "Помилка парсингу YAML: ",
+        rules_title: "Правила для сервісів",
+        rules_desc: "Керуйте напрямком трафіку для додатків.",
+        rules_no_rules: "rules не знайдено в конфігу.",
+        rules_count: "правил(а)"
     },
     en: {
         title: "Mihomo Studio",
@@ -927,7 +949,18 @@ const TR = {
         last_saved: "Saved:",
         restart_service_short: "Restart",
         update_btn_short: "Update",
-        btn_ok: "OK"
+        btn_ok: "OK",
+        tab_yaml: "YAML Editor",
+        tab_routes: "Routes",
+        tab_services: "Services",
+        routes_title: "Smart Routes",
+        routes_desc: "Create balancing pools and distribute proxies.",
+        routes_no_groups: "No proxy-groups found in config.",
+        routes_parse_err: "YAML parse error: ",
+        rules_title: "Service Rules",
+        rules_desc: "Manage traffic direction for applications.",
+        rules_no_rules: "No rules found in config.",
+        rules_count: "rule(s)"
     }
 };
 
@@ -977,7 +1010,7 @@ function renderRoutes() {
         var doc = YAML.parseDocument(yamlText);
         var groups = doc.get('proxy-groups');
         var proxies = doc.get('proxies');
-        if (!groups || !groups.items) { container.innerHTML = '<p style="color:var(--txt-mut)">proxy-groups не найдены в конфиге.</p>'; return; }
+        if (!groups || !groups.items) { container.innerHTML = '<p style="color:var(--txt-mut)">' + t('routes_no_groups') + '</p>'; return; }
         
         var proxyNames = [];
         if (proxies && proxies.items) {
@@ -1011,7 +1044,7 @@ function renderRoutes() {
         });
         container.innerHTML = html;
     } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">Ошибка парсинга YAML: ' + e.message + '</p>';
+        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + e.message + '</p>';
     }
 }
 
@@ -1021,7 +1054,7 @@ function renderRules() {
     try {
         var doc = YAML.parseDocument(yamlText);
         var rules = doc.get('rules');
-        if (!rules || !rules.items) { container.innerHTML = '<p style="color:var(--txt-mut)">rules не найдены в конфиге.</p>'; return; }
+        if (!rules || !rules.items) { container.innerHTML = '<p style="color:var(--txt-mut)">' + t('rules_no_rules') + '</p>'; return; }
         
         var serviceMap = {};
         rules.items.forEach(r => {
@@ -1037,13 +1070,13 @@ function renderRules() {
             var count = serviceMap[svc].length;
             html += '<div style="background:var(--bg-app);border:1px solid var(--bd-color);border-radius:var(--radius-md);padding:12px;">';
             html += '<div style="font-weight:600;font-size:14px;margin-bottom:4px;">' + svc + '</div>';
-            html += '<div style="font-size:11px;color:var(--txt-mut);">' + count + ' правил(а)</div>';
+            html += '<div style="font-size:11px;color:var(--txt-mut);">' + count + ' ' + t('rules_count') + '</div>';
             html += '</div>';
         });
         html += '</div>';
         container.innerHTML = html;
     } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">Ошибка парсинга YAML: ' + e.message + '</p>';
+        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + e.message + '</p>';
     }
 }
 
