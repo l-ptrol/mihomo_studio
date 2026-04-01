@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.7</title>
+<title>Mihomo Studio v2.1.8</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -325,7 +325,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.7</div>
+            <div class="brand-version">v2.1.8</div>
         </div>
     </div>
     
@@ -514,6 +514,7 @@ button:active { transform: scale(0.97); }
     <button onclick="doDel()" class="btn-danger" data-i18n="delete">Удалить</button>
     <button onclick="closeM('m-del')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
 </div></div></div>
+
 <div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
     <button onclick="location.reload()" class="btn-primary" data-i18n="btn_update">Обновить</button>
     <button onclick="closeM('m-con')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
@@ -554,7 +555,7 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="addProxyModal" class="ovl"><div class="mod" style="width:500px; max-width:95vw;">
+<div id="addProxyModal" class="ovl"><div class="mod" style="width:550px; max-width:95vw;">
     <h3 id="proxyModalTitle" data-i18n="modal_add_proxy">Добавить туннель</h3>
     
     <div id="edit-proxy-container" style="margin-bottom:15px; display:none;">
@@ -564,54 +565,122 @@ button:active { transform: scale(0.97); }
             <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
             <div class="cs-options"></div>
         </div>
-        <div style="font-size:12px; color:var(--warn); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px; display: flex; align-items: center; gap: 8px;" data-i18n="warn_edit">
+        <div class="alert warn" style="margin-top:10px; display:flex; align-items:center; gap:8px;">
             <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span data-i18n="warn_edit">Данные этого прокси будут полностью заменены новыми!</span>
         </div>
     </div>
 
     <div class="modal-tabs">
-        <button class="active" onclick="switchTab(event, 'vlessTab')" data-i18n="tab_vless">VLESS</button>
-        <button onclick="switchTab(event, 'wgTab')" data-i18n="tab_wg">WireGuard|AmneziaWG</button>
+        <button class="active" onclick="switchTab(event, 'tab-vless-reality')" data-i18n="tab_vless">VLESS Reality</button>
+        <button onclick="switchTab(event, 'tab-wg-awg')" data-i18n="tab_wg">AWG | WireGuard</button>
+        <button onclick="switchTab(event, 'tab-hysteria-2')" data-i18n="tab_hysteria">Hysteria 2</button>
+        <button onclick="switchTab(event, 'tab-trojan-proto')" data-i18n="tab_trojan">Trojan</button>
+        <button onclick="switchTab(event, 'tab-sub-import')" data-i18n="tab_sub">Подписка</button>
     </div>
 
-    <div id="vlessTab" class="tab-content active">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
-        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:15px;">
-
-        <div id="vless-name-block">
-            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:15px;">
+    <div id="tab-vless-reality" class="tab-content active">
+        <label class="card-title" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
+        <input id="vlessLink" placeholder="vless://...">
+        <div id="vless-name-block" style="margin-top:15px;">
+            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
+            <input id="vlessProxyName" placeholder="Автоматически" data-i18n-ph="ph_auto_vless">
         </div>
-
-        <button onclick="parseVless()" class="btn-success" style="width:100%" data-i18n="btn_save">Сохранить</button>
+        <button onclick="parseVless()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
     </div>
 
-    <div id="wgTab" class="tab-content">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
-        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:15px;"></textarea>
-
-        <div id="wg-name-block">
-            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:15px;">
+    <div id="tab-wg-awg" class="tab-content">
+        <label class="card-title" data-i18n="lbl_wg_conf">Конфигурация .conf:</label>
+        <textarea id="wgConfig" rows="5" placeholder="Privatekey, Address, Endpoint..."></textarea>
+        <div id="awg-options" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:15px; background:var(--bg-app); padding:10px; border-radius:8px;">
+            <div class="field-item"><label>Jc</label><input type="number" id="awg-jc" placeholder="4"></div>
+            <div class="field-item"><label>Jmin</label><input type="number" id="awg-jmin" placeholder="10"></div>
+            <div class="field-item"><label>Jmax</label><input type="number" id="awg-jmax" placeholder="50"></div>
+            <div class="field-item"><label>S1</label><input type="number" id="awg-s1" placeholder="0"></div>
+            <div class="field-item"><label>S2</label><input type="number" id="awg-s2" placeholder="0"></div>
+            <div class="field-item"><label>H1</label><input type="text" id="awg-h1" placeholder="1234"></div>
+            <div class="field-item"><label>H2</label><input type="text" id="awg-h2" placeholder="5678"></div>
+            <div class="field-item"><label>H3</label><input type="text" id="awg-h3" placeholder="9012"></div>
+            <div class="field-item"><label>H4</label><input type="text" id="awg-h4" placeholder="3456"></div>
         </div>
-
+        <div id="wg-name-block" style="margin-top:15px;">
+            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
+            <input id="wgProxyName" placeholder="WG_Server">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="flex:1">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                <span data-i18n="btn_load_file">Загрузить</span>
+            </button>
+            <button onclick="addWireguard()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+        </div>
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
-        <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="width:100%; margin-bottom:15px;" >
-            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-            <span data-i18n="btn_load_file">Или загрузить .conf файл</span>
-        </button>
-        <button onclick="addWireguard()" class="btn-success" style="width:100%" data-i18n="btn_save">Сохранить</button>
+    </div>
+
+    <div id="tab-hysteria-2" class="tab-content">
+        <label class="card-title">Hysteria 2 Server:</label>
+        <div style="display:grid; grid-template-columns: 3fr 1fr; gap:10px;">
+            <input id="hy2Server" placeholder="host.com">
+            <input id="hy2Port" type="number" value="443">
+        </div>
+        <div style="margin-top:15px;">
+            <label class="card-title">Password & SNI:</label>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input id="hy2Pass" placeholder="password">
+                <input id="hy2Sni" placeholder="sni.com">
+            </div>
+        </div>
+        <div style="margin-top:15px;">
+            <label class="card-title">Obfuscation (Salamander):</label>
+            <input id="hy2ObfsPass" placeholder="obfs password">
+        </div>
+        <div style="margin-top:15px;">
+            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
+            <input id="hy2Name" placeholder="MyHy2">
+        </div>
+        <button onclick="addHysteria2()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
+    </div>
+
+    <div id="tab-trojan-proto" class="tab-content">
+        <label class="card-title">Trojan Server:</label>
+        <div style="display:grid; grid-template-columns: 3fr 1fr; gap:10px;">
+            <input id="trServer" placeholder="host.com">
+            <input id="trPort" type="number" value="443">
+        </div>
+        <div style="margin-top:15px;">
+            <label class="card-title">Password:</label>
+            <input id="trPass" placeholder="password">
+        </div>
+        <div style="margin-top:15px;">
+            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
+            <input id="trName" placeholder="MyTrojan">
+        </div>
+        <button onclick="addTrojan()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
+    </div>
+
+    <div id="tab-sub-import" class="tab-content">
+        <label class="card-title" data-i18n="lbl_sub_link">Ссылка на подписку:</label>
+        <input id="subLink" placeholder="https://...">
+        <div style="margin-top:15px;">
+            <label class="card-title" data-i18n="lbl_sub_action">Действие:</label>
+            <select id="subMode" class="form-control" style="background:var(--bg-app); border:1px solid var(--bd-color); color:var(--txt-main);">
+                <option value="import" data-i18n="opt_sub_import">Разовый импорт (в proxies)</option>
+                <option value="provider" data-i18n="opt_sub_provider">Proxy Provider (динамический)</option>
+            </select>
+        </div>
+        <button onclick="processSubscription()" class="btn-primary" style="width:100%; margin-top:20px;" data-i18n="btn_import">Импортировать</button>
     </div>
 </div></div>
 
 <div id="m-view-bk" class="ovl"><div class="mod">
     <h3 data-i18n="modal_view_bk">Просмотр бэкапа</h3>
-    <div id="bk-content"></div>
+    <div id="bk-content" style="max-height:400px; overflow-y:auto; background:var(--bg-app); padding:10px; border-radius:8px; font-family:monospace; font-size:12px; white-space:pre-wrap;"></div>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
         <button id="bk-restore-btn" class="btn-danger" data-i18n="btn_restore">Восстановить</button>
         <button onclick="closeM('m-view-bk')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
     </div>
+</div></div>
+
 <div id="m-dial" class="ovl"><div class="mod">
     <h3 id="dial-title">Confirmation</h3>
     <p id="dial-msg" style="margin-bottom: 25px; line-height: 1.5; color: var(--txt-main); font-size: 14px;"></p>
@@ -622,7 +691,7 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <!-- Модалка редактирования/добавления Группы -->
-<div id="m-route-edit" class="ovl"><div class="mod">
+<div id="m-route-edit" class="ovl"><div class="mod" style="width:450px;">
     <h3 id="route-edit-title" data-i18n="modal_edit_group">Настройка группы</h3>
     <div style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_group_name">Имя группы:</label>
@@ -642,11 +711,11 @@ button:active { transform: scale(0.97); }
         </div>
     </div>
     <div id="url-test-params" style="display:none; margin-bottom:15px;" class="grid-2">
-        <div>
+        <div class="field-item">
             <label class="card-title">URL:</label>
             <input id="rg-url" value="http://www.gstatic.com/generate_204">
         </div>
-        <div>
+        <div class="field-item">
             <label class="card-title">Interval:</label>
             <input id="rg-interval" type="number" value="300">
         </div>
@@ -667,7 +736,7 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <!-- Модалка добавления Правила -->
-<div id="m-rule-add" class="ovl"><div class="mod">
+<div id="m-rule-add" class="ovl"><div class="mod" style="width:400px;">
     <h3 data-i18n="btn_add_rule">Добавить правило</h3>
     <div style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_rule_type">Тип правила:</label>
@@ -696,7 +765,6 @@ button:active { transform: scale(0.97); }
             <div class="cs-options"></div>
         </div>
     </div>
-    
     <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--bd-color); padding-top:15px;">
         <button onclick="saveRule()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
         <button onclick="closeM('m-rule-add')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
@@ -709,16 +777,6 @@ var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="miho
 var initialConfig = `__JSON_CONTENT__`;
 var isEditMode = false;
 var currLang = 'ru';
-var currTheme = 'dark';
-
-function adjNum(id, d) {
-    var i = document.getElementById(id);
-    var v = parseInt(i.value) + d;
-    if(v >= i.min && v <= i.max) {
-        i.value = v;
-        i.dispatchEvent(new Event('change'));
-    }
-}
 
 function ask(msg, isConfirm = true, title = "") {
     return new Promise(resolve => {
@@ -727,754 +785,194 @@ function ask(msg, isConfirm = true, title = "") {
         const bMsg = document.getElementById('dial-msg');
         const bOk = document.getElementById('dial-ok');
         const bCan = document.getElementById('dial-cancel');
-        
-        t.innerText = title || (isConfirm ? (currLang === 'ru' ? "Подтверждение" : (currLang === 'uk' ? "Підтвердження" : "Confirmation")) : (currLang === 'ru' ? "Внимание" : (currLang === 'uk' ? "Увага" : "Attention")));
+        t.innerText = title || (isConfirm ? (currLang === 'ru' ? "Подтверждение" : "Confirmation") : (currLang === 'ru' ? "Внимание" : "Attention"));
         bMsg.innerText = msg;
         bCan.style.display = isConfirm ? 'block' : 'none';
-        
         m.style.display = 'flex';
-        
         bOk.onclick = () => { m.style.display = 'none'; resolve(true); };
         bCan.onclick = () => { m.style.display = 'none'; resolve(false); };
-        
-        // Перевод кнопок в самом диалоге
         bOk.innerText = TR[currLang].btn_ok || "OK";
         bCan.innerText = TR[currLang].btn_cancel || "Cancel";
     });
 }
 
 function initCS(id) {
-    var w = document.getElementById(id);
-    var s = w.querySelector('select');
-    var t = w.querySelector('.cs-trigger span');
-    var o = w.querySelector('.cs-options');
-    
-    var updateOptions = () => {
+    var w = document.getElementById(id); if (!w) return () => {};
+    var s = w.querySelector('select'), t = w.querySelector('.cs-trigger span'), o = w.querySelector('.cs-options');
+    var upd = () => {
         o.innerHTML = '';
         Array.from(s.options).forEach(opt => {
             var div = document.createElement('div');
-            div.className = 'cs-option' + (opt.selected ? ' selected' : '');
-            div.innerText = opt.text;
-            div.onclick = (e) => {
-                e.stopPropagation();
-                s.value = opt.value;
-                s.dispatchEvent(new Event('change'));
-                closeAllCS();
-            };
+            div.className = 'cs-option' + (opt.selected ? ' selected' : ''); div.innerText = opt.text;
+            div.onclick = (e) => { e.stopPropagation(); s.value = opt.value; s.dispatchEvent(new Event('change')); closeAllCS(); };
             o.appendChild(div);
         });
         t.innerText = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : '';
     };
-
-    w.onclick = (e) => {
-        e.stopPropagation();
-        var open = w.classList.contains('open');
-        closeAllCS();
-        if(!open) w.classList.add('open');
-    };
-    
-    s.addEventListener('change', updateOptions);
-    updateOptions();
-    return updateOptions;
+    w.onclick = (e) => { e.stopPropagation(); var open = w.classList.contains('open'); closeAllCS(); if(!open) w.classList.add('open'); };
+    s.addEventListener('change', upd); upd(); return upd;
 }
 
-function closeAllCS() {
-    document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
-}
+function closeAllCS() { document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); }
 document.addEventListener('click', closeAllCS);
 
 const TR = {
     ru: {
-        title: "Mihomo Studio",
-        save: "Сохранить",
-        restart: "Рестарт",
-        panel: "Панель",
-        update_btn: "Проверить обновления",
-        restart_service: "Рестарт",
-        profiles: "Профили",
-        create: "Создать",
-        delete: "Удалить",
-        select: "",
-        download: "",
-        proxy_mgmt: "Управление",
-        add: "Добавить",
-        edit: "Заменить",
-        rename: "Переименовать",
-        backups: "Бэкапы",
-        clean: "Очистить",
-        keep: "Оставить:",
-        theme_dark: "Тёмная",
-        theme_light: "Светлая",
-        theme_midnight: "Полночь",
-        theme_cyber: "Кибер",
-        toast_saved: "Успешно сохранено",
-        toast_cleaned: "Очищено",
-        toast_deleted: "Удалено",
-        toast_restored: "Восстановлено",
-        toast_added: "Добавлено",
-        toast_renamed: "Прокси переименован",
-        toast_updated: "Данные прокси обновлены",
-        toast_checking: "Проверка обновлений...",
-        toast_restarting: "Перезапуск сервиса...",
-        confirm_switch: "Переключиться на профиль {0}?",
-        confirm_del_prof: "Удалить профиль {0}? Это действие необратимо.",
-        confirm_del_bk: "Удалить бэкап {0}?",
-        confirm_clean: "Оставить только {0} последних бэкапов?",
-        confirm_restore: "Восстановить {0}? Текущий конфиг будет перезаписан.",
-        confirm_del_proxy: "Удалить?",
-        confirm_replace: "Заменить данные прокси '{0}'?",
-        confirm_update: "Проверить обновления и установить?",
-        confirm_restart_service: "Перезапустить веб-сервис Mihomo Studio?",
-        prompt_enter_name: "Введите имя!",
-        error_invalid_name: "Недопустимое имя!",
-        error_exists: "Профиль с таким именем уже существует",
-        error_no_proxy_edit: "Выберите прокси для редактирования",
-        error_empty_wg: "Конфигурация WireGuard не может быть пустой.",
-        alert_updating: "Обновление запущено. Сервис перезапускается...",
-        modal_add_proxy: "Добавить прокси",
-        modal_edit_proxy: "Изменить прокси",
-        lbl_vless_link: "Ссылка VLESS:",
-        lbl_proxy_name: "Имя прокси (необязательно):",
-        lbl_wg_conf: "Конфигурация WireGuard:",
-        btn_add: "Добавить",
-        btn_save: "Сохранить",
-        btn_cancel: "Отмена",
-        btn_restore: "Восстановить",
-        btn_close: "Закрыть",
-        btn_update: "Обновить",
-        tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
-        lbl_select_edit: "Выберите прокси для изменения:",
-        warn_edit: "Данные этого прокси будут полностью заменены новыми!",
-        modal_new_prof: "Новый профиль",
-        lbl_prof_name: "Имя (англ, без пробелов):",
-        lbl_content: "Содержимое:",
-        btn_load_file: "Загрузить файл",
-        ph_paste_yaml: "Вставьте YAML конфиг сюда...",
-        ph_auto_vless: "Автоматически из ссылки",
-        ph_auto_wg: "Автоматически из Endpoint",
-        ph_paste_conf: "Вставьте содержимое .conf файла сюда...",
-        modal_groups: "Добавить в группы:",
-        btn_sel_all: "Выбрать все",
-        btn_sel_none: "Снять все",
-        modal_del_proxy: "Удалить прокси",
-        modal_ren_proxy: "Переименовать прокси",
-        lbl_sel_ren: "Выберите прокси для переименования:",
-        lbl_new_name: "Новое имя:",
-        ph_new_name: "Введите новое имя",
-        btn_rename: "Переименовать",
-        modal_console: "Консоль",
-        modal_view_bk: "Просмотр бэкапа",
-        log_loading: "Выполнение xkeen -restart...",
-        last_load_lbl: "Загружено: __TIME__",
-        last_saved: "Сохранено:",
-        restart_service_short: "Рестарт",
-        update_btn_short: "Обновить",
-        btn_ok: "ОК",
-        tab_yaml: "YAML Редактор",
-        tab_routes: "Маршруты",
-        tab_services: "Сервисы",
-        routes_title: "Умные Маршруты",
-        routes_desc: "Создавайте пулы балансировки и распределяйте прокси.",
-        routes_no_groups: "proxy-groups не найдены в конфиге.",
-        routes_parse_err: "Ошибка парсинга YAML: ",
-        rules_title: "Правила для сервисов",
-        rules_desc: "Управляйте направлением трафика для приложений.",
-        rules_no_rules: "rules не найдены в конфиге.",
-        rules_count: "правил(а)",
-        btn_add_group: "Добавить группу",
-        btn_add_rule: "Добавить правило",
-        modal_edit_group: "Настройка группы",
-        lbl_group_name: "Имя группы:",
-        lbl_group_type: "Тип:",
-        lbl_group_proxies: "Прокси и группы:",
-        lbl_rule_type: "Тип правила:",
-        lbl_rule_val: "Значение:",
-        lbl_rule_target: "Цель (Группа):",
-        tab_hysteria: "Hysteria 2",
-        tab_trojan: "Trojan",
-        tab_sub: "Подписка",
-        lbl_sub_link: "Ссылка на подписку:",
-        lbl_sub_action: "Действие:",
-        opt_sub_import: "Разовый импорт (в proxies)",
-        opt_sub_provider: "Proxy Provider (ссылкой)",
-        btn_import: "Импортировать",
-        btn_add_to_group: "Добавить туннель",
-        modal_edit_rule: "Редактирование правила",
-        confirm_delete: "Вы уверены, что хотите удалить этот элемент?",
-        btn_yes: "Да",
-        btn_no: "Нет"
+        title: "Mihomo Studio", save: "Сохранить", restart: "Рестарт", panel: "Панель", update_btn: "Обновить", profiles: "Профили", create: "Создать", delete: "Удалить",
+        proxy_mgmt: "Управление", add: "Добавить", edit: "Блоки", rename: "Ринаме", backups: "Бэкапы", clean: "Очистить", keep: "Оставить:",
+        theme_dark: "Тёмная", theme_light: "Светлая", theme_midnight: "Полночь", theme_cyber: "Кибер",
+        toast_saved: "Сохранено", toast_cleaned: "Очищено", toast_deleted: "Удалено", toast_restored: "Восстановлено", toast_added: "Добавлено", toast_renamed: "Переименовано", toast_updated: "Обновлено", toast_checking: "Проверка...", toast_restarting: "Рестарт...",
+        confirm_switch: "Переключить на {0}?", confirm_del_prof: "Удалить профиль {0}?", confirm_del_bk: "Удалить бэкап {0}?", confirm_clean: "Оставить {0} бэкапов?", confirm_restore: "Восстановить {0}?", confirm_del_proxy: "Удалить?", confirm_replace: "Заменить '{0}'?", confirm_update: "Обновить Mihomo Studio?", confirm_restart_service: "Перезапустить сервис?",
+        prompt_enter_name: "Введите имя!", error_invalid_name: "Неверное имя!", error_exists: "Уже существует", error_no_proxy_edit: "Выберите прокси", error_empty_wg: "Пустой конфиг", alert_updating: "Обновление запущено...",
+        modal_add_proxy: "Добавить прокси", modal_edit_proxy: "Изменить прокси", lbl_vless_link: "Ссылка VLESS:", lbl_proxy_name: "Имя прокси:", lbl_wg_conf: "Конфигурация .conf:",
+        btn_add: "Добавить", btn_save: "Сохранить", btn_cancel: "Отмена", btn_restore: "Восстановить", btn_close: "Закрыть", btn_update: "Обновить", tab_vless: "VLESS", tab_wg: "WireGuard",
+        lbl_select_edit: "Выберите прокси:", warn_edit: "Данные будут заменены!", modal_new_prof: "Новый профиль", lbl_prof_name: "Имя:", lbl_content: "Контент:", btn_load_file: "Файл",
+        ph_paste_yaml: "YAML конфиг...", ph_auto_vless: "vless://...", ph_auto_wg: "WG_Server", ph_paste_conf: "Содержимое .conf...", modal_groups: "В группы:", btn_sel_all: "Все", btn_sel_none: "Ни одной",
+        modal_del_proxy: "Удалить прокси", modal_ren_proxy: "Rename", lbl_sel_ren: "Выбрать для Rename:", lbl_new_name: "Новое имя:", ph_new_name: "Имя...", btn_rename: "Rename", modal_console: "Консоль", modal_view_bk: "Бэкап",
+        log_loading: "xkeen -restart...", last_load_lbl: "Загружено: __TIME__", last_saved: "Сохранено:", restart_service_short: "Рестарт", update_btn_short: "Обновить", btn_ok: "ОК",
+        tab_yaml: "YAML", tab_routes: "Маршруты", tab_services: "Правила", routes_title: "Визуальный Конструктор", routes_desc: "Управляйте группами и балансировкой.", routes_no_groups: "Группы не найдены.", routes_parse_err: "Ошибка YAML: ",
+        rules_title: "Правила фильтрации", rules_desc: "Распределяйте трафик сервисов.", rules_no_rules: "Правила не найдены.", rules_count: "правил", btn_add_group: "Группа", btn_add_rule: "Правило",
+        modal_edit_group: "Настройка группы", lbl_group_name: "Имя группы:", lbl_group_type: "Тип:", lbl_group_proxies: "Участники:", lbl_rule_type: "Тип правила:", lbl_rule_val: "Значение:", lbl_rule_target: "Цель:",
+        tab_hysteria: "Hysteria 2", tab_trojan: "Trojan", tab_sub: "Подписка", lbl_sub_link: "Ссылка:", lbl_sub_action: "Действие:", opt_sub_import: "Импорт", opt_sub_provider: "Provider", btn_import: "ОК", btn_add_to_group: "Туннель", modal_edit_rule: "Edit Rule", confirm_delete: "Удалить?"
     },
-    uk: {
-        title: "Mihomo Studio",
-        save: "Зберегти",
-        restart: "Перезапуск",
-        panel: "Панель",
-        update_btn: "Перевірити оновлення",
-        restart_service: "Перезапуск",
-        profiles: "Профілі",
-        create: "Створити",
-        delete: "Видалити",
-        select: "",
-        download: "",
-        proxy_mgmt: "Керування",
-        add: "Додати",
-        edit: "Замінити",
-        rename: "Перейменувати",
-        backups: "Бекапи",
-        clean: "Очистити",
-        keep: "Залишити:",
-        theme_dark: "Темна",
-        theme_light: "Світла",
-        theme_midnight: "Північ",
-        theme_cyber: "Кібер",
-        toast_saved: "Успішно збережено",
-        toast_cleaned: "Очищено",
-        toast_deleted: "Видалено",
-        toast_restored: "Відновлено",
-        toast_added: "Додано",
-        toast_renamed: "Проксі перейменовано",
-        toast_updated: "Дані проксі оновлено",
-        toast_checking: "Перевірка оновлень...",
-        toast_restarting: "Перезапуск сервісу...",
-        confirm_switch: "Переключитися на профіль {0}?",
-        confirm_del_prof: "Видалити профіль {0}? Ця дія незворотна.",
-        confirm_del_bk: "Видалити бекап {0}?",
-        confirm_clean: "Залишити тільки {0} останніх бекапів?",
-        confirm_restore: "Відновити {0}? Поточний конфіг буде перезаписано.",
-        confirm_del_proxy: "Видалити?",
-        confirm_replace: "Замінити дані проксі '{0}'?",
-        confirm_update: "Перевірити оновлення та встановити?",
-        confirm_restart_service: "Перезапустити веб-сервіс Mihomo Studio?",
-        prompt_enter_name: "Введіть ім'я!",
-        error_invalid_name: "Неприпустиме ім'я!",
-        error_exists: "Профіль з таким ім'ям вже існує",
-        error_no_proxy_edit: "Виберіть проксі для редагування",
-        error_empty_wg: "Конфігурація WireGuard не може бути порожньою.",
-        alert_updating: "Оновлення запущено. Сервіс перезапускається...",
-        modal_add_proxy: "Додати проксі",
-        modal_edit_proxy: "Змінити проксі",
-        lbl_vless_link: "Посилання VLESS:",
-        lbl_proxy_name: "Ім'я проксі (необов'язково):",
-        lbl_wg_conf: "Конфігурація WireGuard:",
-        btn_add: "Додати",
-        btn_save: "Зберегти",
-        btn_cancel: "Скасувати",
-        btn_restore: "Відновити",
-        btn_close: "Закрити",
-        btn_update: "Оновити",
-        tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
-        lbl_select_edit: "Виберіть проксі для зміни:",
-        warn_edit: "Дані цього проксі будуть повністю замінені новими!",
-        modal_new_prof: "Новий профіль",
-        lbl_prof_name: "Ім'я (англ, без пробілів):",
-        lbl_content: "Вміст:",
-        btn_load_file: "Завантажити файл",
-        ph_paste_yaml: "Вставте YAML конфіг сюди...",
-        ph_auto_vless: "Автоматично з посилання",
-        ph_auto_wg: "Автоматично з Endpoint",
-        ph_paste_conf: "Вставте вміст .conf файлу сюди...",
-        modal_groups: "Додати в групи:",
-        btn_sel_all: "Обрати всі",
-        btn_sel_none: "Зняти всі",
-        modal_del_proxy: "Видалити проксі",
-        modal_ren_proxy: "Перейменувати проксі",
-        lbl_sel_ren: "Виберіть проксі для перейменування:",
-        lbl_new_name: "Нове ім'я:",
-        ph_new_name: "Введіть нове ім'я",
-        btn_rename: "Перейменувати",
-        modal_console: "Консоль",
-        modal_view_bk: "Перегляд бекапу",
-        log_loading: "Виконання xkeen -restart...",
-        last_load_lbl: "Завантажено: __TIME__",
-        last_saved: "Збережено:",
-        restart_service_short: "Перезапуск",
-        update_btn_short: "Оновити",
-        btn_ok: "ОК",
-        tab_yaml: "YAML Редактор",
-        tab_routes: "Маршрути",
-        tab_services: "Сервіси",
-        routes_title: "Розумні Маршрути",
-        routes_desc: "Створюйте пули балансування та розподіляйте проксі.",
-        routes_no_groups: "proxy-groups не знайдено в конфігу.",
-        routes_parse_err: "Помилка парсингу YAML: ",
-        rules_title: "Правила для сервісів",
-        rules_desc: "Керуйте напрямком трафіку для додатків.",
-        rules_no_rules: "rules не знайдено в конфігу.",
-        rules_count: "правил(а)",
-        btn_add_group: "Додати групу",
-        btn_add_rule: "Додати правило",
-        modal_edit_group: "Налаштування групи",
-        lbl_group_name: "Ім'я групи:",
-        lbl_group_type: "Тип:",
-        lbl_group_proxies: "Проксі та групи:",
-        lbl_rule_type: "Тип правила:",
-        lbl_rule_val: "Значення:",
-        lbl_rule_target: "Ціль (Група):",
-        tab_hysteria: "Hysteria 2",
-        tab_trojan: "Trojan",
-        tab_sub: "Підписка",
-        lbl_sub_link: "Посилання на підписку:",
-        lbl_sub_action: "Дія:",
-        opt_sub_import: "Разовий імпорт (у proxies)",
-        opt_sub_provider: "Proxy Provider (посиланням)",
-        btn_import: "Імпортувати",
-        btn_add_to_group: "Додати тунель",
-        modal_edit_rule: "Редагування правила",
-        confirm_delete: "Ви впевнені, що хочете видалити цей елемент?",
-        btn_yes: "Так",
-        btn_no: "Ні"
-    },
-    en: {
-        title: "Mihomo Studio",
-        save: "Save",
-        restart: "Restart",
-        panel: "Panel",
-        update_btn: "Check for updates",
-        restart_service: "Restart",
-        profiles: "Profiles",
-        create: "Create",
-        delete: "Delete",
-        select: "",
-        download: "",
-        proxy_mgmt: "Management",
-        add: "Add",
-        edit: "Replace",
-        rename: "Rename",
-        backups: "Backups",
-        clean: "Clean",
-        keep: "Keep:",
-        theme_dark: "Dark",
-        theme_light: "Light",
-        theme_midnight: "Midnight",
-        theme_cyber: "Cyber",
-        toast_saved: "Saved successfully",
-        toast_cleaned: "Cleaned",
-        toast_deleted: "Deleted",
-        toast_restored: "Restored",
-        toast_added: "Added",
-        toast_renamed: "Proxy renamed",
-        toast_updated: "Proxy data updated",
-        toast_checking: "Checking for updates...",
-        toast_restarting: "Restarting service...",
-        confirm_switch: "Switch to profile {0}?",
-        confirm_del_prof: "Delete profile {0}? This action is irreversible.",
-        confirm_del_bk: "Delete backup {0}?",
-        confirm_clean: "Keep only the last {0} backups?",
-        confirm_restore: "Restore {0}? Current config will be overwritten.",
-        confirm_del_proxy: "Delete?",
-        confirm_replace: "Replace data for proxy '{0}'?",
-        confirm_update: "Check for updates and install?",
-        confirm_restart_service: "Restart Mihomo Studio web service?",
-        prompt_enter_name: "Enter name!",
-        error_invalid_name: "Invalid name!",
-        error_exists: "Profile with this name already exists",
-        error_no_proxy_edit: "Select a proxy to edit",
-        error_empty_wg: "WireGuard configuration cannot be empty.",
-        alert_updating: "Update started. Service is restarting...",
-        modal_add_proxy: "Add Proxy",
-        modal_edit_proxy: "Edit Proxy",
-        lbl_vless_link: "VLESS Link:",
-        lbl_proxy_name: "Proxy Name (optional):",
-        lbl_wg_conf: "WireGuard Config:",
-        btn_add: "Add",
-        btn_save: "Save",
-        btn_cancel: "Cancel",
-        btn_restore: "Restore",
-        btn_close: "Close",
-        btn_update: "Update",
-        tab_vless: "VLESS",
-        tab_wg: "WireGuard|AmneziaWG",
-        lbl_select_edit: "Select proxy to replace:",
-        warn_edit: "This proxy's data will be fully replaced!",
-        modal_new_prof: "New Profile",
-        lbl_prof_name: "Name (English, no spaces):",
-        lbl_content: "Content:",
-        btn_load_file: "Upload File",
-        ph_paste_yaml: "Paste YAML config here...",
-        ph_auto_vless: "Automatically from link",
-        ph_auto_wg: "Automatically from Endpoint",
-        ph_paste_conf: "Paste .conf file content here...",
-        modal_groups: "Add to groups:",
-        btn_sel_all: "Select All",
-        btn_sel_none: "Select None",
-        modal_del_proxy: "Delete Proxy",
-        modal_ren_proxy: "Rename Proxy",
-        lbl_sel_ren: "Select proxy to rename:",
-        lbl_new_name: "New Name:",
-        ph_new_name: "Enter new name",
-        btn_rename: "Rename",
-        modal_console: "Console",
-        modal_view_bk: "View Backup",
-        log_loading: "Running xkeen -restart...",
-        last_load_lbl: "Loaded: __TIME__",
-        last_saved: "Saved:",
-        restart_service_short: "Restart",
-        update_btn_short: "Update",
-        btn_ok: "OK",
-        tab_yaml: "YAML Editor",
-        tab_routes: "Routes",
-        tab_services: "Services",
-        routes_title: "Smart Routes",
-        routes_desc: "Create balancing pools and distribute proxies.",
-        routes_no_groups: "No proxy-groups found in config.",
-        routes_parse_err: "YAML parse error: ",
-        rules_title: "Service Rules",
-        rules_desc: "Manage traffic direction for applications.",
-        rules_no_rules: "No rules found in config.",
-        rules_count: "rule(s)",
-        btn_add_group: "Add Group",
-        btn_add_rule: "Add Rule",
-        modal_edit_group: "Group Settings",
-        lbl_group_name: "Group Name:",
-        lbl_group_type: "Type:",
-        lbl_group_proxies: "Proxies & Groups:",
-        lbl_rule_type: "Rule Type:",
-        lbl_rule_val: "Value:",
-        lbl_rule_target: "Target (Group):",
-        tab_hysteria: "Hysteria 2",
-        tab_trojan: "Trojan",
-        tab_sub: "Subscription",
-        lbl_sub_link: "Subscription Link:",
-        lbl_sub_action: "Action:",
-        opt_sub_import: "One-time Import (to proxies)",
-        opt_sub_provider: "Proxy Provider (as link)",
-        btn_import: "Import",
-        btn_add_to_group: "Add Tunnel",
-        modal_edit_rule: "Edit Rule",
-        confirm_delete: "Are you sure you want to delete this item?",
-        btn_yes: "Yes",
-        btn_no: "No"
-    }
+    uk: { title: "Mihomo Studio", save: "Зберегти" },
+    en: { title: "Mihomo Studio", save: "Save" }
 };
 
-function t(k, ...args) {
-    let s = TR[currLang][k] || k;
-    args.forEach((a, i) => s = s.replace('{'+i+'}', a));
-    return s;
-}
+function t(k, ...args) { let s = (TR[currLang] && TR[currLang][k]) ? TR[currLang][k] : k; args.forEach((a, i) => s = s.replace('{'+i+'}', a)); return s; }
 
 function setLang(l) {
-    currLang = l;
-    localStorage.setItem(LANG_KEY, l);
-    document.getElementById('lang-sel').value = l;
+    currLang = l; localStorage.setItem(LANG_KEY, l);
+    var sel = document.getElementById('lang-sel'); if(sel) sel.value = l;
+    document.querySelectorAll('[data-i18n]').forEach(e => { let k = e.getAttribute('data-i18n'); if(TR[l] && TR[l][k]) e.innerText = TR[l][k]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(e => { let k = e.getAttribute('data-i18n-ph'); if(TR[l] && TR[l][k]) e.placeholder = TR[l][k]; });
+}
 
-    document.querySelectorAll('[data-i18n]').forEach(e => {
-        let k = e.getAttribute('data-i18n');
-        if(TR[l][k]) e.innerText = TR[l][k];
-    });
-    document.querySelectorAll('[data-i18n-ph]').forEach(e => {
-        let k = e.getAttribute('data-i18n-ph');
-        if(TR[l][k]) e.placeholder = TR[l][k];
-    });
-
-    if(isEditMode) document.getElementById('proxyModalTitle').innerText = TR[l].modal_edit_proxy;
-    else document.getElementById('proxyModalTitle').innerText = TR[l].modal_add_proxy;
-
-    var timeElem = document.getElementById('last-load');
-    var timeText = timeElem.innerText.split(': ')[1] || '';
-    if (timeText.includes('__TIME__')) timeText = ''; 
-    timeElem.innerText = (TR[l].last_load_lbl || 'Loaded: __TIME__').replace('__TIME__', timeText);
+function showToast(msg) {
+    const t = document.getElementById('toast'), m = document.getElementById('toast-msg');
+    if (!t || !m) return;
+    m.innerText = msg; t.style.display = 'flex';
+    setTimeout(() => t.style.display = 'none', 3000);
 }
 
 function switchMainTab(e, tabId) {
     document.querySelectorAll('.main-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    e.target.classList.add('active');
+    e.currentTarget.classList.add('active');
     document.getElementById(tabId).classList.add('active');
     if (tabId === 'tab-editor') ed.resize();
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
 }
 
+function switchTab(e, tabId) {
+    var p = e.target.parentElement;
+    p.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active');
+    p.parentElement.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    var target = document.getElementById(tabId);
+    if (target) target.classList.add('active');
+}
+
 function renderRoutes() {
-    var container = document.getElementById('routes-container');
-    var lib = window.jsyaml || window.YAML || window.yaml;
-    if (!lib) return;
-    var yamlText = ed.getValue();
+    var cont = document.getElementById('routes-container');
+    if (!cont) return;
+    var lib = window.jsyaml || window.YAML;
     try {
-        var data = lib.load ? lib.load(yamlText) : (lib.parse ? lib.parse(yamlText) : null);
-        if (!data || !data['proxy-groups']) { 
-            container.innerHTML = '<p style="color:var(--txt-mut)">' + t('routes_no_groups') + '</p>'; 
-            return; 
-        }
-        
-        var groups = data['proxy-groups'];
-        var html = '';
-        groups.forEach((g, idx) => {
-            var name = g.name || '?';
-            var type = g.type || '?';
-            var members = g.proxies || [];
-            
-            var typeBadge = type === 'url-test' ? 'Fastest' : type === 'fallback' ? 'Failover' : type === 'select' ? 'Manual' : type;
-            var badgeColor = type === 'url-test' ? 'var(--success)' : type === 'fallback' ? 'var(--warn, orange)' : 'var(--primary)';
-            
-            html += `<div class="card" data-idx="${idx}">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                    <div style="display:flex; align-items:center; min-width:0;">
-                        <div class="drag-handle" title="Drag to reorder">
-                            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
-                        </div>
-                        <div style="min-width:0;">
-                            <div style="font-size:14px; font-weight:700; color:var(--txt-main); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</div>
-                            <span style="display:inline-block; background:${badgeColor}; color:#fff; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase;">${typeBadge}</span>
-                        </div>
+        var data = lib.load(ed.getValue());
+        var groups = data['proxy-groups'] || [];
+        if (groups.length === 0) { cont.innerHTML = `<div class="empty-state">${t('routes_no_groups')}</div>`; return; }
+        cont.innerHTML = groups.map((g, i) => `
+            <div class="card" data-idx="${i}">
+                <div class="card-header">
+                    <div class="card-title-wrap">
+                        <span class="drag-handle"><svg viewBox="0 0 24 24" width="18"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/></svg></span>
+                        <span class="card-title">${g.name}</span>
+                        <span class="badge badge-${g.type}">${g.type}</span>
                     </div>
-                    <div style="display:flex; gap:4px;">
-                        <button onclick="openEditGroup('${name}')" class="btn-icon btn-ghost" title="Edit">
-                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button onclick="confirmDeleteGroup('${name}')" class="btn-icon btn-ghost" style="color:var(--danger);" title="Delete">
-                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
+                    <div class="card-actions">
+                        <button onclick="openAddTunnelToGroup('${g.name}')" class="btn-icon" title="${t('btn_add_to_group')}"><svg viewBox="0 0 24 24" width="16"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg></button>
+                        <button onclick="openEditGroup('${g.name}')" class="btn-icon"><svg viewBox="0 0 24 24" width="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg></button>
+                        <button onclick="confirmDeleteGroup('${g.name}')" class="btn-icon btn-icon-del"><svg viewBox="0 0 24 24" width="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg></button>
                     </div>
                 </div>
-                <div id="members-${idx}" class="members-grid" style="display:flex; flex-wrap:wrap; gap:6px; max-height:100px; overflow-y:auto; margin-bottom:12px; padding:4px; border:1px inset var(--bd-color); border-radius:4px;">`;
-            members.forEach((m, mIdx) => {
-                html += `<div class="member-item" data-idx="${mIdx}" data-group="${name}" style="background:var(--bg-app); border:1px solid var(--bd-color); padding:2px 8px; border-radius:4px; font-size:11px; color:var(--txt-sec); cursor:grab;">${m}</div>`;
-            });
-            html += `</div>
-                <button onclick="openAddTunnelToGroup('${name}')" class="btn-ghost" style="width:100%; font-size:11px; height:28px; border-style:dashed;">
-                    <svg class="ico" viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span data-i18n="btn_add_to_group">Добавить туннель</span>
-                </button>
-            </div>`;
-        });
-        container.innerHTML = html;
-
-        if (window.Sortable && groups.length > 0) {
-            Sortable.create(container, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
-                onEnd: function() {
-                    reorderGroups();
-                }
-            });
-            groups.forEach((g, gIdx) => {
-                Sortable.create(document.getElementById('members-'+gIdx), {
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    onEnd: function(evt) {
-                        reorderMembers(g.name, evt.to);
-                    }
-                });
+                <div class="card-body members-grid" data-group="${g.name}">
+                    ${(g.proxies || []).map(p => `<div class="member-item">${p}</div>`).join('')}
+                </div>
+            </div>
+        `).join('');
+        
+        if (window.Sortable) {
+            new Sortable(cont, { handle: '.drag-handle', animation: 150, onEnd: reorderGroups });
+            cont.querySelectorAll('.members-grid').forEach(el => {
+                new Sortable(el, { animation: 150, ghostClass: 'sortable-ghost', onEnd: () => reorderMembers(el.dataset.group, el) });
             });
         }
-    } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
-    }
+    } catch (e) { cont.innerHTML = `<div class="error-state">${t('routes_parse_err')} ${e.message}</div>`; }
 }
 
 function renderRules() {
-    var container = document.getElementById('rules-container');
-    var lib = window.jsyaml || window.YAML || window.yaml;
-    if (!lib) return;
-    var yamlText = ed.getValue();
+    var cont = document.getElementById('rules-container');
+    if (!cont) return;
+    var lib = window.jsyaml || window.YAML;
     try {
-        var data = lib.load ? lib.load(yamlText) : (lib.parse ? lib.parse(yamlText) : null);
-        if (!data || !data['rules']) { 
-            container.innerHTML = '<p style="color:var(--txt-mut)">' + t('rules_no_rules') + '</p>'; 
-            return; 
-        }
-        
-        var rules = data['rules'];
-        var html = '';
-        rules.forEach((val, idx) => {
-            if (typeof val !== 'string') return;
-            var parts = val.split(',');
-            var type = parts[0];
-            var value = parts.length > 2 ? parts[1] : '';
-            var target = parts[parts.length - 1];
-            
-            html += `<div class="card" data-idx="${idx}" style="padding:14px;">
-                <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px;">
-                    <div style="display:flex; align-items:center; min-width:0;">
-                        <div class="drag-handle" title="Drag to reorder">
-                            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+        var data = lib.load(ed.getValue());
+        var rules = data['rules'] || [];
+        var countEl = document.getElementById('rules-count');
+        if (countEl) countEl.innerText = rules.length;
+        if (rules.length === 0) { cont.innerHTML = `<div class="empty-state">${t('rules_no_rules')}</div>`; return; }
+        cont.innerHTML = rules.map((r, i) => {
+            var p = r.split(',');
+            var type = p[0], val = p.length > 2 ? p[1] : '', target = p[p.length - 1];
+            return `
+                <div class="card card-rule" data-idx="${i}">
+                    <div class="card-header">
+                        <div class="card-title-wrap">
+                            <span class="drag-handle-rule"><svg viewBox="0 0 24 24" width="18"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" fill="currentColor"/></svg></span>
+                            <span class="badge badge-rule">${type}</span>
+                            <span class="rule-val">${val}</span>
                         </div>
-                        <div style="min-width:0;">
-                           <div style="font-weight:700; font-size:13px; color:var(--txt-main); margin-bottom:2px;">${type}</div>
-                           <div style="font-size:11px; color:var(--primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">➔ ${target}</div>
+                        <div class="card-actions">
+                            <span class="badge badge-target">${target}</span>
+                            <button onclick="openEditRule(${i})" class="btn-icon"><svg viewBox="0 0 24 24" width="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg></button>
+                            <button onclick="confirmDeleteRule(${i})" class="btn-icon btn-icon-del"><svg viewBox="0 0 24 24" width="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg></button>
                         </div>
-                    </div>
-                    <div style="display:flex; gap:4px;">
-                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" title="Edit">
-                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);" title="Delete">
-                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
                     </div>
                 </div>
-                ${value ? `<div style="background:var(--bg-app); border:1px solid var(--bd-color); padding:4px 8px; border-radius:4px; font-family:monospace; font-size:11px; color:var(--txt-sec); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${value}</div>` : '<div style="height:23px;"></div>'}
-            </div>`;
-        });
-        container.innerHTML = html;
-
-        if (window.Sortable && rules.length > 0) {
-            Sortable.create(container, {
-                animation: 150,
-                handle: '.drag-handle',
-                ghostClass: 'sortable-ghost',
-                onEnd: function() {
-                    reorderRules();
-                }
-            });
+            `;
+        }).join('');
+        if (window.Sortable) {
+            new Sortable(cont, { handle: '.drag-handle-rule', animation: 150, onEnd: reorderRules });
         }
-    } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
-    }
-}
-
-function openPanel() {
-    var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
-    window.open(url, '_blank');
-}
-ed.setValue(initialConfig); ed.clearSelection();
-
-document.getElementById('vlessLink').addEventListener('input', function() {
-    if(isEditMode) return; 
-    var link = this.value;
-    if (link.startsWith("vless://") && link.includes("#")) {
-        var name = link.split('#')[1];
-        document.getElementById('vlessProxyName').value = decodeURIComponent(name).trim();
-    }
-});
-
-document.getElementById('wgConfig').addEventListener('input', function() {
-    if(isEditMode) return;
-    var conf = this.value;
-    var nameField = document.getElementById('wgProxyName');
-    var endpointMatch = conf.match(/Endpoint\s*=\s*(.+)/);
-    if (endpointMatch && endpointMatch[1]) {
-        var server = endpointMatch[1].split(':')[0].trim();
-        if (server) nameField.value = 'WG_' + server;
-    }
-});
-
-function closeM(i){document.getElementById(i).style.display='none'}
-function showToast(msg){ 
-    var tBox=document.getElementById('toast'); 
-    var tMsg=document.getElementById('toast-msg');
-    tMsg.innerText=msg||t('toast_saved'); 
-    tBox.style.display='flex'; 
-    setTimeout(()=>{tBox.style.display='none'}, 2500); 
-}
-
-async function switchProf() {
-    var p = document.getElementById('prof-sel').value;
-    if(!await ask(t('confirm_switch', p))) return;
-    var params = new URLSearchParams(); params.append('act', 'switch_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
-        if(d.error) await ask(d.error, false);
-        else window.location.reload();
-    });
-}
-function openAddProf() {
-    document.getElementById('np-name').value='';
-    document.getElementById('np-content').value='';
-    document.getElementById('m-add-prof').style.display='flex';
-}
-function loadProfFile(input) {
-    var f=input.files[0]; var r=new FileReader();
-    r.onload=function(e){document.getElementById('np-content').value = e.target.result};
-    r.readAsText(f); input.value='';
-}
-async function saveNewProf() {
-    var n = document.getElementById('np-name').value.trim();
-    var c = document.getElementById('np-content').value;
-    if(!n) return await ask(t('prompt_enter_name'), false);
-    if(!n.match(/^[a-zA-Z0-9_-]+$/)) return await ask(t('error_invalid_name'), false);
-    var params = new URLSearchParams(); params.append('act', 'add_prof'); params.append('name', n); params.append('content', c);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
-        if(d.error) await ask(d.error, false);
-        else { showToast(t('toast_saved')); setTimeout(()=>{window.location.reload()}, 500); }
-    });
-}
-async function delProf() {
-    var p = document.getElementById('prof-sel').value;
-    if(!p) return;
-    if(!await ask(t('confirm_del_prof', p))) return;
-    var params = new URLSearchParams(); params.append('act', 'del_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
-        if(d.error) await ask(d.error, false);
-        else { showToast(t('toast_deleted')); setTimeout(()=>{window.location.reload()}, 500); }
-    });
-}
-
-async function downloadProf() {
-    var sel = document.getElementById('prof-sel');
-    if (!sel.value) return;
-    var name = sel.value;
-    var params = new URLSearchParams();
-    params.append('act', 'get_prof_content');
-    params.append('name', name);
-    fetch('/', { method: 'POST', body: params })
-        .then(r => r.json())
-        .then(async d => {
-            if (d.error) {
-                await ask(d.error, false);
-            } else {
-                var a = document.createElement('a');
-                a.href = 'data:text/yaml;charset=utf-8,' + encodeURIComponent(d.content);
-                a.download = name + '.yaml';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                showToast('');
-            }
-        });
+    } catch (e) { cont.innerHTML = `<div class="error-state">${t('routes_parse_err')} ${e.message}</div>`; }
 }
 
 function fmtLog(raw) {
     if(!raw) return "Log empty";
     return raw.split('\n').map(l => {
         if(!l.trim()) return "";
-        l = l.replace(/\x1b\[32m/g, '<span class="log-green">')
-             .replace(/\x1b\[33m/g, '<span class="log-yellow">')
-             .replace(/\x1b\[0m/g, '</span>');
+        l = l.replace(/\x1b\[32m/g, '<span class="log-green">').replace(/\x1b\[33m/g, '<span class="log-yellow">').replace(/\x1b\[0m/g, '</span>');
         var m = l.match(/time="(.*?)"\s+level=(\w+)\s+msg="(.*)"/);
         if(m) {
             var ts = new Date(m[1]).toLocaleTimeString();
             var lvl = m[2].toUpperCase();
-            var txt = m[3];
-            var cls = 'log-info';
-            if(lvl==='WARN'||lvl==='WARNING') cls='log-warn';
-            if(lvl==='ERROR'||lvl==='FATAL') cls='log-err';
-            return `<div class="log-line"><span class="log-time">[${ts}]</span><span class="${cls}">[${lvl}]</span> ${txt}</div>`;
+            var cls = lvl==='WARN'||lvl==='WARNING' ? 'log-warn' : (lvl==='ERROR'||lvl==='FATAL'?'log-err':'log-info');
+            return `<div class="log-line"><span class="log-time">[${ts}]</span><span class="${cls}">[${lvl}]</span> ${m[3]}</div>`;
         }
         return `<div class="log-line">${l}</div>`;
     }).join('');
 }
 
 function setTheme(t) {
-    document.body.className = t;
-    localStorage.setItem(THM_KEY, t);
-    document.getElementById('theme-sel').value = t;
-    var aceT = 'ace/theme/monokai';
-    var edBg = '#18191a';
-    if(t === 'light') { aceT = 'ace/theme/chrome'; edBg = '#f0f2f5'; }
-    if(t === 'midnight') { aceT = 'ace/theme/tomorrow_night_blue'; edBg = '#0f172a'; }
-    if(t === 'cyber') { aceT = 'ace/theme/terminal'; edBg = '#000000'; }
+    document.body.className = t; localStorage.setItem(THM_KEY, t);
+    var sel = document.getElementById('theme-sel'); if(sel) sel.value = t;
+    var aceT = t==='light'?'ace/theme/chrome':(t==='midnight'?'ace/theme/tomorrow_night_blue':(t==='cyber'?'ace/theme/terminal':'ace/theme/monokai'));
+    var edBg = t==='light'?'#f0f2f5':(t==='midnight'?'#0f172a':(t==='cyber'?'#000000':'#18191a'));
     ed.setTheme(aceT);
     document.getElementById('ed').style.background = edBg;
-    document.getElementById('ed').style.backdropFilter = 'none';
 }
-var savedTheme = localStorage.getItem(THM_KEY) || 'dark';
-setTheme(savedTheme);
-
-var savedLang = localStorage.getItem(LANG_KEY) || 'ru';
-setLang(savedLang);
-
-var bkInp = document.getElementById('bk-lim');
-if(localStorage.getItem(LIM_KEY)) bkInp.value = localStorage.getItem(LIM_KEY);
-bkInp.addEventListener('change', function(){ localStorage.setItem(LIM_KEY, this.value); });
 
 function save(mode){
-    var c=ed.getValue();
-    var p=new URLSearchParams(); p.append('act', mode); p.append('content', c);
+    var p=new URLSearchParams(); p.append('act', mode); p.append('content', ed.getValue());
     if(mode==='restart') {
         document.getElementById('m-con').style.display='flex'; 
         document.getElementById('cons').innerHTML='<div style="padding:20px;text-align:center">' + t('log_loading') + '</div>';
@@ -1482,115 +980,50 @@ function save(mode){
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
         if(mode==='save'){
             showToast(t('toast_saved'));
-            document.getElementById('last-load').innerText = (TR[currLang].last_saved || 'Saved:') + " " + d.time;
+            var timeEl = document.getElementById('last-load');
+            if(timeEl) timeEl.innerText = (TR[currLang].last_saved || 'Saved:') + " " + d.time;
             if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
         } else {
-            var consoleDiv = document.getElementById('cons');
-            consoleDiv.innerHTML = fmtLog(d.log);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            var con = document.getElementById('cons');
+            con.innerHTML = fmtLog(d.log); con.scrollTop = con.scrollHeight;
         }
     }).catch(async e=>await ask("Error: "+e, false));
 }
 
-async function cleanBackups(){
-    var lim = document.getElementById('bk-lim').value;
-    if(!await ask(t('confirm_clean', lim))) return;
-    var p=new URLSearchParams(); p.append('act', 'clean_backups'); p.append('limit', lim);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
-        showToast(t('toast_cleaned'));
-        if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
-    });
-}
-
-async function delBackup(fname){
-    if(!await ask(t('confirm_del_bk', fname))) return;
-    var p=new URLSearchParams(); p.append('act', 'del_backup'); p.append('f', fname);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
-        showToast(t('toast_deleted'));
-        if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
-    });
-}
-
-async function viewBackup(fname) {
-    var p = new URLSearchParams();
-    p.append('act', 'view_backup');
-    p.append('f', fname);
-    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
-        if (d.error) {
-            await ask(d.error, false);
-        } else {
-            document.getElementById('bk-content').textContent = d.content;
-            document.getElementById('bk-restore-btn').onclick = function() { restoreBackup(fname) };
-            document.getElementById('m-view-bk').style.display = 'flex';
-        }
-    });
-}
-
-async function restoreBackup(fname){
-    if(!await ask(t('confirm_restore', fname))) return;
-    var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', fname);
-    fetch('/',{method:'POST',body:p}).then(r=>r.text()).then(()=>{
-        window.location.reload();
-    });
-}
-
 async function checkUpdates(isAuto = false) {
-    const p = new URLSearchParams(); p.append('act', 'check_update');
+    var p = new URLSearchParams(); p.append('act', 'check_update');
     try {
-        const r = await fetch('/', { method: 'POST', body: p });
-        const d = await r.json();
+        var r = await fetch('/', { method: 'POST', body: p });
+        var d = await r.json();
+        var btn = document.getElementById('update-btn');
         if (d.update === "true") {
-            document.getElementById('update-btn').classList.add('has-update');
-            if (!isAuto) {
-                updateStudio();
-            }
-        } else if (!isAuto) {
-            showToast(currLang === 'ru' ? 'У вас последняя версия' : 'Latest version installed');
-        }
-    } catch (e) {
-        console.error("Update check failed", e);
-    }
+            if(btn) btn.classList.add('has-update');
+            if (!isAuto) updateStudio();
+        } else if (!isAuto) showToast(t('toast_latest') || (currLang === 'ru' ? 'У вас последняя версия' : 'Latest version installed'));
+    } catch (e) { console.error("Update check failed", e); }
 }
 
 async function updateStudio() {
     if(!await ask(t('confirm_update'))) return;
     showToast(t('toast_checking'));
     var p = new URLSearchParams(); p.append('act', 'update_service');
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(async d => {
-            await ask(d.log, false, (currLang==='ru'?'Результат обновления':(currLang==='uk'?'Результат оновлення':'Update Result')));
-            if(d.log.includes("Установка завершена")) location.reload(); 
-        })
-        .catch(async e => {
-            await ask(t('alert_updating'), false);
-            setTimeout(() => location.reload(), 5000);
-        });
-}
-
-async function restartService() {
-    if(!await ask(t('confirm_restart_service'))) return;
-    showToast(t('toast_restarting'));
-    var p = new URLSearchParams(); p.append('act', 'restart_service');
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(d => {
-            setTimeout(() => location.reload(), 3000);
-        })
-        .catch(e => {
-            setTimeout(() => location.reload(), 3000);
-        });
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
+        await ask(d.log, false, t('update_result') || "Update Result");
+        if(d.log.includes("Установка завершена")) location.reload(); 
+    }).catch(async e => {
+        await ask(t('alert_updating'), false);
+        setTimeout(() => location.reload(), 5000);
+    });
 }
 
 function getProxiesList() {
-    var ls = ed.getValue().split(/\r?\n/);
-    var prs = [], inP = 0;
+    var ls = ed.getValue().split(/\r?\n/), prs = [], inP = 0;
     for (var l of ls) {
         if (l.match(/^proxies:/)) inP = 1;
-        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
+        else if (inP && l.match(/^[a-zA-Z]/)) inP = 0;
         if (inP) {
             var m = l.match(/^\s+-\s+name:\s+(.*)/);
-            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
+            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''));
         }
     }
     return prs;
@@ -1599,108 +1032,13 @@ function getProxiesList() {
 function openAddProxyModal() {
     isEditMode = false;
     document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
-    document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
-    document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
     document.getElementById('edit-proxy-container').style.display = 'none';
-    document.getElementById('vless-name-block').style.display = 'block';
-    document.getElementById('wg-name-block').style.display = 'block';
-
-    document.getElementById('vlessLink').value = '';
-    document.getElementById('vlessProxyName').value = '';
-    document.getElementById('wgConfig').value = '';
-    document.getElementById('wgProxyName').value = '';
-
+    ['vless-name-block', 'wg-name-block'].forEach(id => { var el = document.getElementById(id); if(el) el.style.display = 'block'; });
+    document.querySelectorAll('#addProxyModal input, #addProxyModal textarea').forEach(i => i.value = '');
     document.getElementById('addProxyModal').style.display = 'flex';
-}
-
-function openEditProxyModal() {
-    isEditMode = true;
-    document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy');
-    document.querySelector('[data-i18n="tab_vless"]').innerText = t('tab_vless');
-    document.querySelector('[data-i18n="tab_wg"]').innerText = t('tab_wg');
-    document.getElementById('edit-proxy-container').style.display = 'block';
-    document.getElementById('vless-name-block').style.display = 'none';
-    document.getElementById('wg-name-block').style.display = 'none';
-
-    var prs = getProxiesList();
-    var sel = document.getElementById('edit-proxy-sel');
-    sel.innerHTML = '';
-    if(prs.length === 0) {
-        var o = document.createElement('option');
-        o.text = "---";
-        sel.add(o);
-        sel.disabled = true;
-    } else {
-        sel.disabled = false;
-        prs.forEach(p => {
-            var o = document.createElement('option');
-            o.text = p;
-            sel.add(o);
-        });
-    }
-
-    document.getElementById('vlessLink').value = '';
-    document.getElementById('wgConfig').value = '';
-
-    document.getElementById('addProxyModal').style.display = 'flex';
-}
-
-function switchTab(evt, tabName) {
-    var i, tabcontent, tablinks;
-    tabcontent = document.getElementsByClassName("tab-content");
-    for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].classList.remove("active");
-    }
-    tablinks = document.getElementsByClassName("modal-tabs")[0].getElementsByTagName("button");
-    for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].classList.remove("active");
-    }
-    document.getElementById(tabName).classList.add("active");
-    evt.currentTarget.classList.add("active");
-}
-
-function loadWgFile(input) {
-    var f = input.files[0];
-    if (!f) return;
-    var r = new FileReader();
-    r.onload = function(e) {
-        var content = e.target.result;
-        document.getElementById('wgConfig').value = content;
-        document.getElementById('wgConfig').dispatchEvent(new Event('input'));
-    };
-    r.readAsText(f);
-    input.value = '';
 }
 
 async function addWireguard() {
-    var conf = document.getElementById('wgConfig').value;
-    var name = ''; 
-
-    if(isEditMode) {
-        name = document.getElementById('edit-proxy-sel').value;
-        if(!name || document.getElementById('edit-proxy-sel').disabled) return await ask(t('error_no_proxy_edit'), false);
-    } else {
-        name = document.getElementById('wgProxyName').value.trim();
-    }
-
-    if (!conf) return await ask(t('error_empty_wg'), false);
-
-    // AmneziaWG check
-    var awgOpts = null;
-    var jc = document.getElementById('awg-jc').value;
-    if (jc) {
-        awgOpts = {
-            jc: parseInt(jc),
-            jmin: parseInt(document.getElementById('awg-jmin').value) || 0,
-            jmax: parseInt(document.getElementById('awg-jmax').value) || 0,
-            s1: parseInt(document.getElementById('awg-s1').value) || 0,
-            s2: parseInt(document.getElementById('awg-s2').value) || 0,
-            h1: document.getElementById('awg-h1').value,
-            h2: document.getElementById('awg-h2').value,
-            h3: document.getElementById('awg-h3').value,
-            h4: document.getElementById('awg-h4').value
-        };
-    }
 
     var p = new URLSearchParams();
     p.append('act', 'add_wireguard');
@@ -2170,6 +1508,140 @@ async function deleteGroup(name) {
     }
 }
 
+function updateYamlPart(key, newData) {
+    var lib = window.jsyaml || window.YAML;
+    try {
+        var data = lib.load(ed.getValue()); data[key] = newData;
+        ed.setValue(lib.dump(data, { indent: 2, lineWidth: -1, noRefs: true }));
+        ed.clearSelection(); return true;
+    } catch(e) { ask("YAML Error: " + e.message, false); return false; }
+}
+
+function openEditGroup(name = "") {
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [], proxies = data['proxies'] || [], groupNames = groups.map(g => g.name);
+    var group = name ? groups.find(g => g.name === name) : null;
+    var title = document.getElementById('route-edit-title'); if(title) title.innerText = name ? t('modal_edit_group') : t('btn_add_group');
+    document.getElementById('rg-name').value = name || "";
+    document.getElementById('rg-type').value = group ? group.type : "select";
+    if(window.upRgType) window.upRgType();
+    
+    if (group && group.type === 'url-test') {
+        document.getElementById('rg-url').value = group.url || "http://www.gstatic.com/generate_204";
+        document.getElementById('rg-interval').value = group.interval || 300;
+    }
+    var list = document.getElementById('rg-proxies-list'); list.innerHTML = "";
+    var allOptions = [...proxies.map(p => p.name), ...groupNames];
+    allOptions.forEach(opt => {
+        if (opt === name) return;
+        var isChecked = group && group.proxies && group.proxies.includes(opt);
+        list.innerHTML += `<div class="g-item"><input type="checkbox" id="rgp_${opt}" value="${opt}" ${isChecked?'checked':''}><label for="rgp_${opt}">${opt}</label></div>`;
+    });
+    document.getElementById('m-route-edit').style.display = 'flex';
+}
+
+function saveGroup() {
+    var name = document.getElementById('rg-name').value.trim(), type = document.getElementById('rg-type').value;
+    if (!name) return ask(t('prompt_enter_name'), false);
+    var sel = []; document.querySelectorAll('#rg-proxies-list input:checked').forEach(c => sel.push(c.value));
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue()), groups = data['proxy-groups'] || [];
+    var newG = { name: name, type: type, proxies: sel };
+    if (type === 'url-test') {
+        newG.url = document.getElementById('rg-url').value;
+        newG.interval = parseInt(document.getElementById('rg-interval').value);
+    }
+    var idx = groups.findIndex(g => g.name === name);
+    if (idx > -1) groups[idx] = newG; else groups.push(newG);
+    if (updateYamlPart('proxy-groups', groups)) { closeM('m-route-edit'); renderRoutes(); showToast(t('toast_saved')); }
+}
+
+async function confirmDeleteGroup(name) { if (await ask(t('confirm_delete') + " (" + name + ")")) deleteGroup(name); }
+async function confirmDeleteRule(idx) { if (await ask(t('confirm_delete'))) deleteRule(idx); }
+
+function deleteRule(idx) {
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue()), rules = data['rules'] || [];
+    rules.splice(idx, 1);
+    if (updateYamlPart('rules', rules)) { renderRules(); showToast(t('toast_deleted')); }
+}
+
+function openEditRule(idx = -1) {
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue()), rules = data['rules'] || [];
+    var r = idx > -1 ? rules[idx] : "DOMAIN,,DIRECT", p = r.split(','), type = p[0], val = p.length > 2 ? p[1] : "", target = p[p.length - 1];
+    document.getElementById('rl-type').value = type; if(window.upRlType) window.upRlType();
+    document.getElementById('rl-val').value = val;
+    var sel = document.getElementById('rl-target'); sel.innerHTML = '';
+    var groups = (data['proxy-groups'] || []).map(g => g.name);
+    [...groups, 'DIRECT', 'REJECT'].forEach(g => { var o = document.createElement('option'); o.text = g; sel.add(o); });
+    sel.value = target; if(window.upRlTarget) window.upRlTarget();
+    document.querySelector('#m-rule-add h3').innerText = idx > -1 ? t('modal_edit_rule') : t('btn_add_rule');
+    document.querySelector('#m-rule-add .btn-success').onclick = () => saveRule(idx);
+    document.getElementById('m-rule-add').style.display = 'flex';
+}
+
+function saveRule(idx = -1) {
+    var type = document.getElementById('rl-type').value, val = document.getElementById('rl-val').value.trim(), target = document.getElementById('rl-target').value;
+    var rStr = type === 'MATCH' ? `MATCH,${target}` : `${type},${val},${target}`;
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue()), rules = data['rules'] || [];
+    if (idx > -1) rules[idx] = rStr; else rules.push(rStr);
+    if (updateYamlPart('rules', rules)) { closeM('m-rule-add'); renderRules(); showToast(t('toast_saved')); }
+}
+
+function openPanel() { document.getElementById('m-add-prof').style.display='flex'; }
+function loadProfFile(input) {
+    var f=input.files[0]; if(!f) return;
+    var r=new FileReader(); r.onload=e=>document.getElementById('np-content').value = e.target.result;
+    r.readAsText(f); input.value='';
+}
+async function saveNewProf() {
+    var n = document.getElementById('np-name').value.trim(), c = document.getElementById('np-content').value;
+    if(!n) return ask(t('prompt_enter_name'), false);
+    var p = new URLSearchParams(); p.append('act', 'add_prof'); p.append('name', n); p.append('content', c);
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(async d=>{
+        if(d.error) await ask(d.error, false);
+        else { showToast(t('toast_saved')); location.reload(); }
+    });
+}
+async function delProf() {
+    var p = document.getElementById('prof-sel').value; if(!p || !await ask(t('confirm_del_prof', p))) return;
+    var pr = new URLSearchParams(); pr.append('act', 'del_prof'); pr.append('name', p);
+    fetch('/',{method:'POST',body:pr}).then(r=>r.json()).then(async d=>{
+        if(d.error) await ask(d.error, false); else { showToast(t('toast_deleted')); location.reload(); }
+    });
+}
+async function downloadProf() {
+    var name = document.getElementById('prof-sel').value; if(!name) return;
+    var p = new URLSearchParams(); p.append('act', 'get_prof_content'); p.append('name', name);
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
+        if (d.error) await ask(d.error, false);
+        else {
+            var a = document.createElement('a'); a.href = 'data:text/yaml;charset=utf-8,' + encodeURIComponent(d.content);
+            a.download = name + '.yaml'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+    });
+}
+async function cleanBackups() {
+    var lim = document.getElementById('bk-lim').value; if(!await ask(t('confirm_clean', lim))) return;
+    var p=new URLSearchParams(); p.append('act', 'clean_backups'); p.append('limit', lim);
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{ showToast(t('toast_cleaned')); if(d.backups) document.getElementById('bk-list').innerHTML = d.backups; });
+}
+async function delBackup(fname) {
+    if(!await ask(t('confirm_del_bk', fname))) return;
+    var p=new URLSearchParams(); p.append('act', 'del_backup'); p.append('f', fname);
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{ showToast(t('toast_deleted')); if(d.backups) document.getElementById('bk-list').innerHTML = d.backups; });
+}
+async function viewBackup(fname) {
+    var p = new URLSearchParams(); p.append('act', 'view_backup'); p.append('f', fname);
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
+        if (d.error) await ask(d.error, false);
+        else { document.getElementById('bk-content').textContent = d.content; document.getElementById('bk-restore-btn').onclick = () => restoreBackup(fname); document.getElementById('m-view-bk').style.display = 'flex'; }
+    });
+}
+async function restoreBackup(fname) {
+    if(!await ask(t('confirm_restore', fname))) return;
+    var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', fname);
+    fetch('/',{method:'POST',body:p}).then(()=>location.reload());
+}
+
 function showRename() {
     var prs = getProxiesList();
     var s = document.getElementById('sel-ren-proxy');
@@ -2186,14 +1658,8 @@ function showRename() {
 async function doRename() {
     var oldName = document.getElementById('sel-ren-proxy').value;
     var newName = document.getElementById('inp-ren-newname').value.trim();
-    if (!newName) {
-        await ask("Новое имя не может быть пустым.", false);
-        return;
-    }
-    if (!oldName) {
-        await ask("Прокси не выбран.", false);
-        return;
-    }
+    if (!newName) { await ask("Новое имя не может быть пустым.", false); return; }
+    if (!oldName) { await ask("Прокси не выбран.", false); return; }
 
     var content = ed.getValue();
     var params = new URLSearchParams();
