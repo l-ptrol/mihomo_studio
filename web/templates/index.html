@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.0</title>
+<title>Mihomo Studio v2.1.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -90,9 +90,11 @@ body {
     gap: 16px; flex-wrap: wrap;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; }
-.logo { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
-.badge { color: var(--txt-mut); font-size: 11px; background: var(--bg-app); padding: 3px 6px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo-svg { width: 32px; height: 32px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+.brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+.brand-name { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; color: var(--txt-main); margin: 0; }
+.brand-version { font-size: 10px; font-weight: 600; color: var(--txt-mut); opacity: 0.8; }
 
 .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
@@ -258,14 +260,27 @@ button:active { transform: scale(0.97); }
 <body>
 <div class="toast" id="toast"><span class="toast-icon"></span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
 
-<div class="app-header">
+<header class="app-header">
     <div class="brand">
-        <div class="logo">Mihomo Studio</div>
-        <span class="badge">v2.1 Go</span>
-        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-left: 8px;">Loaded: __TIME__</div>
+        <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="url(#logo_grad)"/>
+            <path d="M9 22V10L16 16L23 10V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 16V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+            <defs>
+                <linearGradient id="logo_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="var(--primary)"/>
+                    <stop offset="1" stop-color="var(--primary-h)"/>
+                </linearGradient>
+            </defs>
+        </svg>
+        <div class="brand-text">
+            <div class="brand-name">Mihomo Studio</div>
+            <div class="brand-version">v2.1.1</div>
+        </div>
     </div>
     
     <div class="header-actions">
+        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 8px;">Loaded: __TIME__</div>
         <div class="row" style="background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); gap: 4px;">
             <div class="cs-wrap" id="cs-lang" style="width: 70px;">
                 <select id="lang-sel" onchange="setLang(this.value)" style="display:none">
