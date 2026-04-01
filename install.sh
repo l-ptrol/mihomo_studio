@@ -8,6 +8,7 @@ BRANCH="test-go"
 REPO="l-ptrol/mihomo_studio"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 RAW_BASE="${BASE_URL}/dist"
+T_STAMP=$(date +%s)
 
 INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
@@ -41,19 +42,24 @@ detect_arch() {
     esac
 }
 
-# === Скачивание с retry ===
+# === Скачивание с автовыбором curl/wget ===
 download_file() {
     url="$1"
     dest="$2"
-    retries=3
-    i=0
-    while [ $i -lt $retries ]; do
-        if wget --no-check-certificate -O "$dest" "$url" 2>/dev/null; then
+    
+    # Try CURL first
+    if command -v curl >/dev/null 2>&1; then
+        if curl -sL -A "Mozilla/5.0" --connect-timeout 10 "$url" -o "$dest"; then
             return 0
         fi
-        i=$((i + 1))
-        sleep 2
-    done
+    fi
+
+    # Try WGET fallback
+    if command -v wget >/dev/null 2>&1; then
+        if wget -q --no-check-certificate --timeout=15 "$url" -O "$dest"; then
+            return 0
+        fi
+    fi
     return 1
 }
 
@@ -82,7 +88,7 @@ mkdir -p "${MIHOMO_ETC_DIR}/backup"
 BINARY_NAME="mhstudio-${TARGET_ARCH}"
 echo ">>> Скачивание бинарника ${BINARY_NAME}..."
 
-if ! download_file "${RAW_BASE}/${BINARY_NAME}" "/opt/bin/mhstudio"; then
+if ! download_file "${RAW_BASE}/${BINARY_NAME}?t=${T_STAMP}" "/opt/bin/mhstudio"; then
     echo "Не удалось скачать бинарник из папки dist/."
     echo "Попробуйте собрать вручную: go build ./cmd/server"
     exit 1
