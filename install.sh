@@ -7,7 +7,7 @@ set -e
 BRANCH="test-go"
 REPO="l-ptrol/mihomo_studio"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
-RAW_BASE="https://github.com/${REPO}/releases/download/v2.1.0"
+RAW_BASE="${BASE_URL}/dist"
 
 INSTALL_DIR="/opt/scripts"
 INIT_DIR="/opt/etc/init.d"
@@ -83,7 +83,7 @@ BINARY_NAME="mhstudio-${TARGET_ARCH}"
 echo ">>> Скачивание бинарника ${BINARY_NAME}..."
 
 if ! download_file "${RAW_BASE}/${BINARY_NAME}" "/opt/bin/mhstudio"; then
-    echo "Не удалось скачать бинарник с Releases."
+    echo "Не удалось скачать бинарник из папки dist/."
     echo "Попробуйте собрать вручную: go build ./cmd/server"
     exit 1
 fi
