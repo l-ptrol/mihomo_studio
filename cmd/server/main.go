@@ -18,7 +18,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.1.6"
+var Version = "2.1.7"
 
 func main() {
 	fStop := flag.Bool("stop", false, "Stop the server")

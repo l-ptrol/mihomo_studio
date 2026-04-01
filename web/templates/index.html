@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.6</title>
+<title>Mihomo Studio v2.1.7</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -288,6 +288,13 @@ button:active { transform: scale(0.97); }
 .tab-pane { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
 .tab-pane.active { display: flex; }
 
+.builder-se.card { background:var(--bg-card); border:1px solid var(--bd-color); border-radius:var(--radius-md); padding:16px; transition: var(--transit); position: relative; }
+.card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
+.drag-handle:active { cursor: grabbing; }
+.sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
+
 .builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
 
 @media (max-width: 768px) {
@@ -318,7 +325,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.6</div>
+            <div class="brand-version">v2.1.7</div>
         </div>
     </div>
     
@@ -394,8 +401,8 @@ button:active { transform: scale(0.97); }
                        <span data-i18n="btn_add_group">Добавить группу</span>
                    </button>
                 </div>
-                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="routes_desc">Создавайте пулы балансировки и распределяйте прокси.</p>
-                <div id="routes-container">Загрузка...</div>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 20px;" data-i18n="routes_desc">Создавайте пулы балансировки и распределяйте прокси.</p>
+                <div id="routes-container" class="grid-cards">Загрузка...</div>
             </div>
         </div>
         
@@ -409,7 +416,7 @@ button:active { transform: scale(0.97); }
                    </button>
                 </div>
                 <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="rules_desc">Управляйте направлением трафика для приложений.</p>
-                <div id="rules-container">Загрузка...</div>
+                <div id="rules-container" class="grid-cards">Загрузка...</div>
             </div>
         </div>
     </div>
@@ -547,16 +554,11 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="addProxyModal" class="ovl"><div class="mod">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd-color); padding-bottom:15px; margin-bottom:20px;">
-       <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;" data-i18n="modal_add_proxy">Добавить прокси</h3>
-       <button onclick="closeM('addProxyModal')" class="btn-icon btn-ghost" style="border-radius: 50%;">
-          <svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-       </button>
-    </div>
-
-    <div id="edit-proxy-container" style="display:none; margin-bottom:15px;">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
+<div id="addProxyModal" class="ovl"><div class="mod" style="width:500px; max-width:95vw;">
+    <h3 id="proxyModalTitle" data-i18n="modal_add_proxy">Добавить туннель</h3>
+    
+    <div id="edit-proxy-container" style="margin-bottom:15px; display:none;">
+        <label class="card-title" data-i18n="lbl_edit_target">Редактируемый прокси:</label>
         <div class="cs-wrap" id="cs-edit-m">
             <select id="edit-proxy-sel" style="display:none"></select>
             <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
@@ -888,7 +890,20 @@ const TR = {
         lbl_group_proxies: "Прокси и группы:",
         lbl_rule_type: "Тип правила:",
         lbl_rule_val: "Значение:",
-        lbl_rule_target: "Цель (Группа):"
+        lbl_rule_target: "Цель (Группа):",
+        tab_hysteria: "Hysteria 2",
+        tab_trojan: "Trojan",
+        tab_sub: "Подписка",
+        lbl_sub_link: "Ссылка на подписку:",
+        lbl_sub_action: "Действие:",
+        opt_sub_import: "Разовый импорт (в proxies)",
+        opt_sub_provider: "Proxy Provider (ссылкой)",
+        btn_import: "Импортировать",
+        btn_add_to_group: "Добавить туннель",
+        modal_edit_rule: "Редактирование правила",
+        confirm_delete: "Вы уверены, что хотите удалить этот элемент?",
+        btn_yes: "Да",
+        btn_no: "Нет"
     },
     uk: {
         title: "Mihomo Studio",
@@ -996,7 +1011,20 @@ const TR = {
         lbl_group_proxies: "Проксі та групи:",
         lbl_rule_type: "Тип правила:",
         lbl_rule_val: "Значення:",
-        lbl_rule_target: "Ціль (Група):"
+        lbl_rule_target: "Ціль (Група):",
+        tab_hysteria: "Hysteria 2",
+        tab_trojan: "Trojan",
+        tab_sub: "Підписка",
+        lbl_sub_link: "Посилання на підписку:",
+        lbl_sub_action: "Дія:",
+        opt_sub_import: "Разовий імпорт (у proxies)",
+        opt_sub_provider: "Proxy Provider (посиланням)",
+        btn_import: "Імпортувати",
+        btn_add_to_group: "Додати тунель",
+        modal_edit_rule: "Редагування правила",
+        confirm_delete: "Ви впевнені, що хочете видалити цей елемент?",
+        btn_yes: "Так",
+        btn_no: "Ні"
     },
     en: {
         title: "Mihomo Studio",
@@ -1104,7 +1132,20 @@ const TR = {
         lbl_group_proxies: "Proxies & Groups:",
         lbl_rule_type: "Rule Type:",
         lbl_rule_val: "Value:",
-        lbl_rule_target: "Target (Group):"
+        lbl_rule_target: "Target (Group):",
+        tab_hysteria: "Hysteria 2",
+        tab_trojan: "Trojan",
+        tab_sub: "Subscription",
+        lbl_sub_link: "Subscription Link:",
+        lbl_sub_action: "Action:",
+        opt_sub_import: "One-time Import (to proxies)",
+        opt_sub_provider: "Proxy Provider (as link)",
+        btn_import: "Import",
+        btn_add_to_group: "Add Tunnel",
+        modal_edit_rule: "Edit Rule",
+        confirm_delete: "Are you sure you want to delete this item?",
+        btn_yes: "Yes",
+        btn_no: "No"
     }
 };
 
@@ -1133,7 +1174,7 @@ function setLang(l) {
 
     var timeElem = document.getElementById('last-load');
     var timeText = timeElem.innerText.split(': ')[1] || '';
-    if (timeText.includes('__TIME__')) timeText = ''; // Первичный запуск
+    if (timeText.includes('__TIME__')) timeText = ''; 
     timeElem.innerText = (TR[l].last_load_lbl || 'Loaded: __TIME__').replace('__TIME__', timeText);
 }
 
@@ -1161,7 +1202,7 @@ function renderRoutes() {
         
         var groups = data['proxy-groups'];
         var html = '';
-        groups.forEach((g) => {
+        groups.forEach((g, idx) => {
             var name = g.name || '?';
             var type = g.type || '?';
             var members = g.proxies || [];
@@ -1169,28 +1210,58 @@ function renderRoutes() {
             var typeBadge = type === 'url-test' ? 'Fastest' : type === 'fallback' ? 'Failover' : type === 'select' ? 'Manual' : type;
             var badgeColor = type === 'url-test' ? 'var(--success)' : type === 'fallback' ? 'var(--warn, orange)' : 'var(--primary)';
             
-            html += `<div class="card" style="margin-bottom:12px; padding:12px; background:var(--bg-app);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <strong style="font-size:14px; color:var(--txt-main);">${name}</strong>
-                        <span style="background:${badgeColor}; color:#fff; padding:1px 6px; border-radius:10px; font-size:10px; font-weight:700; text-transform:uppercase;">${typeBadge}</span>
+            html += `<div class="card" data-idx="${idx}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; min-width:0;">
+                        <div class="drag-handle" title="Drag to reorder">
+                            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="font-size:14px; font-weight:700; color:var(--txt-main); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${name}</div>
+                            <span style="display:inline-block; background:${badgeColor}; color:#fff; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase;">${typeBadge}</span>
+                        </div>
                     </div>
-                    <div style="display:flex; gap:6px;">
-                        <button onclick="openEditGroup('${name}')" class="btn-icon btn-ghost" style="width:28px; height:28px;" title="Edit">
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="openEditGroup('${name}')" class="btn-icon btn-ghost" title="Edit">
                             <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button onclick="deleteGroup('${name}')" class="btn-icon btn-ghost" style="width:28px; height:28px; color:var(--danger);" title="Delete">
+                        <button onclick="confirmDeleteGroup('${name}')" class="btn-icon btn-ghost" style="color:var(--danger);" title="Delete">
                             <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:4px;">`;
-            members.forEach(m => {
-                html += `<span style="background:var(--bg-card); border:1px solid var(--bd-color); padding:2px 8px; border-radius:4px; font-size:11px; color:var(--txt-sec);">${m}</span>`;
+                <div id="members-${idx}" class="members-grid" style="display:flex; flex-wrap:wrap; gap:6px; max-height:100px; overflow-y:auto; margin-bottom:12px; padding:4px; border:1px inset var(--bd-color); border-radius:4px;">`;
+            members.forEach((m, mIdx) => {
+                html += `<div class="member-item" data-idx="${mIdx}" data-group="${name}" style="background:var(--bg-app); border:1px solid var(--bd-color); padding:2px 8px; border-radius:4px; font-size:11px; color:var(--txt-sec); cursor:grab;">${m}</div>`;
             });
-            html += '</div></div>';
+            html += `</div>
+                <button onclick="openAddTunnelToGroup('${name}')" class="btn-ghost" style="width:100%; font-size:11px; height:28px; border-style:dashed;">
+                    <svg class="ico" viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span data-i18n="btn_add_to_group">Добавить туннель</span>
+                </button>
+            </div>`;
         });
         container.innerHTML = html;
+
+        if (window.Sortable && groups.length > 0) {
+            Sortable.create(container, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                onEnd: function() {
+                    reorderGroups();
+                }
+            });
+            groups.forEach((g, gIdx) => {
+                Sortable.create(document.getElementById('members-'+gIdx), {
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function(evt) {
+                        reorderMembers(g.name, evt.to);
+                    }
+                });
+            });
+        }
     } catch(e) {
         container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
     }
@@ -1209,7 +1280,7 @@ function renderRules() {
         }
         
         var rules = data['rules'];
-        var html = '<div id="rules-list" style="display:flex; flex-direction:column; gap:8px;">';
+        var html = '';
         rules.forEach((val, idx) => {
             if (typeof val !== 'string') return;
             var parts = val.split(',');
@@ -1217,28 +1288,35 @@ function renderRules() {
             var value = parts.length > 2 ? parts[1] : '';
             var target = parts[parts.length - 1];
             
-            html += `<div class="rule-item card" data-idx="${idx}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-app); cursor:grab;">
-                <div style="display:flex; align-items:center; gap:12px; min-width:0;">
-                    <svg class="ico" viewBox="0 0 24 24" style="width:16px; height:16px; color:var(--txt-mut); flex-shrink:0;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                    <div style="min-width:0;">
-                       <div style="font-weight:700; font-size:13px; color:var(--txt-main); display:flex; align-items:center; gap:6px;">
-                          <span>${type}</span>
-                          ${value ? `<span style="font-weight:400; color:var(--txt-mut); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${value}</span>` : ''}
-                       </div>
-                       <div style="font-size:11px; color:var(--primary); font-weight:600;">➔ ${target}</div>
+            html += `<div class="card" data-idx="${idx}" style="padding:14px;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; min-width:0;">
+                        <div class="drag-handle" title="Drag to reorder">
+                            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                        </div>
+                        <div style="min-width:0;">
+                           <div style="font-weight:700; font-size:13px; color:var(--txt-main); margin-bottom:2px;">${type}</div>
+                           <div style="font-size:11px; color:var(--primary); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">➔ ${target}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" title="Edit">
+                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);" title="Delete">
+                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                     </div>
                 </div>
-                <button onclick="deleteRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px; color:var(--danger); flex-shrink:0;">
-                    <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
+                ${value ? `<div style="background:var(--bg-app); border:1px solid var(--bd-color); padding:4px 8px; border-radius:4px; font-family:monospace; font-size:11px; color:var(--txt-sec); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${value}</div>` : '<div style="height:23px;"></div>'}
             </div>`;
         });
-        html += '</div>';
         container.innerHTML = html;
 
         if (window.Sortable && rules.length > 0) {
-            Sortable.create(document.getElementById('rules-list'), {
+            Sortable.create(container, {
                 animation: 150,
+                handle: '.drag-handle',
                 ghostClass: 'sortable-ghost',
                 onEnd: function() {
                     reorderRules();
@@ -1607,23 +1685,43 @@ async function addWireguard() {
 
     if (!conf) return await ask(t('error_empty_wg'), false);
 
+    // AmneziaWG check
+    var awgOpts = null;
+    var jc = document.getElementById('awg-jc').value;
+    if (jc) {
+        awgOpts = {
+            jc: parseInt(jc),
+            jmin: parseInt(document.getElementById('awg-jmin').value) || 0,
+            jmax: parseInt(document.getElementById('awg-jmax').value) || 0,
+            s1: parseInt(document.getElementById('awg-s1').value) || 0,
+            s2: parseInt(document.getElementById('awg-s2').value) || 0,
+            h1: document.getElementById('awg-h1').value,
+            h2: document.getElementById('awg-h2').value,
+            h3: document.getElementById('awg-h3').value,
+            h4: document.getElementById('awg-h4').value
+        };
+    }
+
     var p = new URLSearchParams();
     p.append('act', 'add_wireguard');
     p.append('config_text', conf);
     if (name) p.append('proxy_name', name);
-
+    // If AWG, we might need a custom backend act or just inject fields after receiving YAML
+    
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
         .then(async d => {
             if (d.error) {
                 await ask(d.error, false);
             } else {
+                var lib = window.jsyaml || window.YAML;
+                var finalProxy = lib.load(d.yaml);
+                if (awgOpts) finalProxy['amnezia-wg-option'] = awgOpts;
+                
                 if(isEditMode) {
-                   replaceProxyData(name, d.yaml);
+                    replaceProxyData(name, lib.dump(finalProxy));
                 } else {
-                   pData = d;
-                   closeM('addProxyModal');
-                   showG();
+                    injectProxy(finalProxy);
                 }
             }
         });
@@ -1844,40 +1942,43 @@ function saveGroup() {
     }
 }
 
-async function deleteGroup(name) {
-    if (!await ask(t('confirm_del_proxy') + " " + name)) return;
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var groups = data['proxy-groups'] || [];
-    var newGroups = groups.filter(g => g.name !== name);
-    
-    if (updateYamlPart('proxy-groups', newGroups)) {
-        renderRoutes();
-        showToast(t('toast_deleted'));
-    }
+async function confirmDeleteGroup(name) {
+    if (!await ask(t('confirm_delete') + " (" + name + ")")) return;
+    deleteGroup(name);
 }
 
-// RULES LOGIC
-function openAddRule() {
+async function confirmDeleteRule(idx) {
+    if (!await ask(t('confirm_delete'))) return;
+    deleteRule(idx);
+}
+
+function openEditRule(idx) {
     var lib = window.jsyaml || window.YAML;
     var data = lib.load(ed.getValue());
-    var groups = data['proxy-groups'] || [];
+    var rules = data['rules'] || [];
+    var rule = rules[idx];
+    if (!rule) return;
     
-    var sel = document.getElementById('rl-target');
-    sel.innerHTML = "";
-    groups.forEach(g => {
-        var o = document.createElement('option');
-        o.value = g.name;
-        o.text = g.name;
-        sel.add(o);
-    });
+    var parts = rule.split(',');
+    var type = parts[0];
+    var val = parts.length > 2 ? parts[1] : "";
+    var target = parts[parts.length - 1];
+    
+    document.getElementById('rl-type').value = type;
+    document.getElementById('rl-type').dispatchEvent(new Event('change'));
+    document.getElementById('rl-val').value = val;
+    
+    openAddRule(); // Reuses modal logic for targets setup
+    document.querySelector('#m-rule-add h3').innerText = t('modal_edit_rule');
+    document.getElementById('rl-target').value = target;
     if (upRlTarget) upRlTarget();
     
-    document.getElementById('rl-val').value = "";
-    document.getElementById('m-rule-add').style.display = 'flex';
+    // Override save button for edit mode
+    var saveBtn = document.querySelector('#m-rule-add .btn-success');
+    saveBtn.onclick = function() { saveRule(idx); };
 }
 
-function saveRule() {
+function saveRule(editIdx = -1) {
     var type = document.getElementById('rl-type').value;
     var val = document.getElementById('rl-val').value.trim();
     var target = document.getElementById('rl-target').value;
@@ -1887,31 +1988,147 @@ function saveRule() {
     var lib = window.jsyaml || window.YAML;
     var data = lib.load(ed.getValue());
     var rules = data['rules'] || [];
-    rules.push(ruleStr);
+    
+    if (editIdx > -1) rules[editIdx] = ruleStr;
+    else rules.push(ruleStr);
     
     if (updateYamlPart('rules', rules)) {
         closeM('m-rule-add');
         renderRules();
+        showToast(t('toast_saved'));
+    }
+}
+
+// New Protocols
+function addHysteria2() {
+    var name = document.getElementById('hy2Name').value.trim();
+    var server = document.getElementById('hy2Server').value.trim();
+    var port = parseInt(document.getElementById('hy2Port').value);
+    var pass = document.getElementById('hy2Pass').value;
+    var sni = document.getElementById('hy2Sni').value;
+    var obfs = document.getElementById('hy2ObfsPass').value;
+    
+    if (!name || !server) return ask(t('prompt_enter_name'), false);
+    
+    var proxy = {
+        name: name,
+        type: 'hysteria2',
+        server: server,
+        port: port,
+        password: pass,
+        sni: sni,
+        up: '100 Mbps',
+        down: '100 Mbps'
+    };
+    if (obfs) {
+        proxy.obfs = 'salamander';
+        proxy['obfs-password'] = obfs;
+    }
+    
+    injectProxy(proxy);
+}
+
+function addTrojan() {
+    var name = document.getElementById('trName').value.trim();
+    var server = document.getElementById('trServer').value.trim();
+    var port = parseInt(document.getElementById('trPort').value);
+    var pass = document.getElementById('trPass').value;
+    
+    if (!name || !server) return ask(t('prompt_enter_name'), false);
+    
+    var proxy = {
+        name: name,
+        type: 'trojan',
+        server: server,
+        port: port,
+        password: pass,
+        sni: server,
+        udp: true
+    };
+    
+    injectProxy(proxy);
+}
+
+function injectProxy(newProxy) {
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var proxies = data['proxies'] || [];
+    
+    var idx = proxies.findIndex(p => p.name === newProxy.name);
+    if (idx > -1) proxies[idx] = newProxy;
+    else proxies.push(newProxy);
+    
+    if (updateYamlPart('proxies', proxies)) {
+        closeM('addProxyModal');
         showToast(t('toast_added'));
     }
 }
 
-async function deleteRule(idx) {
-    if (!await ask(t('confirm_del_proxy'))) return;
+function processSubscription() {
+    var link = document.getElementById('subLink').value.trim();
+    var mode = document.getElementById('subMode').value;
+    if (!link) return;
+    
+    if (mode === 'provider') {
+        addProxyProvider(link);
+    } else {
+        // Simple Link Parser (Placeholder for now, just adds as a single proxy if supported)
+        ask("One-time import logic requires backend/library support. Adding as Provider instead.", false);
+        addProxyProvider(link);
+    }
+}
+
+function addProxyProvider(link) {
     var lib = window.jsyaml || window.YAML;
     var data = lib.load(ed.getValue());
-    var rules = data['rules'] || [];
-    rules.splice(idx, 1);
+    if (!data['proxy-providers']) data['proxy-providers'] = {};
     
-    if (updateYamlPart('rules', rules)) {
-        renderRules();
-        showToast(t('toast_deleted'));
-    }
+    var name = "Sub_" + Math.floor(Math.random()*1000);
+    data['proxy-providers'][name] = {
+        type: 'http',
+        url: link,
+        interval: 3600,
+        path: `./providers/${name}.yaml`,
+        health_check: { enable: true, interval: 600, url: 'http://www.gstatic.com/generate_204' }
+    };
+    
+    var newYaml = lib.dump(data, { indent: 2 });
+    ed.setValue(newYaml);
+    closeM('addProxyModal');
+    showToast(t('toast_added'));
+}
+
+function openAddTunnelToGroup(routeName) {
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var proxies = (data['proxies'] || []).map(p => p.name);
+    var groups = (data['proxy-groups'] || []).map(g => g.name);
+    
+    var all = [...proxies, ...groups].filter(n => n !== routeName);
+    
+    // Open the route edit modal with pre-filled name and focused on proxies list
+    openEditGroup(routeName);
+    document.getElementById('rg-filter').focus();
+}
+
+function reorderGroups() {
+    var newOrder = [];
+    document.querySelectorAll('#routes-container > .card').forEach(el => {
+        newOrder.push(parseInt(el.getAttribute('data-idx')));
+    });
+    
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    var reordered = newOrder.map(i => groups[i]);
+    
+    updateYamlPart('proxy-groups', reordered);
+    renderRoutes();
 }
 
 function reorderRules() {
     var newOrder = [];
-    document.querySelectorAll('.rule-item').forEach(el => {
+    document.querySelectorAll('#rules-container > .card').forEach(el => {
         newOrder.push(parseInt(el.getAttribute('data-idx')));
     });
     
@@ -1922,6 +2139,35 @@ function reorderRules() {
     
     updateYamlPart('rules', reordered);
     renderRules();
+}
+
+function reorderMembers(groupName, container) {
+    var newOrder = [];
+    container.querySelectorAll('.member-item').forEach(el => {
+        newOrder.push(el.innerText.trim());
+    });
+    
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    var g = groups.find(x => x.name === groupName);
+    if (g) {
+        g.proxies = newOrder;
+        updateYamlPart('proxy-groups', groups);
+        renderRoutes();
+    }
+}
+
+async function deleteGroup(name) {
+    var lib = window.jsyaml || window.YAML;
+    var data = lib.load(ed.getValue());
+    var groups = data['proxy-groups'] || [];
+    var newGroups = groups.filter(g => g.name !== name);
+    
+    if (updateYamlPart('proxy-groups', newGroups)) {
+        renderRoutes();
+        showToast(t('toast_deleted'));
+    }
 }
 
 function showRename() {
