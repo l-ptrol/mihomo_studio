@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.1</title>
+<title>Mihomo Studio v2.1.2</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -87,7 +87,6 @@ body {
     border-bottom: 1px solid var(--bd-color);
     display: flex; justify-content: space-between; align-items: center;
     flex-shrink: 0; z-index: 10; box-shadow: var(--shadow-sm);
-    gap: 16px; flex-wrap: wrap;
 }
 
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -96,7 +95,8 @@ body {
 .brand-name { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; color: var(--txt-main); margin: 0; }
 .brand-version { font-size: 10px; font-weight: 600; color: var(--txt-mut); opacity: 0.8; }
 
-.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.header-group { display: flex; align-items: center; gap: 6px; background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
 
 .app-content {
     display: flex; flex: 1; overflow: hidden;
@@ -133,14 +133,19 @@ body {
     text-transform: uppercase; letter-spacing: 0.05em;
 }
 
-button, input, select, textarea {
+button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 500; cursor: pointer; white-space: nowrap;
+    height: 36px; padding: 0 16px; border: 1px solid transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+input, select, textarea {
     font-family: inherit; font-size: 13px; color: var(--txt-main);
     border: 1px solid var(--bd-color); border-radius: var(--radius-sm);
     background: var(--bg-app); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     outline: none;
+    height: 36px; padding: 0 12px; width: 100%;
 }
-
-input, select { height: 36px; padding: 0 12px; width: 100%; border: 1px solid var(--bd-color); }
 input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
 /* Custom Dropdown Styles */
@@ -152,7 +157,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 }
 .cs-wrap:hover .cs-trigger { border-color: var(--txt-mut); }
 .cs-wrap.open .cs-trigger { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15); }
-.cs-arrow { width: 14px; height: 14px; fill: var(--txt-mut); transition: transform 0.2s; }
+.cs-arrow { width: 14px; height: 14px; fill: var(--txt-mut); transition: transform 0.2s; stroke: none; fill: var(--txt-mut); }
 .cs-wrap.open .cs-arrow { transform: rotate(180deg); fill: var(--primary); }
 
 .cs-options {
@@ -173,23 +178,27 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); box-sh
 .num-wrap { display: flex; align-items: center; border: 1px solid var(--bd-color); border-radius: var(--radius-sm); background: var(--bg-app); overflow: hidden; height: 36px; }
 .num-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: var(--txt-mut); font-size: 16px; font-weight: 700; transition: 0.2s; }
 .num-inp::-webkit-outer-spin-button, .num-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-
-.btn-s { background: var(--primary); color: #fff; border: none; }
-.btn-s:hover { background: var(--primary-h); filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.btn-r { background: var(--success); color: #fff; border: none; }
-.btn-r:hover { background: var(--success-h); filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.btn-d { background: var(--danger); color: #fff; border: none; }
-.btn-d:hover { background: var(--danger-h); filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.btn-u { background: var(--warn); color: #fff; border: none; }
-.btn-u:hover { background: var(--warn-h); filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.btn-g { background: transparent; border: 1px solid var(--bd-color); color: var(--txt-main); }
-.btn-g:hover { background: var(--bg-app); border-color: var(--txt-mut); }
-
-.btn-ghost { background: transparent; color: var(--txt-mut); border: none; height: 32px; padding: 0 10px; }
-.btn-ghost:hover { background: var(--bd-color); color: var(--txt-main); }
-.btn-icon { width: 36px; padding: 0; justify-content: center; }
-
 button:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-h); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: var(--success-h); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger-h); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.btn-ghost { background: var(--bg-app); color: var(--txt-main); border-color: var(--bd-color); }
+.btn-ghost:hover { background: var(--bd-color); border-color: var(--txt-mut); }
+
+.btn-outline { background: transparent; color: var(--txt-main); border-color: var(--bd-color); }
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn-icon { width: 36px; padding: 0; flex-shrink: 0; }
+.btn-icon svg { width: 18px; height: 18px; }
+
+.ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .ovl {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -275,13 +284,14 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.1</div>
+            <div class="brand-version">v2.1.2</div>
         </div>
     </div>
     
     <div class="header-actions">
-        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 8px;">Loaded: __TIME__</div>
-        <div class="row" style="background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); gap: 4px;">
+        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 12px; font-weight: 500;">__TIME__</div>
+        
+        <div class="header-group">
             <div class="cs-wrap" id="cs-lang" style="width: 70px;">
                 <select id="lang-sel" onchange="setLang(this.value)" style="display:none">
                     <option value="ru" selected>RU</option>
@@ -306,13 +316,26 @@ button:active { transform: scale(0.97); }
             </div>
         </div>
         
-        <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
-        <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
-        <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo" data-i18n="panel">🌐 Панель</button>
-        <button onclick="updateStudio()" class="btn-u btn-icon" title="Проверить обновления">🔄</button>
-        <button onclick="restartService()" class="btn-d btn-icon" title="Перезапустить сервис">🔌</button>
+        <button onclick="save('save')" class="btn-success" data-i18n="save">
+            <svg class="ico"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span data-i18n="save">Сохранить</span>
+        </button>
+        <button onclick="save('restart')" class="btn-danger" data-i18n="restart">
+            <svg class="ico"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-i18n="restart">Рестарт</span>
+        </button>
+        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" data-i18n="panel">
+            <svg class="ico"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span data-i18n="panel">Панель</span>
+        </button>
+        <button onclick="updateStudio()" class="btn-ghost btn-icon" title="Проверить обновления">
+            <svg class="ico"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+        <button onclick="restartService()" class="btn-ghost btn-icon" title="Перезапустить сервис">
+            <svg class="ico"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/></svg>
+        </button>
     </div>
-</div>
+</header>
 
 <div class="app-content">
     <div class="editor-wrapper">
@@ -328,24 +351,46 @@ button:active { transform: scale(0.97); }
                     <div class="cs-trigger"><span>Loading...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
                     <div class="cs-options"></div>
                 </div>
-                <button onclick="switchProf()" class="btn-s btn-icon" title="Выбрать">✔</button>
-                <button onclick="downloadProf()" class="btn-ghost btn-icon" style="font-size: 16px;" title="Скачать">📥</button>
+                <button onclick="switchProf()" class="btn-primary btn-icon" title="Выбрать">
+                    <svg class="ico" style="stroke-width: 3;"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+                <button onclick="downloadProf()" class="btn-ghost btn-icon" title="Скачать">
+                    <svg class="ico"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
             </div>
             <div class="grid-2" style="margin-top:4px;">
-                 <button onclick="openAddProf()" class="btn-g" data-i18n="create">➕ Создать</button>
-                 <button onclick="delProf()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">🗑 Удалить</button>
+                 <button onclick="openAddProf()" class="btn-outline" data-i18n="create">
+                    <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span data-i18n="create">Создать</span>
+                 </button>
+                 <button onclick="delProf()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">
+                    <svg class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span data-i18n="delete">Удалить</span>
+                 </button>
             </div>
         </div>
         
         <div class="card">
             <h3 class="card-title"><span data-i18n="proxy_mgmt">Управление</span></h3>
             <div class="grid-2">
-                <button onclick="openAddProxyModal()" class="btn-s" data-i18n="add">➕ Добавить</button>
-                <button onclick="openEditProxyModal()" class="btn-g" data-i18n="edit">✏️ Заменить</button>
+                <button onclick="openAddProxyModal()" class="btn-primary" data-i18n="add">
+                    <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span data-i18n="add">Добавить</span>
+                </button>
+                <button onclick="openEditProxyModal()" class="btn-outline" data-i18n="edit">
+                    <svg class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <span data-i18n="edit">Заменить</span>
+                </button>
             </div>
             <div class="grid-2">
-                <button onclick="showRename()" class="btn-g" style="border:none; background: var(--bg-app);" data-i18n="rename">Переименовать</button>
-                <button onclick="showDel()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">🗑 Удалить</button>
+                <button onclick="showRename()" class="btn-ghost" data-i18n="rename">
+                    <svg class="ico"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                    <span data-i18n="rename">Переименовать</span>
+                </button>
+                <button onclick="showDel()" class="btn-ghost" style="color: var(--danger);" data-i18n="delete">
+                    <svg class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    <span data-i18n="delete">Удалить</span>
+                </button>
             </div>
         </div>
         
@@ -363,17 +408,22 @@ button:active { transform: scale(0.97); }
             <div id="bk-list" style="display: flex; flex-direction: column; margin-top: 8px; max-height: 220px; overflow-y: auto;">__BACKUPS__</div>
         </div>
         
-        <div style="text-align: center; font-size: 11px; color: var(--txt-mut); margin-top: auto; padding: 10px;">
-            Mihomo Studio &copy; 2025 - 2026<br>
-            <span style="opacity: 0.5;">App Design UI</span>
+        <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.5;">
+            Mihomo Studio &copy; 2025 - 2026<br>Premium UI Design
         </div>
     </div>
 </div>
 
 <div id="m-grp" class="ovl"><div class="mod"><h3 data-i18n="modal_groups">Добавить в группы:</h3>
-<div style="display:flex; gap:10px; margin-bottom:15px"><button onclick="tgGrp(true)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_all">☑ Выбрать все</button><button onclick="tgGrp(false)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_none">☐ Снять все</button></div>
+<div style="display:flex; gap:10px; margin-bottom:15px">
+    <button onclick="tgGrp(true)" class="btn-outline" style="flex:1" data-i18n="btn_sel_all">Выбрать все</button>
+    <button onclick="tgGrp(false)" class="btn-outline" style="flex:1" data-i18n="btn_sel_none">Снять все</button>
+</div>
 <div id="g-cnt" class="g-list"></div>
-<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
+<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd-color)">
+    <button onclick="applyVless()" class="btn-primary" style="flex:1" data-i18n="btn_add">Добавить</button>
+    <button onclick="closeM('m-grp')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
+</div></div></div>
 
 <div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3>
 <div class="cs-wrap" id="cs-del-m">
@@ -381,8 +431,14 @@ button:active { transform: scale(0.97); }
     <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
     <div class="cs-options"></div>
 </div>
-<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
-<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
+<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+    <button onclick="doDel()" class="btn-danger" data-i18n="delete">Удалить</button>
+    <button onclick="closeM('m-del')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
+</div></div></div>
+<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+    <button onclick="location.reload()" class="btn-primary" data-i18n="btn_update">Обновить</button>
+    <button onclick="closeM('m-con')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
+</div></div></div>
 
 <div id="m-ren" class="ovl"><div class="mod">
     <h3 data-i18n="modal_ren_proxy">Переименовать прокси</h3>
@@ -395,8 +451,8 @@ button:active { transform: scale(0.97); }
     <p style="margin-top:15px;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_new_name">Новое имя:</p>
     <input id="inp-ren-newname" placeholder="Введите новое имя" data-i18n-ph="ph_new_name">
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:25px">
-        <button onclick="doRename()" class="btn-s" data-i18n="btn_rename">Переименовать</button>
-        <button onclick="closeM('m-ren')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
+        <button onclick="doRename()" class="btn-primary" data-i18n="btn_rename">Переименовать</button>
+        <button onclick="closeM('m-ren')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
 
@@ -406,20 +462,25 @@ button:active { transform: scale(0.97); }
     <input id="np-name" placeholder="my_config" style="margin-bottom:15px">
     <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
     <div style="display:flex; gap:5px; margin-bottom:10px">
-        <button onclick="document.getElementById('np-file').click()" class="btn-u" style="flex:1;justify-content:center" data-i18n="btn_load_file">📂 Загрузить файл</button>
+        <button onclick="document.getElementById('np-file').click()" class="btn-outline" style="flex:1" data-i18n="btn_load_file">
+            <svg class="ico"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            <span data-i18n="btn_load_file">Загрузить файл</span>
+        </button>
     </div>
     <input type="file" id="np-file" style="display:none" onchange="loadProfFile(this)">
     <textarea id="np-content" rows="10" placeholder="Вставьте YAML конфиг сюда..." data-i18n-ph="ph_paste_yaml"></textarea>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
-        <button onclick="saveNewProf()" class="btn-s" data-i18n="btn_save">Сохранить</button>
-        <button onclick="closeM('m-add-prof')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
+        <button onclick="saveNewProf()" class="btn-success" data-i18n="btn_save">Сохранить</button>
+        <button onclick="closeM('m-add-prof')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
 
 <div id="addProxyModal" class="ovl"><div class="mod">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:15px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd-color); padding-bottom:15px; margin-bottom:20px;">
        <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;" data-i18n="modal_add_proxy">Добавить прокси</h3>
-       <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:transparent; color:var(--txt-sec); font-size:20px; box-shadow:none;">✕</button>
+       <button onclick="closeM('addProxyModal')" class="btn-icon btn-ghost" style="border-radius: 50%;">
+          <svg class="ico"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+       </button>
     </div>
 
     <div id="edit-proxy-container" style="display:none; margin-bottom:15px;">
@@ -429,7 +490,10 @@ button:active { transform: scale(0.97); }
             <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
             <div class="cs-options"></div>
         </div>
-        <div style="font-size:12px; color:var(--btn-u); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
+        <div style="font-size:12px; color:var(--warn); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px; display: flex; align-items: center; gap: 8px;" data-i18n="warn_edit">
+            <svg class="ico" style="width:14px; height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span data-i18n="warn_edit">Данные этого прокси будут полностью заменены новыми!</span>
+        </div>
     </div>
 
     <div class="modal-tabs">
@@ -446,7 +510,7 @@ button:active { transform: scale(0.97); }
             <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:15px;">
         </div>
 
-        <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
+        <button onclick="parseVless()" class="btn-success" style="width:100%" data-i18n="btn_save">Сохранить</button>
     </div>
 
     <div id="wgTab" class="tab-content">
@@ -459,8 +523,11 @@ button:active { transform: scale(0.97); }
         </div>
 
         <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
-        <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:15px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
-        <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
+        <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="width:100%; margin-bottom:15px;" data-i18n="btn_load_file">
+            <svg class="ico"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+            <span data-i18n="btn_load_file">Или загрузить .conf файл</span>
+        </button>
+        <button onclick="addWireguard()" class="btn-success" style="width:100%" data-i18n="btn_save">Сохранить</button>
     </div>
 </div></div>
 
@@ -468,15 +535,15 @@ button:active { transform: scale(0.97); }
     <h3 data-i18n="modal_view_bk">Просмотр бэкапа</h3>
     <div id="bk-content"></div>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
-        <button id="bk-restore-btn" class="btn-r" data-i18n="btn_restore">Восстановить</button>
-        <button onclick="closeM('m-view-bk')" class="btn-g" data-i18n="btn_close">Закрыть</button>
+        <button id="bk-restore-btn" class="btn-danger" data-i18n="btn_restore">Восстановить</button>
+        <button onclick="closeM('m-view-bk')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
     </div>
 <div id="m-dial" class="ovl"><div class="mod">
     <h3 id="dial-title">Confirmation</h3>
     <p id="dial-msg" style="margin-bottom: 25px; line-height: 1.5; color: var(--txt-main); font-size: 14px;"></p>
     <div style="display:flex; justify-content: flex-end; gap: 12px;">
-        <button id="dial-cancel" class="btn-g" data-i18n="btn_cancel">Отмена</button>
-        <button id="dial-ok" class="btn-s" data-i18n="btn_ok" style="min-width: 80px; justify-content: center;">OK</button>
+        <button id="dial-cancel" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
+        <button id="dial-ok" class="btn-success" data-i18n="btn_ok" style="min-width: 80px;">OK</button>
     </div>
 </div></div>
 
