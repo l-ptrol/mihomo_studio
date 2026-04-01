@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.3</title>
+<title>Mihomo Studio v2.1.4</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://unpkg.com/yaml@2.3.4/browser/index.js"></script>
@@ -295,7 +295,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.3</div>
+            <div class="brand-version">v2.1.4</div>
         </div>
     </div>
     
@@ -1004,29 +1004,26 @@ function switchMainTab(e, tabId) {
 }
 
 function renderRoutes() {
+    if (typeof YAML === 'undefined') {
+        document.getElementById('routes-container').innerHTML = '<p style="color:var(--danger)">Библиотека YAML не загружена.</p>';
+        return;
+    }
     var yamlText = ed.getValue();
     var container = document.getElementById('routes-container');
     try {
-        var doc = YAML.parseDocument(yamlText);
-        var groups = doc.get('proxy-groups');
-        var proxies = doc.get('proxies');
-        if (!groups || !groups.items) { container.innerHTML = '<p style="color:var(--txt-mut)">' + t('routes_no_groups') + '</p>'; return; }
-        
-        var proxyNames = [];
-        if (proxies && proxies.items) {
-            proxies.items.forEach(p => {
-                var name = p.get ? p.get('name') : null;
-                if (name) proxyNames.push(name);
-            });
+        // Используем parse для надежного чтения данных
+        var data = YAML.parse(yamlText);
+        if (!data || !data['proxy-groups']) { 
+            container.innerHTML = '<p style="color:var(--txt-mut)">' + t('routes_no_groups') + '</p>'; 
+            return; 
         }
         
+        var groups = data['proxy-groups'];
         var html = '';
-        groups.items.forEach((g, idx) => {
-            var name = g.get ? g.get('name') : '?';
-            var type = g.get ? g.get('type') : '?';
-            var pxList = g.get ? g.get('proxies') : null;
-            var members = [];
-            if (pxList && pxList.items) pxList.items.forEach(i => members.push(i.value || i));
+        groups.forEach((g) => {
+            var name = g.name || '?';
+            var type = g.type || '?';
+            var members = g.proxies || [];
             
             var typeBadge = type === 'url-test' ? 'Fastest' : type === 'fallback' ? 'Failover' : type === 'select' ? 'Manual' : type;
             var badgeColor = type === 'url-test' ? 'var(--success)' : type === 'fallback' ? 'var(--warn, orange)' : 'var(--primary)';
@@ -1044,21 +1041,25 @@ function renderRoutes() {
         });
         container.innerHTML = html;
     } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + e.message + '</p>';
+        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
     }
 }
 
 function renderRules() {
+    if (typeof YAML === 'undefined') return;
     var yamlText = ed.getValue();
     var container = document.getElementById('rules-container');
     try {
-        var doc = YAML.parseDocument(yamlText);
-        var rules = doc.get('rules');
-        if (!rules || !rules.items) { container.innerHTML = '<p style="color:var(--txt-mut)">' + t('rules_no_rules') + '</p>'; return; }
+        var data = YAML.parse(yamlText);
+        if (!data || !data['rules']) { 
+            container.innerHTML = '<p style="color:var(--txt-mut)">' + t('rules_no_rules') + '</p>'; 
+            return; 
+        }
         
+        var rules = data['rules'];
         var serviceMap = {};
-        rules.items.forEach(r => {
-            var val = r.value || r;
+        rules.forEach(val => {
+            if (typeof val !== 'string') return;
             var parts = val.split(',');
             var target = parts[parts.length - 1].trim();
             if (!serviceMap[target]) serviceMap[target] = [];
@@ -1076,7 +1077,7 @@ function renderRules() {
         html += '</div>';
         container.innerHTML = html;
     } catch(e) {
-        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + e.message + '</p>';
+        container.innerHTML = '<p style="color:var(--danger)">' + t('routes_parse_err') + (e.message || e) + '</p>';
     }
 }
 
