@@ -354,7 +354,10 @@ func (h *Handler) renderBackups() string {
 	for _, bk := range backups {
 		t := bk.ModTime.Format("02.01 15:04")
 		b.WriteString(fmt.Sprintf(`<div class="bk-item">
-			<div><b>%s</b><span style="font-size:11px;color:var(--txt-sec)">%s</span></div>
+			<div class="bk-info">
+				<div class="bk-name">%s</div>
+				<div class="bk-date">%s</div>
+			</div>
 			<div class="bk-btns">
 				<button onclick="viewBackup('%s')" class="btn-u" title="Просмотр">👁️</button>
 				<button onclick="restoreBackup('%s')" class="btn-g" title="Восстановить">↺</button>

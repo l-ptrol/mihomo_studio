@@ -138,13 +138,39 @@ button, input, select, textarea {
     outline: none;
 }
 
-button {
-    height: 36px; padding: 0 14px; cursor: pointer; font-weight: 600;
-    display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
-}
-
-input, select { height: 36px; padding: 0 12px; width: 100%; }
+input, select { height: 36px; padding: 0 12px; width: 100%; border: 1px solid var(--bd-color); }
 input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+
+/* Custom Dropdown Styles */
+.cs-wrap { position: relative; width: 100%; height: 36px; cursor: pointer; user-select: none; }
+.cs-trigger { 
+    height: 100%; display: flex; align-items: center; justify-content: space-between; 
+    padding: 0 12px; border: 1px solid var(--bd-color); border-radius: var(--radius-sm); 
+    background: var(--bg-app); font-weight: 500; font-size: 13px; transition: all 0.2s;
+}
+.cs-wrap:hover .cs-trigger { border-color: var(--txt-mut); }
+.cs-wrap.open .cs-trigger { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15); }
+.cs-arrow { width: 14px; height: 14px; fill: var(--txt-mut); transition: transform 0.2s; }
+.cs-wrap.open .cs-arrow { transform: rotate(180deg); fill: var(--primary); }
+
+.cs-options {
+    position: absolute; top: calc(100% + 6px); left: 0; width: 100%; 
+    background: var(--bg-card); border: 1px solid var(--bd-color); 
+    border-radius: var(--radius-md); box-shadow: var(--shadow-lg); 
+    z-index: 100; display: none; overflow: hidden; padding: 4px;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.cs-wrap.open .cs-options { display: block; animation: csFade 0.2s ease-out; }
+@keyframes csFade { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+.cs-option { padding: 8px 12px; font-size: 13px; border-radius: 6px; transition: 0.15s; color: var(--txt-main); }
+.cs-option:hover { background: var(--bg-app); color: var(--primary); }
+.cs-option.selected { background: var(--primary); color: #fff; }
+
+/* Custom Number Input */
+.num-wrap { display: flex; align-items: center; border: 1px solid var(--bd-color); border-radius: var(--radius-sm); background: var(--bg-app); overflow: hidden; height: 36px; }
+.num-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: var(--txt-mut); font-size: 16px; font-weight: 700; transition: 0.2s; }
+.num-inp::-webkit-outer-spin-button, .num-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .btn-s { background: var(--primary); color: #fff; border: none; }
 .btn-s:hover { background: var(--primary-h); filter: brightness(1.1); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
@@ -183,13 +209,19 @@ button:active { transform: scale(0.97); }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .bk-item {
-    background: var(--bg-app); padding: 8px 12px; margin-bottom: 6px;
-    border: 1px solid var(--bd-color); border-radius: var(--radius-sm);
-    display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 500;
+    background: var(--bg-app); padding: 10px 14px; margin-bottom: 8px;
+    border: 1px solid var(--bd-color); border-radius: var(--radius-md);
+    display: flex; justify-content: space-between; align-items: center; 
+    transition: 0.2s;
 }
+.bk-item:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); transform: translateX(2px); }
 
-.bk-btns { display: flex; gap: 4px; }
-.bk-btns button { width: 28px; height: 28px; padding: 0; font-size: 14px; }
+.bk-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bk-name { font-size: 13px; font-weight: 700; color: var(--txt-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-date { font-size: 11px; color: var(--txt-mut); font-weight: 500; }
+
+.bk-btns { display: flex; gap: 6px; flex-shrink: 0; margin-left: 12px; }
+.bk-btns button { width: 32px; height: 32px; padding: 0; font-size: 14px; border-radius: 8px; box-shadow: var(--shadow-sm); }
 
 #bk-content { background: var(--log-bg); color: var(--log-txt); font-family: monospace; padding: 16px; border-radius: var(--radius-sm); white-space: pre-wrap; overflow-y: auto; flex-grow: 1; font-size: 12px; }
 
@@ -234,19 +266,29 @@ button:active { transform: scale(0.97); }
     </div>
     
     <div class="header-actions">
-        <div class="row" style="background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color);">
-            <select id="lang-sel" onchange="setLang(this.value)" style="border: none; background: transparent; height: 28px; padding: 0 8px; width: auto; font-weight: 500;">
-                <option value="ru">RU</option>
-                <option value="en">EN</option>
-                <option value="uk">UA</option>
-            </select>
+        <div class="row" style="background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); gap: 4px;">
+            <div class="cs-wrap" id="cs-lang" style="width: 70px;">
+                <select id="lang-sel" onchange="setLang(this.value)" style="display:none">
+                    <option value="ru" selected>RU</option>
+                    <option value="en">EN</option>
+                    <option value="uk">UA</option>
+                </select>
+                <div class="cs-trigger"><span>RU</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                <div class="cs-options"></div>
+            </div>
+            
             <div style="width: 1px; height: 16px; background: var(--bd-color);"></div>
-            <select id="theme-sel" onchange="setTheme(this.value)" style="border: none; background: transparent; height: 28px; padding: 0 8px; width: auto; font-weight: 500;">
-                <option value="dark" data-i18n="theme_dark">Dark</option>
-                <option value="light" data-i18n="theme_light">Light</option>
-                <option value="midnight" data-i18n="theme_midnight">Midnight</option>
-                <option value="cyber" data-i18n="theme_cyber">Cyber</option>
-            </select>
+            
+            <div class="cs-wrap" id="cs-theme" style="width: 110px;">
+                <select id="theme-sel" onchange="setTheme(this.value)" style="display:none">
+                    <option value="dark" data-i18n="theme_dark">Dark</option>
+                    <option value="light" data-i18n="theme_light">Light</option>
+                    <option value="midnight" data-i18n="theme_midnight">Midnight</option>
+                    <option value="cyber" data-i18n="theme_cyber">Cyber</option>
+                </select>
+                <div class="cs-trigger"><span>Dark</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                <div class="cs-options"></div>
+            </div>
         </div>
         
         <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
@@ -266,7 +308,11 @@ button:active { transform: scale(0.97); }
         <div class="card">
             <h3 class="card-title"><span data-i18n="profiles">Профили</span></h3>
             <div class="row sp-between">
-                <select id="prof-sel" style="flex: 1;">__PROFILES__</select>
+                <div class="cs-wrap" id="cs-prof" style="flex: 1;">
+                    <select id="prof-sel" style="display:none">__PROFILES__</select>
+                    <div class="cs-trigger"><span>Loading...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                    <div class="cs-options"></div>
+                </div>
                 <button onclick="switchProf()" class="btn-s btn-icon" title="Выбрать">✔</button>
                 <button onclick="downloadProf()" class="btn-ghost btn-icon" style="font-size: 16px;" title="Скачать">📥</button>
             </div>
@@ -292,8 +338,12 @@ button:active { transform: scale(0.97); }
             <h3 class="card-title"><span data-i18n="backups">Бэкапы</span></h3>
             <div class="row">
                 <span data-i18n="keep" style="font-size: 13px; color: var(--txt-mut);">Оставить:</span>
-                <input type="number" id="bk-lim" value="5" min="1" max="50" style="width: 50px; text-align:center; padding: 0 4px;">
-                <button onclick="cleanBackups()" class="btn-ghost" style="flex: 1; border: 1px dashed var(--bd-color);" data-i18n="clean">Очистить</button>
+                <div class="num-wrap">
+                    <button class="num-btn" onclick="adjNum('bk-lim', -1)">-</button>
+                    <input type="number" id="bk-lim" value="5" min="1" max="50" class="num-inp">
+                    <button class="num-btn" onclick="adjNum('bk-lim', 1)">+</button>
+                </div>
+                <button onclick="cleanBackups()" class="btn-ghost" style="flex: 1; border: 1px dashed var(--bd-color); border-radius: var(--radius-sm);" data-i18n="clean">Очистить</button>
             </div>
             <div id="bk-list" style="display: flex; flex-direction: column; margin-top: 8px; max-height: 220px; overflow-y: auto;">__BACKUPS__</div>
         </div>
@@ -310,13 +360,23 @@ button:active { transform: scale(0.97); }
 <div id="g-cnt" class="g-list"></div>
 <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
 
-<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
+<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3>
+<div class="cs-wrap" id="cs-del-m">
+    <select id="sel-del" style="display:none"></select>
+    <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+    <div class="cs-options"></div>
+</div>
+<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
 <div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
 
 <div id="m-ren" class="ovl"><div class="mod">
     <h3 data-i18n="modal_ren_proxy">Переименовать прокси</h3>
     <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
-    <select id="sel-ren-proxy"></select>
+    <div class="cs-wrap" id="cs-ren-m">
+        <select id="sel-ren-proxy" style="display:none"></select>
+        <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+        <div class="cs-options"></div>
+    </div>
     <p style="margin-top:15px;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_new_name">Новое имя:</p>
     <input id="inp-ren-newname" placeholder="Введите новое имя" data-i18n-ph="ph_new_name">
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:25px">
@@ -349,7 +409,11 @@ button:active { transform: scale(0.97); }
 
     <div id="edit-proxy-container" style="display:none; margin-bottom:15px;">
         <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
-        <select id="edit-proxy-sel"></select>
+        <div class="cs-wrap" id="cs-edit-m">
+            <select id="edit-proxy-sel" style="display:none"></select>
+            <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+            <div class="cs-options"></div>
+        </div>
         <div style="font-size:12px; color:var(--btn-u); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
     </div>
 
@@ -392,6 +456,13 @@ button:active { transform: scale(0.97); }
         <button id="bk-restore-btn" class="btn-r" data-i18n="btn_restore">Восстановить</button>
         <button onclick="closeM('m-view-bk')" class="btn-g" data-i18n="btn_close">Закрыть</button>
     </div>
+<div id="m-dial" class="ovl"><div class="mod">
+    <h3 id="dial-title">Confirmation</h3>
+    <p id="dial-msg" style="margin-bottom: 25px; line-height: 1.5; color: var(--txt-main); font-size: 14px;"></p>
+    <div style="display:flex; justify-content: flex-end; gap: 12px;">
+        <button id="dial-cancel" class="btn-g" data-i18n="btn_cancel">Отмена</button>
+        <button id="dial-ok" class="btn-s" data-i18n="btn_ok" style="min-width: 80px; justify-content: center;">OK</button>
+    </div>
 </div></div>
 
 <script>
@@ -400,6 +471,79 @@ var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="miho
 var initialConfig = `__JSON_CONTENT__`;
 var isEditMode = false;
 var currLang = 'ru';
+var currTheme = 'dark';
+
+function adjNum(id, d) {
+    var i = document.getElementById(id);
+    var v = parseInt(i.value) + d;
+    if(v >= i.min && v <= i.max) {
+        i.value = v;
+        i.dispatchEvent(new Event('change'));
+    }
+}
+
+function ask(msg, isConfirm = true, title = "") {
+    return new Promise(resolve => {
+        const m = document.getElementById('m-dial');
+        const t = document.getElementById('dial-title');
+        const bMsg = document.getElementById('dial-msg');
+        const bOk = document.getElementById('dial-ok');
+        const bCan = document.getElementById('dial-cancel');
+        
+        t.innerText = title || (isConfirm ? (currLang === 'ru' ? "Подтверждение" : (currLang === 'uk' ? "Підтвердження" : "Confirmation")) : (currLang === 'ru' ? "Внимание" : (currLang === 'uk' ? "Увага" : "Attention")));
+        bMsg.innerText = msg;
+        bCan.style.display = isConfirm ? 'block' : 'none';
+        
+        m.style.display = 'flex';
+        
+        bOk.onclick = () => { m.style.display = 'none'; resolve(true); };
+        bCan.onclick = () => { m.style.display = 'none'; resolve(false); };
+        
+        // Перевод кнопок в самом диалоге
+        bOk.innerText = TR[currLang].btn_ok || "OK";
+        bCan.innerText = TR[currLang].btn_cancel || "Cancel";
+    });
+}
+
+function initCS(id) {
+    var w = document.getElementById(id);
+    var s = w.querySelector('select');
+    var t = w.querySelector('.cs-trigger span');
+    var o = w.querySelector('.cs-options');
+    
+    var updateOptions = () => {
+        o.innerHTML = '';
+        Array.from(s.options).forEach(opt => {
+            var div = document.createElement('div');
+            div.className = 'cs-option' + (opt.selected ? ' selected' : '');
+            div.innerText = opt.text;
+            div.onclick = (e) => {
+                e.stopPropagation();
+                s.value = opt.value;
+                s.dispatchEvent(new Event('change'));
+                closeAllCS();
+            };
+            o.appendChild(div);
+        });
+        t.innerText = s.options[s.selectedIndex] ? s.options[s.selectedIndex].text : '';
+    };
+
+    w.onclick = (e) => {
+        e.stopPropagation();
+        var open = w.classList.contains('open');
+        closeAllCS();
+        if(!open) w.classList.add('open');
+    };
+    
+    s.addEventListener('change', updateOptions);
+    updateOptions();
+    return updateOptions;
+}
+
+function closeAllCS() {
+    document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
+}
+document.addEventListener('click', closeAllCS);
 
 const TR = {
     ru: {
@@ -487,7 +631,8 @@ const TR = {
         last_load_lbl: "Загружено: __TIME__",
         last_saved: "Сохранено:",
         restart_service_short: "🔄 Рестарт",
-        update_btn_short: "🔄 Обновить"
+        update_btn_short: "🔄 Обновить",
+        btn_ok: "ОК"
     },
     uk: {
         title: "Mihomo Studio",
@@ -574,7 +719,8 @@ const TR = {
         last_load_lbl: "Завантажено: __TIME__",
         last_saved: "Збережено:",
         restart_service_short: "🔄 Перезапуск",
-        update_btn_short: "🔄 Оновити"
+        update_btn_short: "🔄 Оновити",
+        btn_ok: "ОК"
     },
     en: {
         title: "Mihomo Studio",
@@ -661,7 +807,8 @@ const TR = {
         last_load_lbl: "Loaded: __TIME__",
         last_saved: "Saved:",
         restart_service_short: "🔄 Restart",
-        update_btn_short: "🔄 Update"
+        update_btn_short: "🔄 Update",
+        btn_ok: "OK"
     }
 };
 
@@ -729,12 +876,12 @@ function showToast(msg){
     setTimeout(()=>{tBox.style.display='none'}, 2500); 
 }
 
-function switchProf() {
+async function switchProf() {
     var p = document.getElementById('prof-sel').value;
-    if(!confirm(t('confirm_switch', p))) return;
+    if(!await ask(t('confirm_switch', p))) return;
     var params = new URLSearchParams(); params.append('act', 'switch_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
+    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
+        if(d.error) await ask(d.error, false);
         else window.location.reload();
     });
 }
@@ -748,29 +895,29 @@ function loadProfFile(input) {
     r.onload=function(e){document.getElementById('np-content').value = e.target.result};
     r.readAsText(f); input.value='';
 }
-function saveNewProf() {
+async function saveNewProf() {
     var n = document.getElementById('np-name').value.trim();
     var c = document.getElementById('np-content').value;
-    if(!n) return alert(t('prompt_enter_name'));
-    if(!n.match(/^[a-zA-Z0-9_-]+$/)) return alert(t('error_invalid_name'));
+    if(!n) return await ask(t('prompt_enter_name'), false);
+    if(!n.match(/^[a-zA-Z0-9_-]+$/)) return await ask(t('error_invalid_name'), false);
     var params = new URLSearchParams(); params.append('act', 'add_prof'); params.append('name', n); params.append('content', c);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
+    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
+        if(d.error) await ask(d.error, false);
         else { showToast(t('toast_saved')); setTimeout(()=>{window.location.reload()}, 500); }
     });
 }
-function delProf() {
+async function delProf() {
     var p = document.getElementById('prof-sel').value;
     if(!p) return;
-    if(!confirm(t('confirm_del_prof', p))) return;
+    if(!await ask(t('confirm_del_prof', p))) return;
     var params = new URLSearchParams(); params.append('act', 'del_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
+    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(async d=>{
+        if(d.error) await ask(d.error, false);
         else { showToast(t('toast_deleted')); setTimeout(()=>{window.location.reload()}, 500); }
     });
 }
 
-function downloadProf() {
+async function downloadProf() {
     var sel = document.getElementById('prof-sel');
     if (!sel.value) return;
     var name = sel.value;
@@ -779,9 +926,9 @@ function downloadProf() {
     params.append('name', name);
     fetch('/', { method: 'POST', body: params })
         .then(r => r.json())
-        .then(d => {
+        .then(async d => {
             if (d.error) {
-                alert(d.error);
+                await ask(d.error, false);
             } else {
                 var a = document.createElement('a');
                 a.href = 'data:text/yaml;charset=utf-8,' + encodeURIComponent(d.content);
@@ -848,19 +995,19 @@ function save(mode){
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
         if(mode==='save'){
             showToast(t('toast_saved'));
-            document.getElementById('last-load').innerText = t('last_saved') + " " + d.time;
+            document.getElementById('last-load').innerText = (TR[currLang].last_saved || 'Saved:') + " " + d.time;
             if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
         } else {
             var consoleDiv = document.getElementById('cons');
             consoleDiv.innerHTML = fmtLog(d.log);
             consoleDiv.scrollTop = consoleDiv.scrollHeight;
         }
-    }).catch(e=>alert("Error: "+e));
+    }).catch(async e=>await ask("Error: "+e, false));
 }
 
-function cleanBackups(){
+async function cleanBackups(){
     var lim = document.getElementById('bk-lim').value;
-    if(!confirm(t('confirm_clean', lim))) return;
+    if(!await ask(t('confirm_clean', lim))) return;
     var p=new URLSearchParams(); p.append('act', 'clean_backups'); p.append('limit', lim);
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
         showToast(t('toast_cleaned'));
@@ -868,8 +1015,8 @@ function cleanBackups(){
     });
 }
 
-function delBackup(fname){
-    if(!confirm(t('confirm_del_bk', fname))) return;
+async function delBackup(fname){
+    if(!await ask(t('confirm_del_bk', fname))) return;
     var p=new URLSearchParams(); p.append('act', 'del_backup'); p.append('f', fname);
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
         showToast(t('toast_deleted'));
@@ -877,13 +1024,13 @@ function delBackup(fname){
     });
 }
 
-function viewBackup(fname) {
+async function viewBackup(fname) {
     var p = new URLSearchParams();
     p.append('act', 'view_backup');
     p.append('f', fname);
-    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(d => {
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
         if (d.error) {
-            alert(d.error);
+            await ask(d.error, false);
         } else {
             document.getElementById('bk-content').textContent = d.content;
             document.getElementById('bk-restore-btn').onclick = function() { restoreBackup(fname) };
@@ -892,32 +1039,32 @@ function viewBackup(fname) {
     });
 }
 
-function restoreBackup(fname){
-    if(!confirm(t('confirm_restore', fname))) return;
+async function restoreBackup(fname){
+    if(!await ask(t('confirm_restore', fname))) return;
     var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', fname);
     fetch('/',{method:'POST',body:p}).then(r=>r.text()).then(()=>{
         window.location.reload();
     });
 }
 
-function updateStudio() {
-    if(!confirm(t('confirm_update'))) return;
+async function updateStudio() {
+    if(!await ask(t('confirm_update'))) return;
     showToast(t('toast_checking'));
     var p = new URLSearchParams(); p.append('act', 'update_service');
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
-        .then(d => {
-            alert(d.log);
+        .then(async d => {
+            await ask(d.log, false, (currLang==='ru'?'Результат обновления':(currLang==='uk'?'Результат оновлення':'Update Result')));
             if(d.log.includes("Установка/обновление завершено")) location.reload(); 
         })
-        .catch(e => {
-            alert(t('alert_updating'));
+        .catch(async e => {
+            await ask(t('alert_updating'), false);
             setTimeout(() => location.reload(), 5000);
         });
 }
 
-function restartService() {
-    if(!confirm(t('confirm_restart_service'))) return;
+async function restartService() {
+    if(!await ask(t('confirm_restart_service'))) return;
     showToast(t('toast_restarting'));
     var p = new URLSearchParams(); p.append('act', 'restart_service');
     fetch('/', { method: 'POST', body: p })
@@ -1020,18 +1167,18 @@ function loadWgFile(input) {
     input.value = '';
 }
 
-function addWireguard() {
+async function addWireguard() {
     var conf = document.getElementById('wgConfig').value;
     var name = ''; 
 
     if(isEditMode) {
         name = document.getElementById('edit-proxy-sel').value;
-        if(!name || document.getElementById('edit-proxy-sel').disabled) return alert(t('error_no_proxy_edit'));
+        if(!name || document.getElementById('edit-proxy-sel').disabled) return await ask(t('error_no_proxy_edit'), false);
     } else {
         name = document.getElementById('wgProxyName').value.trim();
     }
 
-    if (!conf) return alert(t('error_empty_wg'));
+    if (!conf) return await ask(t('error_empty_wg'), false);
 
     var p = new URLSearchParams();
     p.append('act', 'add_wireguard');
@@ -1040,9 +1187,9 @@ function addWireguard() {
 
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
-        .then(d => {
+        .then(async d => {
             if (d.error) {
-                alert(d.error);
+                await ask(d.error, false);
             } else {
                 if(isEditMode) {
                    replaceProxyData(name, d.yaml);
@@ -1055,13 +1202,13 @@ function addWireguard() {
         });
 }
 
-function parseVless(){
+async function parseVless(){
     var link = document.getElementById('vlessLink').value;
     var name = '';
 
     if(isEditMode) {
         name = document.getElementById('edit-proxy-sel').value;
-        if(!name || document.getElementById('edit-proxy-sel').disabled) return alert(t('error_no_proxy_edit'));
+        if(!name || document.getElementById('edit-proxy-sel').disabled) return await ask(t('error_no_proxy_edit'), false);
     } else {
         name = document.getElementById('vlessProxyName').value.trim();
     }
@@ -1075,9 +1222,9 @@ function parseVless(){
 
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
-        .then(d => {
+        .then(async d => {
             if (d.error) {
-                alert(d.error);
+                await ask(d.error, false);
             } else {
                 if(isEditMode) {
                     replaceProxyData(name, d.yaml);
@@ -1090,8 +1237,8 @@ function parseVless(){
         });
 }
 
-function replaceProxyData(targetName, newYaml) {
-    if(!confirm(t('confirm_replace', targetName))) return;
+async function replaceProxyData(targetName, newYaml) {
+    if(!await ask(t('confirm_replace', targetName))) return;
     var content = ed.getValue();
     var p = new URLSearchParams();
     p.append('act', 'replace_proxy');
@@ -1101,9 +1248,9 @@ function replaceProxyData(targetName, newYaml) {
 
     fetch('/', { method: 'POST', body: p })
         .then(r => r.json())
-        .then(d => {
+        .then(async d => {
             if (d.error) {
-                alert(d.error);
+                await ask(d.error, false);
             } else {
                 ed.setValue(d.new_content);
                 ed.clearSelection();
@@ -1125,12 +1272,12 @@ function showG(){
     document.getElementById('m-grp').style.display='flex';
 }
 function tgGrp(s){document.querySelectorAll('#g-cnt input').forEach(c=>c.checked=s)}
-function applyVless(){
+async function applyVless(){
     closeM('m-grp'); var txt=ed.getValue(); var sels=[];
     document.querySelectorAll('#g-cnt input:checked').forEach(c=>sels.push(c.value));
     localStorage.setItem(GRP_KEY, JSON.stringify(sels));
     var p=new URLSearchParams(); p.append('act','apply_insert'); p.append('content',txt); p.append('proxy_name',pData.name); p.append('proxy_yaml',pData.yaml); p.append('targets',JSON.stringify(sels));
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{ed.setValue(d.new_content);ed.clearSelection();showToast(t('toast_added'))}});
+    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(async d=>{if(d.error)await ask(d.error, false);else{ed.setValue(d.new_content);ed.clearSelection();showToast(t('toast_added'))}});
 }
 function showDel(){
     var prs = getProxiesList();
@@ -1138,8 +1285,8 @@ function showDel(){
     prs.forEach(p=>{var o=document.createElement('option');o.text=p;s.add(o)});
     document.getElementById('m-del').style.display='flex';
 }
-function doDel(){
-    var nm=document.getElementById('sel-del').value;if(!nm)return;if(!confirm(t('confirm_del_proxy')))return;closeM('m-del');
+async function doDel(){
+    var nm=document.getElementById('sel-del').value;if(!nm)return;if(!await ask(t('confirm_del_proxy')))return;closeM('m-del');
     var ls=ed.getValue().split(/\r?\n/); var nls=[], inP=false, delB=false, bInd=-1;
     for(var l of ls){
         if(l.match(/^proxies:/)){inP=true;nls.push(l);continue} if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)){inP=false;delB=false}
@@ -1174,6 +1321,8 @@ function doDel(){
     ed.setValue(nls.join('\n'));
 }
 
+var upDel, upRen, upEdit;
+
 function showRename() {
     var prs = getProxiesList();
     var s = document.getElementById('sel-ren-proxy');
@@ -1187,15 +1336,15 @@ function showRename() {
     document.getElementById('m-ren').style.display = 'flex';
 }
 
-function doRename() {
+async function doRename() {
     var oldName = document.getElementById('sel-ren-proxy').value;
     var newName = document.getElementById('inp-ren-newname').value.trim();
     if (!newName) {
-        alert("Новое имя не может быть пустым.");
+        await ask("Новое имя не может быть пустым.", false);
         return;
     }
     if (!oldName) {
-        alert("Прокси не выбран.");
+        await ask("Прокси не выбран.", false);
         return;
     }
 
@@ -1208,9 +1357,9 @@ function doRename() {
 
     fetch('/', { method: 'POST', body: params })
         .then(r => r.json())
-        .then(d => {
+        .then(async d => {
             if (d.error) {
-                alert('Ошибка: ' + d.error);
+                await ask('Ошибка: ' + d.error, false);
             } else {
                 ed.setValue(d.new_content);
                 ed.clearSelection();
@@ -1218,7 +1367,7 @@ function doRename() {
                 showToast(t('toast_renamed'));
             }
         })
-        .catch(e => alert("Сетевая ошибка: " + e));
+        .catch(async e => await ask("Сетевая ошибка: " + e, false));
 }
 
 // Initial session
@@ -1229,8 +1378,25 @@ function doRename() {
     setTheme(tVal);
     ed.setValue(initialConfig);
     ed.clearSelection();
-    
+
     var lim = localStorage.getItem(LIM_KEY) || '5';
     document.getElementById('bk-lim').value = lim;
+
+    initCS('cs-lang');
+    initCS('cs-theme');
+    var upProf = initCS('cs-prof');
+    upDel = initCS('cs-del-m');
+    upRen = initCS('cs-ren-m');
+    upEdit = initCS('cs-edit-m');
+
+    // Наблюдатель за изменениями в prof-sel (так как он наполняется сервером)
+    var observer = new MutationObserver(upProf);
+    observer.observe(document.getElementById('prof-sel'), { childList: true });
+    
+    new MutationObserver(upDel).observe(document.getElementById('sel-del'), { childList: true });
+    new MutationObserver(upRen).observe(document.getElementById('sel-ren-proxy'), { childList: true });
+    new MutationObserver(upEdit).observe(document.getElementById('edit-proxy-sel'), { childList: true });
 })();
+
+
 </script></body></html>
