@@ -111,8 +111,9 @@ body {
 #ed { flex: 1; font-size: 13px; }
 
 .sidebar {
-    width: 300px; display: flex; flex-direction: column;
+    width: 320px; display: flex; flex-direction: column;
     gap: 16px; overflow-y: auto; flex-shrink: 0; padding-right: 4px;
+    height: 100%;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -227,9 +228,9 @@ button:active { transform: scale(0.97); }
 
 <div class="app-header">
     <div class="brand">
-        <div class="logo" data-i18n="title">Mihomo Studio</div>
+        <div class="logo">Mihomo Studio</div>
         <span class="badge">v2.1 Go</span>
-        <div id="last-load" data-i18n="last_load_lbl" style="font-size: 11px; color: var(--txt-mut); margin-left: 8px;">Loaded: __TIME__</div>
+        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-left: 8px;">Loaded: __TIME__</div>
     </div>
     
     <div class="header-actions">
@@ -396,7 +397,7 @@ button:active { transform: scale(0.97); }
 <script>
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
-var initialConfig = __JSON_CONTENT__;
+var initialConfig = `__JSON_CONTENT__`;
 var isEditMode = false;
 var currLang = 'ru';
 
@@ -689,7 +690,8 @@ function setLang(l) {
 
     var timeElem = document.getElementById('last-load');
     var timeText = timeElem.innerText.split(': ')[1] || '';
-    timeElem.innerText = TR[l].last_load_lbl.replace('__TIME__', timeText);
+    if (timeText.includes('__TIME__')) timeText = ''; // Первичный запуск
+    timeElem.innerText = (TR[l].last_load_lbl || 'Loaded: __TIME__').replace('__TIME__', timeText);
 }
 
 function openPanel() {
@@ -1217,16 +1219,6 @@ function doRename() {
             }
         })
         .catch(e => alert("Сетевая ошибка: " + e));
-}
-
-function setTheme(t) {
-    currTheme = t;
-    localStorage.setItem(THM_KEY, t);
-    document.body.className = t;
-    document.getElementById('theme-sel').value = t;
-    if(t === 'light') ed.setTheme("ace/theme/chrome");
-    else if (t === 'cyber') ed.setTheme("ace/theme/terminal");
-    else ed.setTheme("ace/theme/monokai");
 }
 
 // Initial session
