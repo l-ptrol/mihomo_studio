@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.1.8</title>
+<title>Mihomo Studio v2.1.9</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -324,8 +324,8 @@ button:active { transform: scale(0.97); }
             </defs>
         </svg>
         <div class="brand-text">
-            <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.1.8</div>
+            <div class="brand-name">Mihomo</div>
+            <div class="brand-version">v2.1.9 (Go)</div>
         </div>
     </div>
     
@@ -396,10 +396,16 @@ button:active { transform: scale(0.97); }
             <div class="builder-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                    <h3 data-i18n="routes_title" style="margin:0;">Умные Маршруты</h3>
-                   <button onclick="openEditGroup()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
-                       <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                       <span data-i18n="btn_add_group">Добавить группу</span>
-                   </button>
+                   <div style="display:flex; gap:8px;">
+                       <button onclick="openAddProxyModal()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
+                           <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                           <span data-i18n="modal_add_proxy">Добавить прокси</span>
+                       </button>
+                       <button onclick="openEditGroup()" class="btn-outline" style="height:32px; font-size:12px; padding:0 12px; background:var(--bg-app);">
+                           <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                           <span data-i18n="btn_add_group">Добавить группу</span>
+                       </button>
+                   </div>
                 </div>
                 <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 20px;" data-i18n="routes_desc">Создавайте пулы балансировки и распределяйте прокси.</p>
                 <div id="routes-container" class="grid-cards">Загрузка...</div>
@@ -555,7 +561,7 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="addProxyModal" class="ovl"><div class="mod" style="width:550px; max-width:95vw;">
+<div id="addProxyModal" class="ovl"><div class="mod" style="width:700px; max-width:95vw; max-height:85vh; overflow-y:auto;">
     <h3 id="proxyModalTitle" data-i18n="modal_add_proxy">Добавить туннель</h3>
     
     <div id="edit-proxy-container" style="margin-bottom:15px; display:none;">
@@ -571,94 +577,172 @@ button:active { transform: scale(0.97); }
         </div>
     </div>
 
-    <div class="modal-tabs">
-        <button class="active" onclick="switchTab(event, 'tab-vless-reality')" data-i18n="tab_vless">VLESS Reality</button>
-        <button onclick="switchTab(event, 'tab-wg-awg')" data-i18n="tab_wg">AWG | WireGuard</button>
-        <button onclick="switchTab(event, 'tab-hysteria-2')" data-i18n="tab_hysteria">Hysteria 2</button>
-        <button onclick="switchTab(event, 'tab-trojan-proto')" data-i18n="tab_trojan">Trojan</button>
-        <button onclick="switchTab(event, 'tab-sub-import')" data-i18n="tab_sub">Подписка</button>
-    </div>
-
-    <div id="tab-vless-reality" class="tab-content active">
-        <label class="card-title" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
-        <input id="vlessLink" placeholder="vless://...">
-        <div id="vless-name-block" style="margin-top:15px;">
-            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
-            <input id="vlessProxyName" placeholder="Автоматически" data-i18n-ph="ph_auto_vless">
-        </div>
-        <button onclick="parseVless()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
-    </div>
-
-    <div id="tab-wg-awg" class="tab-content">
-        <label class="card-title" data-i18n="lbl_wg_conf">Конфигурация .conf:</label>
-        <textarea id="wgConfig" rows="5" placeholder="Privatekey, Address, Endpoint..."></textarea>
-        <div id="awg-options" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:15px; background:var(--bg-app); padding:10px; border-radius:8px;">
-            <div class="field-item"><label>Jc</label><input type="number" id="awg-jc" placeholder="4"></div>
-            <div class="field-item"><label>Jmin</label><input type="number" id="awg-jmin" placeholder="10"></div>
-            <div class="field-item"><label>Jmax</label><input type="number" id="awg-jmax" placeholder="50"></div>
-            <div class="field-item"><label>S1</label><input type="number" id="awg-s1" placeholder="0"></div>
-            <div class="field-item"><label>S2</label><input type="number" id="awg-s2" placeholder="0"></div>
-            <div class="field-item"><label>H1</label><input type="text" id="awg-h1" placeholder="1234"></div>
-            <div class="field-item"><label>H2</label><input type="text" id="awg-h2" placeholder="5678"></div>
-            <div class="field-item"><label>H3</label><input type="text" id="awg-h3" placeholder="9012"></div>
-            <div class="field-item"><label>H4</label><input type="text" id="awg-h4" placeholder="3456"></div>
-        </div>
-        <div id="wg-name-block" style="margin-top:15px;">
-            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
-            <input id="wgProxyName" placeholder="WG_Server">
-        </div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="document.getElementById('wgFile').click()" class="btn-outline" style="flex:1">
-                <svg class="ico" viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
-                <span data-i18n="btn_load_file">Загрузить</span>
+    <!-- Smart Import Section -->
+    <div style="background:var(--bg-app); padding:12px; border-radius:8px; margin-bottom:20px; border:1px dashed var(--bd-color);">
+        <label class="card-title" style="margin-bottom:8px;" data-i18n="lbl_smart_link">Импорт по ссылке (vless://, ss://, vmess://...):</label>
+        <div style="display:flex; gap:8px;">
+            <input id="smartLink" placeholder="Вставьте ссылку сюда..." style="flex:1;">
+            <button onclick="parseSmartLink()" class="btn-outline" style="white-space:nowrap;">
+                <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Парсить
             </button>
-            <button onclick="addWireguard()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
         </div>
-        <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
     </div>
 
-    <div id="tab-hysteria-2" class="tab-content">
-        <label class="card-title">Hysteria 2 Server:</label>
-        <div style="display:grid; grid-template-columns: 3fr 1fr; gap:10px;">
-            <input id="hy2Server" placeholder="host.com">
-            <input id="hy2Port" type="number" value="443">
+    <!-- Base Proxy Fields (Always visible when not editing subscription) -->
+    <div id="base-proxy-fields" style="margin-bottom:20px;">
+        <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
+        <input id="proxyName" placeholder="MyProxy" data-i18n-ph="ph_name">
+    </div>
+
+    <div class="modal-tabs" style="overflow-x:auto; white-space:nowrap; padding-bottom:5px; margin-bottom:15px; scrollbar-width:thin;">
+        <button class="active" onclick="switchTab(event, 'tab-vless')">VLESS</button>
+        <button onclick="switchTab(event, 'tab-vmess')">VMess</button>
+        <button onclick="switchTab(event, 'tab-hy2')">Hysteria 2</button>
+        <button onclick="switchTab(event, 'tab-wg')">WireGuard / AWG</button>
+        <button onclick="switchTab(event, 'tab-http')">HTTP / SOCKS</button>
+        <button onclick="switchTab(event, 'tab-ss')">SS / SSR</button>
+        <button onclick="switchTab(event, 'tab-sub')">Подписка</button>
+    </div>
+
+    <!-- VLESS Tab -->
+    <div id="tab-vless" class="tab-content active proxy-form">
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="vless-server" placeholder="host.com"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="vless-port" placeholder="443"></div>
         </div>
-        <div style="margin-top:15px;">
-            <label class="card-title">Password & SNI:</label>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input id="hy2Pass" placeholder="password">
-                <input id="hy2Sni" placeholder="sni.com">
+        <div class="field-item"><label>UUID</label><input id="vless-uuid" placeholder="xxxx-xxxx-xxxx-xxxx"></div>
+        <div class="grid-2">
+            <div class="field-item"><label>Network</label><input id="vless-network" placeholder="ws, grpc, tcp..." value="tcp"></div>
+            <div class="field-item"><label>TLS</label><input id="vless-tls" type="checkbox" style="width:18px;height:18px;margin-top:6px;"></div>
+        </div>
+        <div class="field-item"><label>Reality / Servername (SNI)</label><input id="vless-sni" placeholder="sni.com"></div>
+        <div class="field-item"><label>Flow</label><input id="vless-flow" placeholder="xtls-rprx-vision"></div>
+    </div>
+
+    <!-- VMess Tab -->
+    <div id="tab-vmess" class="tab-content proxy-form">
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="vmess-server" placeholder="host.com"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="vmess-port" placeholder="443"></div>
+        </div>
+        <div class="field-item"><label>UUID</label><input id="vmess-uuid" placeholder="xxxx-xxxx-xxxx-xxxx"></div>
+        <div class="grid-2">
+            <div class="field-item"><label>AlterId</label><input type="number" id="vmess-alterid" value="0"></div>
+            <div class="field-item"><label>Cipher</label><input id="vmess-cipher" value="auto"></div>
+        </div>
+        <div class="grid-2">
+            <div class="field-item"><label>Network</label><input id="vmess-network" placeholder="ws, grpc, tcp..." value="tcp"></div>
+            <div class="field-item"><label>TLS</label><input id="vmess-tls" type="checkbox" style="width:18px;height:18px;margin-top:6px;"></div>
+        </div>
+    </div>
+
+    <!-- Hysteria 2 Tab -->
+    <div id="tab-hy2" class="tab-content proxy-form">
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="hy2-server" placeholder="host.com"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="hy2-port" placeholder="443"></div>
+        </div>
+        <div class="grid-2">
+            <div class="field-item"><label>Password</label><input id="hy2-pass" placeholder="password"></div>
+            <div class="field-item"><label>SNI</label><input id="hy2-sni" placeholder="sni.com"></div>
+        </div>
+        <div class="field-item"><label>Obfs (salamander)</label><input id="hy2-obfs" placeholder="obfs password"></div>
+    </div>
+
+    <!-- WireGuard & AmneziaWG Tab -->
+    <div id="tab-wg" class="tab-content proxy-form">
+        <div style="margin-bottom:15px; display:flex; gap:10px;">
+            <div style="flex:1;">
+                <label class="card-title">Импорт из .conf файла/текста:</label>
+                <textarea id="wg-textarea" rows="4" placeholder="[Interface]&#10;PrivateKey = ...&#10;Address = ..."></textarea>
             </div>
         </div>
-        <div style="margin-top:15px;">
-            <label class="card-title">Obfuscation (Salamander):</label>
-            <input id="hy2ObfsPass" placeholder="obfs password">
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom:15px;">
+            <button onclick="document.getElementById('wg-file').click()" class="btn-outline">Файл</button>
+            <button onclick="parseWgConfig()" class="btn-primary">Разобрать Config</button>
+            <input type="file" id="wg-file" accept=".conf" style="display:none" onchange="loadWgConfFile(this)">
         </div>
-        <div style="margin-top:15px;">
-            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
-            <input id="hy2Name" placeholder="MyHy2">
+
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="wg-server" placeholder="endpoint IP/domain"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="wg-port"></div>
         </div>
-        <button onclick="addHysteria2()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
+        <div class="grid-2">
+            <div class="field-item"><label>IP</label><input id="wg-ip" placeholder="10.0.0.2"></div>
+            <div class="field-item"><label>IPv6</label><input id="wg-ipv6" placeholder="::/0"></div>
+        </div>
+        <div class="field-item"><label>Private Key</label><input id="wg-priv" placeholder="private key"></div>
+        <div class="field-item"><label>Public Key</label><input id="wg-pub" placeholder="public key"></div>
+        <div class="field-item"><label>Preshared Key (optional)</label><input id="wg-psk" placeholder="preshared key"></div>
+
+        <label class="card-title" style="margin-top:10px;">AmneziaWG Options</label>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; background:var(--bg-app); padding:10px; border-radius:8px; border:1px solid var(--bd-color);">
+            <div class="field-item"><label>jc</label><input type="number" id="awg-jc"></div>
+            <div class="field-item"><label>jmin</label><input type="number" id="awg-jmin"></div>
+            <div class="field-item"><label>jmax</label><input type="number" id="awg-jmax"></div>
+            <div class="field-item"><label>s1</label><input type="number" id="awg-s1"></div>
+            <div class="field-item"><label>s2</label><input type="number" id="awg-s2"></div>
+            <div class="field-item"><label>h1</label><input type="number" id="awg-h1"></div>
+            <div class="field-item"><label>h2</label><input type="number" id="awg-h2"></div>
+            <div class="field-item"><label>h3</label><input type="number" id="awg-h3"></div>
+            <div class="field-item"><label>h4</label><input type="number" id="awg-h4"></div>
+        </div>
     </div>
 
-    <div id="tab-trojan-proto" class="tab-content">
-        <label class="card-title">Trojan Server:</label>
-        <div style="display:grid; grid-template-columns: 3fr 1fr; gap:10px;">
-            <input id="trServer" placeholder="host.com">
-            <input id="trPort" type="number" value="443">
+    <!-- HTTP & SOCKS Tab -->
+    <div id="tab-http" class="tab-content proxy-form">
+        <div class="field-item" style="margin-bottom:12px;">
+            <label class="card-title">Type</label>
+            <select id="hs-type" class="form-control" style="background:var(--bg-app); border:1px solid var(--bd-color); color:var(--txt-main);">
+                <option value="http">HTTP</option>
+                <option value="socks5">SOCKS5</option>
+                <option value="socks4">SOCKS4</option>
+            </select>
         </div>
-        <div style="margin-top:15px;">
-            <label class="card-title">Password:</label>
-            <input id="trPass" placeholder="password">
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="hs-server" placeholder="host.com"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="hs-port"></div>
         </div>
-        <div style="margin-top:15px;">
-            <label class="card-title" data-i18n="lbl_proxy_name">Имя прокси:</label>
-            <input id="trName" placeholder="MyTrojan">
+        <div class="grid-2">
+            <div class="field-item"><label>Username</label><input id="hs-user" placeholder="user"></div>
+            <div class="field-item"><label>Password</label><input id="hs-pass" placeholder="pass"></div>
         </div>
-        <button onclick="addTrojan()" class="btn-success" style="width:100%; margin-top:20px;" data-i18n="btn_save">Сохранить</button>
+        <div class="field-item"><label>TLS</label><input id="hs-tls" type="checkbox" style="width:18px;height:18px;margin-top:6px;"></div>
     </div>
 
-    <div id="tab-sub-import" class="tab-content">
+    <!-- Shadowsocks (SS) & SSR Tab -->
+    <div id="tab-ss" class="tab-content proxy-form">
+        <div class="field-item" style="margin-bottom:12px;">
+            <label class="card-title">Type</label>
+            <select id="ss-type" class="form-control" style="background:var(--bg-app); border:1px solid var(--bd-color); color:var(--txt-main);">
+                <option value="ss">Shadowsocks (SS)</option>
+                <option value="ssr">ShadowsocksR (SSR)</option>
+            </select>
+        </div>
+        <div class="grid-2">
+            <div class="field-item"><label>Server</label><input id="ss-server" placeholder="host.com"></div>
+            <div class="field-item"><label>Port</label><input type="number" id="ss-port"></div>
+        </div>
+        <div class="grid-2">
+            <div class="field-item"><label>Password</label><input id="ss-pass" placeholder="password"></div>
+            <div class="field-item"><label>Cipher</label><input id="ss-cipher" placeholder="aes-256-gcm"></div>
+        </div>
+        <div id="ssr-fields" style="display:none; background:var(--bg-app); padding:10px; border-radius:8px; border:1px solid var(--bd-color); margin-top:10px;">
+            <label class="card-title" style="margin-bottom:8px;">SSR Params</label>
+            <div class="grid-2">
+                <div class="field-item"><label>Protocol</label><input id="ssr-proto"></div>
+                <div class="field-item"><label>Protocol Param</label><input id="ssr-protoparam"></div>
+                <div class="field-item"><label>Obfs</label><input id="ssr-obfs"></div>
+                <div class="field-item"><label>Obfs Param</label><input id="ssr-obfsparam"></div>
+            </div>
+        </div>
+        <div class="field-item" style="margin-top:10px;"><label>Plugin (e.g. obfs)</label><input id="ss-plugin" placeholder="obfs"></div>
+        <div class="field-item"><label>Plugin-opts (JSON)</label><input id="ss-pluginopts" placeholder='{"mode":"tls","host":"..."}'></div>
+    </div>
+
+    <!-- Subscription Tab -->
+    <div id="tab-sub" class="tab-content proxy-form">
         <label class="card-title" data-i18n="lbl_sub_link">Ссылка на подписку:</label>
         <input id="subLink" placeholder="https://...">
         <div style="margin-top:15px;">
@@ -668,9 +752,19 @@ button:active { transform: scale(0.97); }
                 <option value="provider" data-i18n="opt_sub_provider">Proxy Provider (динамический)</option>
             </select>
         </div>
-        <button onclick="processSubscription()" class="btn-primary" style="width:100%; margin-top:20px;" data-i18n="btn_import">Импортировать</button>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:25px; border-top:1px solid var(--bd-color); padding-top:15px;">
+        <button onclick="saveProxyByType()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+        <button onclick="closeM('addProxyModal')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
+
+<script>
+document.getElementById('ss-type').addEventListener('change', function(e) {
+    document.getElementById('ssr-fields').style.display = e.target.value === 'ssr' ? 'block' : 'none';
+});
+</script>
 
 <div id="m-view-bk" class="ovl"><div class="mod">
     <h3 data-i18n="modal_view_bk">Просмотр бэкапа</h3>
@@ -819,7 +913,7 @@ document.addEventListener('click', closeAllCS);
 const TR = {
     ru: {
         title: "Mihomo Studio", save: "Сохранить", restart: "Рестарт", panel: "Панель", update_btn: "Обновить", profiles: "Профили", create: "Создать", delete: "Удалить",
-        proxy_mgmt: "Управление", add: "Добавить", edit: "Блоки", rename: "Ринаме", backups: "Бэкапы", clean: "Очистить", keep: "Оставить:",
+        proxy_mgmt: "Управление", add: "Добавить", edit: "Блоки", rename: "Переименовать", backups: "Бэкапы", clean: "Очистить", keep: "Оставить:",
         theme_dark: "Тёмная", theme_light: "Светлая", theme_midnight: "Полночь", theme_cyber: "Кибер",
         toast_saved: "Сохранено", toast_cleaned: "Очищено", toast_deleted: "Удалено", toast_restored: "Восстановлено", toast_added: "Добавлено", toast_renamed: "Переименовано", toast_updated: "Обновлено", toast_checking: "Проверка...", toast_restarting: "Рестарт...",
         confirm_switch: "Переключить на {0}?", confirm_del_prof: "Удалить профиль {0}?", confirm_del_bk: "Удалить бэкап {0}?", confirm_clean: "Оставить {0} бэкапов?", confirm_restore: "Восстановить {0}?", confirm_del_proxy: "Удалить?", confirm_replace: "Заменить '{0}'?", confirm_update: "Обновить Mihomo Studio?", confirm_restart_service: "Перезапустить сервис?",
@@ -828,15 +922,52 @@ const TR = {
         btn_add: "Добавить", btn_save: "Сохранить", btn_cancel: "Отмена", btn_restore: "Восстановить", btn_close: "Закрыть", btn_update: "Обновить", tab_vless: "VLESS", tab_wg: "WireGuard",
         lbl_select_edit: "Выберите прокси:", warn_edit: "Данные будут заменены!", modal_new_prof: "Новый профиль", lbl_prof_name: "Имя:", lbl_content: "Контент:", btn_load_file: "Файл",
         ph_paste_yaml: "YAML конфиг...", ph_auto_vless: "vless://...", ph_auto_wg: "WG_Server", ph_paste_conf: "Содержимое .conf...", modal_groups: "В группы:", btn_sel_all: "Все", btn_sel_none: "Ни одной",
-        modal_del_proxy: "Удалить прокси", modal_ren_proxy: "Rename", lbl_sel_ren: "Выбрать для Rename:", lbl_new_name: "Новое имя:", ph_new_name: "Имя...", btn_rename: "Rename", modal_console: "Консоль", modal_view_bk: "Бэкап",
+        modal_del_proxy: "Удалить прокси", modal_ren_proxy: "Переименовать", lbl_sel_ren: "Выбрать для переименования:", lbl_new_name: "Новое имя:", ph_new_name: "Имя...", btn_rename: "Переименовать", modal_console: "Консоль", modal_view_bk: "Бэкап",
         log_loading: "xkeen -restart...", last_load_lbl: "Загружено: __TIME__", last_saved: "Сохранено:", restart_service_short: "Рестарт", update_btn_short: "Обновить", btn_ok: "ОК",
         tab_yaml: "YAML", tab_routes: "Маршруты", tab_services: "Правила", routes_title: "Визуальный Конструктор", routes_desc: "Управляйте группами и балансировкой.", routes_no_groups: "Группы не найдены.", routes_parse_err: "Ошибка YAML: ",
         rules_title: "Правила фильтрации", rules_desc: "Распределяйте трафик сервисов.", rules_no_rules: "Правила не найдены.", rules_count: "правил", btn_add_group: "Группа", btn_add_rule: "Правило",
         modal_edit_group: "Настройка группы", lbl_group_name: "Имя группы:", lbl_group_type: "Тип:", lbl_group_proxies: "Участники:", lbl_rule_type: "Тип правила:", lbl_rule_val: "Значение:", lbl_rule_target: "Цель:",
-        tab_hysteria: "Hysteria 2", tab_trojan: "Trojan", tab_sub: "Подписка", lbl_sub_link: "Ссылка:", lbl_sub_action: "Действие:", opt_sub_import: "Импорт", opt_sub_provider: "Provider", btn_import: "ОК", btn_add_to_group: "Туннель", modal_edit_rule: "Edit Rule", confirm_delete: "Удалить?"
+        tab_hysteria: "Hysteria 2", tab_trojan: "Trojan", tab_sub: "Подписка", lbl_sub_link: "Ссылка:", lbl_sub_action: "Действие:", opt_sub_import: "Импорт", opt_sub_provider: "Provider", btn_import: "ОК", btn_add_to_group: "Туннель", modal_edit_rule: "Настройка правила", confirm_delete: "Удалить?",
+        lbl_smart_link: "Импорт по ссылке (vless://, ss://, vmess://...):", ph_name: "Имя..."
     },
-    uk: { title: "Mihomo Studio", save: "Зберегти" },
-    en: { title: "Mihomo Studio", save: "Save" }
+    en: {
+        title: "Mihomo Studio", save: "Save", restart: "Restart", panel: "Panel", update_btn: "Update", profiles: "Profiles", create: "Create", delete: "Delete",
+        proxy_mgmt: "Management", add: "Add", edit: "Edit", rename: "Rename", backups: "Backups", clean: "Clean", keep: "Keep:",
+        theme_dark: "Dark", theme_light: "Light", theme_midnight: "Midnight", theme_cyber: "Cyber",
+        toast_saved: "Saved", toast_cleaned: "Cleaned", toast_deleted: "Deleted", toast_restored: "Restored", toast_added: "Added", toast_renamed: "Renamed", toast_updated: "Updated", toast_checking: "Checking...", toast_restarting: "Restarting...",
+        confirm_switch: "Switch to {0}?", confirm_del_prof: "Delete profile {0}?", confirm_del_bk: "Delete backup {0}?", confirm_clean: "Keep {0} backups?", confirm_restore: "Restore {0}?", confirm_del_proxy: "Delete?", confirm_replace: "Replace '{0}'?", confirm_update: "Update Mihomo Studio?", confirm_restart_service: "Restart service?",
+        prompt_enter_name: "Enter a name!", error_invalid_name: "Invalid name!", error_exists: "Already exists", error_no_proxy_edit: "Select a proxy", error_empty_wg: "Empty config", alert_updating: "Updating in progress...",
+        modal_add_proxy: "Add Tunnel", modal_edit_proxy: "Edit Tunnel", lbl_vless_link: "VLESS Link:", lbl_proxy_name: "Proxy Name:", lbl_wg_conf: "Config (.conf):",
+        btn_add: "Add", btn_save: "Save", btn_cancel: "Cancel", btn_restore: "Restore", btn_close: "Close", btn_update: "Update", tab_vless: "VLESS", tab_wg: "WireGuard",
+        lbl_select_edit: "Select proxy:", warn_edit: "Proxy data will be completely replaced!", modal_new_prof: "New Profile", lbl_prof_name: "Name:", lbl_content: "Content:", btn_load_file: "File",
+        ph_paste_yaml: "YAML config...", ph_auto_vless: "vless://...", ph_auto_wg: "WG_Server", ph_paste_conf: "Paste .conf...", modal_groups: "Add to groups:", btn_sel_all: "All", btn_sel_none: "None",
+        modal_del_proxy: "Delete Proxy", modal_ren_proxy: "Rename Proxy", lbl_sel_ren: "Select to Rename:", lbl_new_name: "New Name:", ph_new_name: "Name...", btn_rename: "Rename", modal_console: "Console", modal_view_bk: "View Backup",
+        log_loading: "xkeen -restart...", last_load_lbl: "Loaded: __TIME__", last_saved: "Saved:", restart_service_short: "Restart", update_btn_short: "Update", btn_ok: "OK",
+        tab_yaml: "YAML", tab_routes: "Routes", tab_services: "Rules", routes_title: "Visual Constructor", routes_desc: "Manage proxy groups and load balancing.", routes_no_groups: "No groups found.", routes_parse_err: "YAML Error: ",
+        rules_title: "Routing Rules", rules_desc: "Distribute service traffic.", rules_no_rules: "No rules found.", rules_count: "rules", btn_add_group: "Group", btn_add_rule: "Rule",
+        modal_edit_group: "Edit Group", lbl_group_name: "Group Name:", lbl_group_type: "Type:", lbl_group_proxies: "Members:", lbl_rule_type: "Rule Type:", lbl_rule_val: "Value:", lbl_rule_target: "Target:",
+        tab_hysteria: "Hysteria 2", tab_trojan: "Trojan", tab_sub: "Subscription", lbl_sub_link: "URL:", lbl_sub_action: "Action:", opt_sub_import: "Import", opt_sub_provider: "Provider", btn_import: "OK", btn_add_to_group: "To Group", modal_edit_rule: "Edit Rule", confirm_delete: "Delete?",
+        lbl_smart_link: "Import by link (vless://, ss://, vmess://...):", ph_name: "Name..."
+    },
+    uk: {
+        title: "Mihomo Studio", save: "Зберегти", restart: "Рестарт", panel: "Панель", update_btn: "Оновити", profiles: "Профілі", create: "Створити", delete: "Видалити",
+        proxy_mgmt: "Керування", add: "Додати", edit: "Блоки", rename: "Перейменувати", backups: "Резервні копії", clean: "Очистити", keep: "Залишити:",
+        theme_dark: "Темна", theme_light: "Світла", theme_midnight: "Північ", theme_cyber: "Кібер",
+        toast_saved: "Збережено", toast_cleaned: "Очищено", toast_deleted: "Видалено", toast_restored: "Відновлено", toast_added: "Додано", toast_renamed: "Перейменовано", toast_updated: "Оновлено", toast_checking: "Перевірка...", toast_restarting: "Рестарт...",
+        confirm_switch: "Перейти до {0}?", confirm_del_prof: "Видалити профіль {0}?", confirm_del_bk: "Видалити бекап {0}?", confirm_clean: "Залишити {0} копій?", confirm_restore: "Відновити {0}?", confirm_del_proxy: "Видалити?", confirm_replace: "Замінити '{0}'?", confirm_update: "Оновити Mihomo Studio?", confirm_restart_service: "Перезапустити сервіс?",
+        prompt_enter_name: "Введіть ім'я!", error_invalid_name: "Невірне ім'я!", error_exists: "Вже існує", error_no_proxy_edit: "Оберіть проксі", error_empty_wg: "Порожній конфіг", alert_updating: "Почато оновлення...",
+        modal_add_proxy: "Додати тунель", modal_edit_proxy: "Змінити тунель", lbl_vless_link: "Посилання VLESS:", lbl_proxy_name: "Ім'я проксі:", lbl_wg_conf: "Конфігурація .conf:",
+        btn_add: "Додати", btn_save: "Зберегти", btn_cancel: "Скасувати", btn_restore: "Відновити", btn_close: "Закрити", btn_update: "Оновити", tab_vless: "VLESS", tab_wg: "WireGuard",
+        lbl_select_edit: "Оберіть проксі:", warn_edit: "Дані будуть повністю замінені!", modal_new_prof: "Новий профіль", lbl_prof_name: "Ім'я:", lbl_content: "Вміст:", btn_load_file: "Файл",
+        ph_paste_yaml: "YAML конфіг...", ph_auto_vless: "vless://...", ph_auto_wg: "WG_Server", ph_paste_conf: "Вміст .conf...", modal_groups: "У групи:", btn_sel_all: "Всі", btn_sel_none: "Жодної",
+        modal_del_proxy: "Видалити проксі", modal_ren_proxy: "Перейменувати", lbl_sel_ren: "Обрати для перейменування:", lbl_new_name: "Нове ім'я:", ph_new_name: "Ім'я...", btn_rename: "Перейменувати", modal_console: "Консоль", modal_view_bk: "Бекап",
+        log_loading: "xkeen -restart...", last_load_lbl: "Завантажено: __TIME__", last_saved: "Збережено:", restart_service_short: "Рестарт", update_btn_short: "Оновити", btn_ok: "ОК",
+        tab_yaml: "YAML", tab_routes: "Маршрути", tab_services: "Правила", routes_title: "Візуальний Конструктор", routes_desc: "Керуйте групами та балансуванням.", routes_no_groups: "Групи не знайдено.", routes_parse_err: "Помилка YAML: ",
+        rules_title: "Правила фільтрації", rules_desc: "Розподіляйте трафік сервісів.", rules_no_rules: "Правила не знайдено.", rules_count: "правил", btn_add_group: "Група", btn_add_rule: "Правило",
+        modal_edit_group: "Налаштування групи", lbl_group_name: "Ім'я групи:", lbl_group_type: "Тип:", lbl_group_proxies: "Учасники:", lbl_rule_type: "Тип правила:", lbl_rule_val: "Значення:", lbl_rule_target: "Ціль:",
+        tab_hysteria: "Hysteria 2", tab_trojan: "Trojan", tab_sub: "Підписка", lbl_sub_link: "Посилання:", lbl_sub_action: "Дія:", opt_sub_import: "Імпорт", opt_sub_provider: "Provider", btn_import: "ОК", btn_add_to_group: "Тунель", modal_edit_rule: "Зміна правила", confirm_delete: "Видалити?",
+        lbl_smart_link: "Імпорт за посиланням (vless://, ss://, vmess://...):", ph_name: "Ім'я..."
+    }
 };
 
 function t(k, ...args) { let s = (TR[currLang] && TR[currLang][k]) ? TR[currLang][k] : k; args.forEach((a, i) => s = s.replace('{'+i+'}', a)); return s; }
@@ -890,9 +1021,8 @@ function renderRoutes() {
                         <span class="badge badge-${g.type}">${g.type}</span>
                     </div>
                     <div class="card-actions">
-                        <button onclick="openAddTunnelToGroup('${g.name}')" class="btn-icon" title="${t('btn_add_to_group')}"><svg viewBox="0 0 24 24" width="16"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"/></svg></button>
-                        <button onclick="openEditGroup('${g.name}')" class="btn-icon"><svg viewBox="0 0 24 24" width="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="currentColor"/></svg></button>
-                        <button onclick="confirmDeleteGroup('${g.name}')" class="btn-icon btn-icon-del"><svg viewBox="0 0 24 24" width="16"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" fill="currentColor"/></svg></button>
+                        <button onclick="openEditGroup('${g.name}')" class="btn-icon" title="${t('btn_edit')}"><svg viewBox="0 0 24 24" width="14"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button onclick="confirmDeleteGroup('${g.name}')" class="btn-icon btn-icon-del" title="${t('delete')}"><svg viewBox="0 0 24 24" width="14"><polyline points="3 6 5 6 21 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     </div>
                 </div>
                 <div class="card-body members-grid" data-group="${g.name}">
@@ -1029,424 +1159,309 @@ function getProxiesList() {
     return prs;
 }
 
-function openAddProxyModal() {
-    isEditMode = false;
-    document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
-    document.getElementById('edit-proxy-container').style.display = 'none';
-    ['vless-name-block', 'wg-name-block'].forEach(id => { var el = document.getElementById(id); if(el) el.style.display = 'block'; });
-    document.querySelectorAll('#addProxyModal input, #addProxyModal textarea').forEach(i => i.value = '');
+async function switchProf() {
+    var p = document.getElementById('prof-sel').value;
+    if(!p || !await ask(t('confirm_switch', p))) return;
+    var params = new URLSearchParams(); params.append('act', 'switch_prof'); params.append('name', p);
+    fetch('/', {method:'POST', body:params}).then(() => location.reload());
+}
+function openAddProf() { document.getElementById('m-add-prof').style.display = 'flex'; }
+
+
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function openPanel() { window.open('/ui/', '_blank'); }
+function adjNum(id, change) {
+    var e = document.getElementById(id);
+    var v = parseInt(e.value) + change;
+    if (v >= parseInt(e.min) && v <= parseInt(e.max)) e.value = v;
+}
+async function restartService() {
+    if(!await ask(t('confirm_restart_service'))) return;
+    showToast(t('toast_restarting'));
+    var p = new URLSearchParams(); p.append('act', 'restart_service');
+    fetch('/', { method: 'POST', body: p }).then(() => {
+        setTimeout(() => location.reload(), 2000);
+    });
+}
+
+function openEditProxyModal() {
+    isEditMode = true;
+    document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy') || 'Edit Tunnel';
+    document.getElementById('edit-proxy-container').style.display = 'block';
+    document.getElementById('base-proxy-fields').style.display = 'none';
+    
+    var prs = getProxiesList();
+    var s = document.getElementById('edit-proxy-sel');
+    s.innerHTML = '';
+    prs.forEach(p => {
+        var o = document.createElement('option');
+        o.text = p; o.value = p;
+        s.add(o);
+    });
+    
+    document.querySelectorAll('#addProxyModal input, #addProxyModal textarea').forEach(i => { if(i.type==='checkbox') i.checked=false; else i.value=''; });
+    
+    var hst = document.getElementById('hs-type'); if(hst) hst.value = 'http';
+    var sst = document.getElementById('ss-type'); if(sst) sst.value = 'ss';
+    document.getElementById('ssr-fields').style.display = 'none';
+    document.getElementById('subMode').value = 'provider';
+    document.getElementById('vless-network').value = 'tcp';
+    document.getElementById('vmess-network').value = 'tcp';
+    document.getElementById('vmess-cipher').value = 'auto';
+    
+    var tb = document.querySelector('.modal-tabs button');
+    if(tb) switchTab({target: tb}, 'tab-vless');
+    
+    if (prs.length > 0) {
+        s.value = prs[0];
+        if (typeof upEdit === 'function') upEdit();
+    }
     document.getElementById('addProxyModal').style.display = 'flex';
 }
 
-async function addWireguard() {
-
-    var p = new URLSearchParams();
-    p.append('act', 'add_wireguard');
-    p.append('config_text', conf);
-    if (name) p.append('proxy_name', name);
-    // If AWG, we might need a custom backend act or just inject fields after receiving YAML
-    
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(async d => {
-            if (d.error) {
-                await ask(d.error, false);
-            } else {
-                var lib = window.jsyaml || window.YAML;
-                var finalProxy = lib.load(d.yaml);
-                if (awgOpts) finalProxy['amnezia-wg-option'] = awgOpts;
-                
-                if(isEditMode) {
-                    replaceProxyData(name, lib.dump(finalProxy));
-                } else {
-                    injectProxy(finalProxy);
-                }
-            }
-        });
+function showDel() {
+    var prs = getProxiesList();
+    var s = document.getElementById('sel-del');
+    s.innerHTML = '';
+    prs.forEach(p => {
+        var o = document.createElement('option');
+        o.text = p; o.value = p;
+        s.add(o);
+    });
+    if (prs.length > 0) {
+        s.value = prs[0];
+        if (typeof upDel === 'function') upDel();
+    }
+    document.getElementById('m-del').style.display = 'flex';
 }
 
-async function parseVless(){
-    var link = document.getElementById('vlessLink').value;
-    var name = '';
-
-    if(isEditMode) {
-        name = document.getElementById('edit-proxy-sel').value;
-        if(!name || document.getElementById('edit-proxy-sel').disabled) return await ask(t('error_no_proxy_edit'), false);
-    } else {
-        name = document.getElementById('vlessProxyName').value.trim();
-    }
-
-    if (!link) return;
-
-    var p = new URLSearchParams();
-    p.append('act', 'parse');
-    p.append('link', link);
-    if (name) p.append('proxy_name', name);
-
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(async d => {
-            if (d.error) {
-                await ask(d.error, false);
-            } else {
-                if(isEditMode) {
-                    replaceProxyData(name, d.yaml);
-                } else {
-                    pData = d;
-                    closeM('addProxyModal');
-                    showG();
-                }
-            }
+async function doDel() {
+    var pName = document.getElementById('sel-del').value;
+    if (!pName) return ask(t('error_no_proxy_edit') || "Select a proxy", false);
+    if (!await ask(t('confirm_del_proxy') + " (" + pName + ")")) return;
+    
+    var lib = window.jsyaml || window.YAML;
+    try {
+        var data = lib.load(ed.getValue());
+        var proxies = data['proxies'] || [];
+        var newProxies = proxies.filter(p => p.name !== pName);
+        
+        var groups = data['proxy-groups'] || [];
+        groups.forEach(g => {
+            if (g.proxies) g.proxies = g.proxies.filter(member => member !== pName);
         });
+        
+        data['proxies'] = newProxies;
+        data['proxy-groups'] = groups;
+        
+        ed.setValue(lib.dump(data, { indent: 2, lineWidth: -1, noRefs: true }));
+        ed.clearSelection();
+        closeM('m-del');
+        showToast(t('toast_deleted'));
+        renderRoutes();
+    } catch(e) {
+        ask("YAML Error: " + e.message, false);
+    }
+}
+
+
+function openAddProxyModal() {
+    isEditMode = false;
+    document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy') || 'Добавить туннель';
+    document.getElementById('edit-proxy-container').style.display = 'none';
+    document.getElementById('base-proxy-fields').style.display = 'block';
+    document.querySelectorAll('#addProxyModal input, #addProxyModal textarea').forEach(i => { if(i.type==='checkbox') i.checked=false; else i.value=''; });
+    document.getElementById('smartLink').value = '';
+    
+    var hst = document.getElementById('hs-type'); if(hst) hst.value = 'http';
+    var sst = document.getElementById('ss-type'); if(sst) sst.value = 'ss';
+    document.getElementById('ssr-fields').style.display = 'none';
+    document.getElementById('subMode').value = 'provider';
+    document.getElementById('vless-network').value = 'tcp';
+    document.getElementById('vmess-network').value = 'tcp';
+    document.getElementById('vmess-cipher').value = 'auto';
+    
+    var tb = document.querySelector('.modal-tabs button');
+    if(tb) switchTab({target: tb}, 'tab-vless');
+    document.getElementById('addProxyModal').style.display = 'flex';
+}
+
+function parseSmartLink() {
+    var link = document.getElementById('smartLink').value.trim();
+    if(!link) return;
+    try {
+        var url = (link.startsWith('vmess://') || !link.includes('://')) ? null : new URL(link);
+        var name = (url && url.hash) ? decodeURIComponent(url.hash.replace('#', '')) : "Proxy";
+        document.getElementById('proxyName').value = name;
+        
+        if (link.startsWith('vless://')) {
+            switchTab({target: document.querySelector('.modal-tabs button:nth-child(1)')}, 'tab-vless');
+            document.getElementById('vless-server').value = url.hostname;
+            document.getElementById('vless-port').value = url.port || 443;
+            document.getElementById('vless-uuid').value = url.username;
+            var p = new URLSearchParams(url.search);
+            document.getElementById('vless-network').value = p.get('type') || 'tcp';
+            document.getElementById('vless-tls').checked = (p.get('security') === 'tls' || p.get('security') === 'reality');
+            document.getElementById('vless-sni').value = p.get('sni') || p.get('peer') || '';
+            document.getElementById('vless-flow').value = p.get('flow') || '';
+        } else if (link.startsWith('vmess://')) {
+            switchTab({target: document.querySelector('.modal-tabs button:nth-child(2)')}, 'tab-vmess');
+            var b64 = link.replace('vmess://', '');
+            var dec = JSON.parse(decodeURIComponent(escape(atob(b64))));
+            document.getElementById('proxyName').value = dec.ps || name;
+            document.getElementById('vmess-server').value = dec.add;
+            document.getElementById('vmess-port').value = dec.port;
+            document.getElementById('vmess-uuid').value = dec.id;
+            document.getElementById('vmess-alterid').value = dec.aid || 0;
+            document.getElementById('vmess-network').value = dec.net || 'tcp';
+            document.getElementById('vmess-tls').checked = dec.tls === 'tls';
+        } else if (link.startsWith('hysteria2://') || link.startsWith('hy2://')) {
+            switchTab({target: document.querySelector('.modal-tabs button:nth-child(3)')}, 'tab-hy2');
+            document.getElementById('hy2-server').value = url.hostname;
+            document.getElementById('hy2-port').value = url.port || 443;
+            document.getElementById('hy2-pass').value = url.username || url.password;
+            var p = new URLSearchParams(url.search);
+            document.getElementById('hy2-sni').value = p.get('sni') || '';
+            document.getElementById('hy2-obfs').value = p.get('obfs-password') || '';
+        } else if (link.startsWith('ss://')) {
+            switchTab({target: document.querySelector('.modal-tabs button:nth-child(6)')}, 'tab-ss');
+            document.getElementById('ss-type').value = 'ss'; document.getElementById('ssr-fields').style.display = 'none';
+            var raw = link.replace('ss://', '').split('#')[0];
+            var dec;
+            if(raw.includes('@')) {
+                var pts = raw.split('@'); dec = atob(pts[0]) + '@' + pts[1];
+            } else {
+                dec = atob(raw);
+            }
+            var mp = dec.substring(0, dec.lastIndexOf('@'));
+            var hp = dec.substring(dec.lastIndexOf('@')+1);
+            var mpa = mp.split(':'), hpa = hp.split(':');
+            document.getElementById('ss-server').value = hpa[0];
+            document.getElementById('ss-port').value = hpa[1].replace('/','');
+            document.getElementById('ss-pass').value = mpa[1] || '';
+            document.getElementById('ss-cipher').value = mpa[0];
+        } else {
+            showToast("Неподдерживаемая ссылка для автопарсинга");
+        }
+    } catch(e) { showToast("Ошибка парсинга ссылки: " + e.message); }
+}
+
+function loadWgConfFile(input) {
+    var f=input.files[0]; if(!f) return;
+    var r=new FileReader(); r.onload=e=> { document.getElementById('wg-textarea').value = e.target.result; parseWgConfig(); };
+    r.readAsText(f); input.value='';
+}
+
+function parseWgConfig() {
+    var txt = document.getElementById('wg-textarea').value;
+    var lines = txt.split('\n');
+    var map = {};
+    for(var l of lines) {
+        l = l.split('#')[0].trim();
+        if(!l || l.startsWith('[')) continue;
+        var m = l.match(/^([^=]+)=(.*)$/);
+        if(m) map[m[1].trim().toLowerCase()] = m[2].trim();
+    }
+    if(map['endpoint']) {
+        var ep = map['endpoint'].split(':'); document.getElementById('wg-server').value = ep[0];
+        if(ep[1]) document.getElementById('wg-port').value = parseInt(ep[1]);
+    }
+    if(map['address']) document.getElementById('wg-ip').value = map['address'].split(',')[0].trim();
+    if(map['privatekey']) document.getElementById('wg-priv').value = map['privatekey'];
+    if(map['publickey']) document.getElementById('wg-pub').value = map['publickey'];
+    if(map['presharedkey']) document.getElementById('wg-psk').value = map['presharedkey'];
+    
+    ['jc','jmin','jmax','s1','s2','h1','h2','h3','h4'].forEach(k => {
+        if(map[k]) document.getElementById('awg-'+k).value = map[k];
+    });
+}
+
+function saveProxyByType() {
+    var name = isEditMode ? document.getElementById('edit-proxy-sel').value : document.getElementById('proxyName').value.trim();
+    if(!name && document.querySelector('.tab-content.active').id !== 'tab-sub') return ask(t('prompt_enter_name')||"Введите имя", false);
+    
+    var act = document.querySelector('.tab-content.active').id;
+    if(act === 'tab-sub') return processSubscription();
+    
+    var proxy = { name: name };
+    if(act === 'tab-vless') {
+        proxy.type = 'vless'; proxy.server = document.getElementById('vless-server').value;
+        proxy.port = parseInt(document.getElementById('vless-port').value) || 443;
+        proxy.uuid = document.getElementById('vless-uuid').value; proxy.network = document.getElementById('vless-network').value || 'tcp';
+        proxy.tls = document.getElementById('vless-tls').checked;
+        var sni = document.getElementById('vless-sni').value; if(sni) proxy.servername = sni;
+        var flow = document.getElementById('vless-flow').value; if(flow) proxy.flow = flow;
+    } else if(act === 'tab-vmess') {
+        proxy.type = 'vmess'; proxy.server = document.getElementById('vmess-server').value;
+        proxy.port = parseInt(document.getElementById('vmess-port').value) || 443;
+        proxy.uuid = document.getElementById('vmess-uuid').value; proxy.alterId = parseInt(document.getElementById('vmess-alterid').value) || 0;
+        proxy.cipher = document.getElementById('vmess-cipher').value || 'auto'; proxy.network = document.getElementById('vmess-network').value || 'tcp';
+        proxy.tls = document.getElementById('vmess-tls').checked;
+    } else if(act === 'tab-hy2') {
+        proxy.type = 'hysteria2'; proxy.server = document.getElementById('hy2-server').value;
+        proxy.port = parseInt(document.getElementById('hy2-port').value) || 443;
+        proxy.password = document.getElementById('hy2-pass').value;
+        var sni = document.getElementById('hy2-sni').value; if(sni) proxy.sni = sni;
+        var obfs = document.getElementById('hy2-obfs').value; if(obfs) { proxy.obfs = 'salamander'; proxy['obfs-password'] = obfs; }
+    } else if(act === 'tab-wg') {
+        proxy.type = 'wireguard'; proxy.server = document.getElementById('wg-server').value;
+        proxy.port = parseInt(document.getElementById('wg-port').value); proxy.ip = document.getElementById('wg-ip').value;
+        var ipv6 = document.getElementById('wg-ipv6').value; if(ipv6) proxy.ipv6 = ipv6;
+        proxy['private-key'] = document.getElementById('wg-priv').value; proxy['public-key'] = document.getElementById('wg-pub').value;
+        var psk = document.getElementById('wg-psk').value; if(psk) proxy['pre-shared-key'] = psk;
+        proxy.udp = true;
+        var awg = {}; ['jc','jmin','jmax','s1','s2','h1','h2','h3','h4'].forEach(k => { var v = document.getElementById('awg-'+k).value; if(v) awg[k] = parseInt(v); });
+        if(Object.keys(awg).length > 0) proxy['amnezia-wg-option'] = awg;
+    } else if(act === 'tab-http') {
+        proxy.type = document.getElementById('hs-type').value; proxy.server = document.getElementById('hs-server').value;
+        proxy.port = parseInt(document.getElementById('hs-port').value);
+        var u = document.getElementById('hs-user').value; if(u) proxy.username = u;
+        var p = document.getElementById('hs-pass').value; if(p) proxy.password = p;
+        proxy.tls = document.getElementById('hs-tls').checked;
+    } else if(act === 'tab-ss') {
+        proxy.type = document.getElementById('ss-type').value; proxy.server = document.getElementById('ss-server').value;
+        proxy.port = parseInt(document.getElementById('ss-port').value); proxy.password = document.getElementById('ss-pass').value;
+        proxy.cipher = document.getElementById('ss-cipher').value;
+        if(proxy.type === 'ssr') {
+            proxy.protocol = document.getElementById('ssr-proto').value;
+            var pp = document.getElementById('ssr-protoparam').value; if(pp) proxy['protocol-param'] = pp;
+            proxy.obfs = document.getElementById('ssr-obfs').value;
+            var op = document.getElementById('ssr-obfsparam').value; if(op) proxy['obfs-param'] = op;
+        }
+        var plugin = document.getElementById('ss-plugin').value;
+        if(plugin) { proxy.plugin = plugin; var opts = document.getElementById('ss-pluginopts').value; if(opts) { try { proxy['plugin-opts'] = JSON.parse(opts); } catch(e){} } }
+    }
+    
+    var lib = window.jsyaml || window.YAML;
+    if(isEditMode) replaceProxyData(name, lib.dump(proxy));
+    else injectProxy(proxy);
 }
 
 async function replaceProxyData(targetName, newYaml) {
     if(!await ask(t('confirm_replace', targetName))) return;
-    var content = ed.getValue();
-    var p = new URLSearchParams();
-    p.append('act', 'replace_proxy');
-    p.append('target_name', targetName);
-    p.append('new_yaml', newYaml);
-    p.append('content', content);
-
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(async d => {
-            if (d.error) {
-                await ask(d.error, false);
-            } else {
-                ed.setValue(d.new_content);
-                ed.clearSelection();
-                closeM('addProxyModal');
-                showToast(t('toast_updated'));
-            }
-        });
-}
-
-function showG(){
-    var txt=ed.getValue(); var ls=txt.split(/\r?\n/); var grps=[], inG=false;
-    for(var l of ls){ if(l.match(/^proxy-groups:/))inG=true; if(inG && l.match(/^[a-zA-Z]/) && !l.match(/^proxy-groups:/))inG=false; if(inG){var m=l.match(/^\s*-\s+name:\s+(.*)/);if(m)grps.push(m[1].trim().replace(/^['"]|['"]$/g,''))}}
-    var c=document.getElementById('g-cnt'); c.innerHTML=''; var sv=JSON.parse(localStorage.getItem(GRP_KEY));
-    if(grps.length===0) c.innerHTML='<div style="color:orange">Группы не найдены</div>';
-    else grps.forEach(g=>{
-        var ch=(sv===null||sv.includes(g))?'checked':'';
-        c.innerHTML+=`<div class="g-item"><input type="checkbox" id="c_${g}" value="${g}" ${ch}><label for="c_${g}">${g}</label></div>`;
-    });
-    document.getElementById('m-grp').style.display='flex';
-}
-function tgGrp(s){document.querySelectorAll('#g-cnt input').forEach(c=>c.checked=s)}
-async function applyVless(){
-    closeM('m-grp'); var txt=ed.getValue(); var sels=[];
-    document.querySelectorAll('#g-cnt input:checked').forEach(c=>sels.push(c.value));
-    localStorage.setItem(GRP_KEY, JSON.stringify(sels));
-    var p=new URLSearchParams(); p.append('act','apply_insert'); p.append('content',txt); p.append('proxy_name',pData.name); p.append('proxy_yaml',pData.yaml); p.append('targets',JSON.stringify(sels));
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(async d=>{if(d.error)await ask(d.error, false);else{ed.setValue(d.new_content);ed.clearSelection();showToast(t('toast_added'))}});
-}
-function showDel(){
-    var prs = getProxiesList();
-    var s=document.getElementById('sel-del');s.innerHTML='';
-    prs.forEach(p=>{var o=document.createElement('option');o.text=p;s.add(o)});
-    document.getElementById('m-del').style.display='flex';
-}
-async function doDel(){
-    var nm=document.getElementById('sel-del').value;if(!nm)return;if(!await ask(t('confirm_del_proxy')))return;closeM('m-del');
-    var ls=ed.getValue().split(/\r?\n/); var nls=[], inP=false, delB=false, bInd=-1;
-    for(var l of ls){
-        if(l.match(/^proxies:/)){inP=true;nls.push(l);continue} if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)){inP=false;delB=false}
-        if(inP){
-            var df=l.match(/^(\s+)-\s+name:\s+(.*)/);
-            if(df){
-                var ind=df[1].length, pn=df[2].trim().replace(/^['"]|['"]$/g,'');
-                if(pn===nm){delB=true;bInd=ind;continue}else if(delB)delB=false;
-            } else if(delB){
-                var ci=l.search(/\S/); if(l.trim()===''||ci>bInd)continue; else delB=false;
-            }
-        }
-        if(delB)continue;
-
-        if(l.match(/^\s*proxies:\s*\[.*\]/)){
-             var st = l.indexOf('['); var en = l.lastIndexOf(']');
-             var pre = l.substring(0, st+1); var suf = l.substring(en);
-             var mid = l.substring(st+1, en);
-             var parts = mid.split(',');
-             var res = []; var changed = false;
-             for(var p of parts){
-                 var clean = p.trim().replace(/^['"]|['"]$/g, '');
-                 if(clean === nm){ changed = true; } else { res.push(p); }
-             }
-             if(changed){ nls.push(pre + res.join(',') + suf); continue; }
-        }
-
-        var rm=l.match(/^\s+-\s+(?:"([^"]+)"|'([^']+)'|([^"':]+))\s*$/);
-        if(rm){var rn=rm[1]||rm[2]||rm[3];if(rn&&rn.trim()===nm)continue}
-        nls.push(l);
-    }
-    ed.setValue(nls.join('\n'));
-}
-
-var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget;
-
-function updateYamlPart(key, newData) {
-    var lib = window.jsyaml || window.YAML;
-    var yamlText = ed.getValue();
-    try {
-        var data = lib.load(yamlText);
-        data[key] = newData;
-        var newYaml = lib.dump(data, { indent: 2, lineWidth: -1, noRefs: true });
-        ed.setValue(newYaml);
-        ed.clearSelection();
-        return true;
-    } catch(e) {
-        ask("YAML Error: " + e.message, false);
-        return false;
-    }
-}
-
-// GROUPS LOGIC
-function openEditGroup(name = "") {
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var groups = data['proxy-groups'] || [];
-    var proxies = data['proxies'] || [];
-    var groupNames = groups.map(g => g.name);
-    
-    var group = name ? groups.find(g => g.name === name) : null;
-    
-    document.getElementById('route-edit-title').innerText = name ? t('modal_edit_group') : t('btn_add_group');
-    document.getElementById('rg-name').value = name || "";
-    document.getElementById('rg-type').value = group ? group.type : "select";
-    document.getElementById('rg-type').dispatchEvent(new Event('change'));
-    
-    if (group && group.type === 'url-test') {
-        document.getElementById('rg-url').value = group.url || "http://www.gstatic.com/generate_204";
-        document.getElementById('rg-interval').value = group.interval || 300;
-    }
-
-    var list = document.getElementById('rg-proxies-list');
-    list.innerHTML = "";
-    
-    // Union of all possible members: physical proxies + other groups
-    var allOptions = [...proxies.map(p => p.name), ...groupNames];
-    
-    allOptions.forEach(opt => {
-        if (opt === name) return; // Cannot add itself
-        var isChecked = group && group.proxies && group.proxies.includes(opt);
-        list.innerHTML += `<div class="g-item"><input type="checkbox" id="rgp_${opt}" value="${opt}" ${isChecked?'checked':''}><label for="rgp_${opt}">${opt}</label></div>`;
-    });
-    
-    document.getElementById('m-route-edit').style.display = 'flex';
-}
-
-function toggleAllRg(s) {
-    document.querySelectorAll('#rg-proxies-list input').forEach(c => {
-        if (c.parentElement.style.display !== 'none') c.checked = s;
+    var content = ed.getValue(), p = new URLSearchParams();
+    p.append('act', 'replace_proxy'); p.append('target_name', targetName); p.append('new_yaml', newYaml); p.append('content', content);
+    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(async d => {
+        if(d.error) await ask(d.error, false); else { ed.setValue(d.new_content); ed.clearSelection(); closeM('addProxyModal'); showToast(t('toast_updated')); }
     });
 }
-
-function filterRgProxies() {
-    var val = document.getElementById('rg-filter').value.toLowerCase();
-    document.querySelectorAll('#rg-proxies-list .g-item').forEach(el => {
-        var txt = el.innerText.toLowerCase();
-        el.style.display = txt.includes(val) ? 'block' : 'none';
-    });
-}
-
-function saveGroup() {
-    var name = document.getElementById('rg-name').value.trim();
-    var type = document.getElementById('rg-type').value;
-    if (!name) return ask(t('prompt_enter_name'), false);
-    
-    var selProxies = [];
-    document.querySelectorAll('#rg-proxies-list input:checked').forEach(c => selProxies.push(c.value));
-    
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var groups = data['proxy-groups'] || [];
-    
-    var newGroup = { name: name, type: type, proxies: selProxies };
-    if (type === 'url-test') {
-        newGroup.url = document.getElementById('rg-url').value;
-        newGroup.interval = parseInt(document.getElementById('rg-interval').value);
-    }
-    
-    var idx = groups.findIndex(g => g.name === name);
-    if (idx > -1) groups[idx] = newGroup;
-    else groups.push(newGroup);
-    
-    if (updateYamlPart('proxy-groups', groups)) {
-        closeM('m-route-edit');
-        renderRoutes();
-        showToast(t('toast_saved'));
-    }
-}
-
-async function confirmDeleteGroup(name) {
-    if (!await ask(t('confirm_delete') + " (" + name + ")")) return;
-    deleteGroup(name);
-}
-
-async function confirmDeleteRule(idx) {
-    if (!await ask(t('confirm_delete'))) return;
-    deleteRule(idx);
-}
-
-function openEditRule(idx) {
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var rules = data['rules'] || [];
-    var rule = rules[idx];
-    if (!rule) return;
-    
-    var parts = rule.split(',');
-    var type = parts[0];
-    var val = parts.length > 2 ? parts[1] : "";
-    var target = parts[parts.length - 1];
-    
-    document.getElementById('rl-type').value = type;
-    document.getElementById('rl-type').dispatchEvent(new Event('change'));
-    document.getElementById('rl-val').value = val;
-    
-    openAddRule(); // Reuses modal logic for targets setup
-    document.querySelector('#m-rule-add h3').innerText = t('modal_edit_rule');
-    document.getElementById('rl-target').value = target;
-    if (upRlTarget) upRlTarget();
-    
-    // Override save button for edit mode
-    var saveBtn = document.querySelector('#m-rule-add .btn-success');
-    saveBtn.onclick = function() { saveRule(idx); };
-}
-
-function saveRule(editIdx = -1) {
-    var type = document.getElementById('rl-type').value;
-    var val = document.getElementById('rl-val').value.trim();
-    var target = document.getElementById('rl-target').value;
-    
-    var ruleStr = type === 'MATCH' ? `MATCH,${target}` : `${type},${val},${target}`;
-    
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var rules = data['rules'] || [];
-    
-    if (editIdx > -1) rules[editIdx] = ruleStr;
-    else rules.push(ruleStr);
-    
-    if (updateYamlPart('rules', rules)) {
-        closeM('m-rule-add');
-        renderRules();
-        showToast(t('toast_saved'));
-    }
-}
-
-// New Protocols
-function addHysteria2() {
-    var name = document.getElementById('hy2Name').value.trim();
-    var server = document.getElementById('hy2Server').value.trim();
-    var port = parseInt(document.getElementById('hy2Port').value);
-    var pass = document.getElementById('hy2Pass').value;
-    var sni = document.getElementById('hy2Sni').value;
-    var obfs = document.getElementById('hy2ObfsPass').value;
-    
-    if (!name || !server) return ask(t('prompt_enter_name'), false);
-    
-    var proxy = {
-        name: name,
-        type: 'hysteria2',
-        server: server,
-        port: port,
-        password: pass,
-        sni: sni,
-        up: '100 Mbps',
-        down: '100 Mbps'
-    };
-    if (obfs) {
-        proxy.obfs = 'salamander';
-        proxy['obfs-password'] = obfs;
-    }
-    
-    injectProxy(proxy);
-}
-
-function addTrojan() {
-    var name = document.getElementById('trName').value.trim();
-    var server = document.getElementById('trServer').value.trim();
-    var port = parseInt(document.getElementById('trPort').value);
-    var pass = document.getElementById('trPass').value;
-    
-    if (!name || !server) return ask(t('prompt_enter_name'), false);
-    
-    var proxy = {
-        name: name,
-        type: 'trojan',
-        server: server,
-        port: port,
-        password: pass,
-        sni: server,
-        udp: true
-    };
-    
-    injectProxy(proxy);
-}
-
 function injectProxy(newProxy) {
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var proxies = data['proxies'] || [];
-    
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue()), proxies = data['proxies'] || [];
     var idx = proxies.findIndex(p => p.name === newProxy.name);
-    if (idx > -1) proxies[idx] = newProxy;
-    else proxies.push(newProxy);
-    
-    if (updateYamlPart('proxies', proxies)) {
-        closeM('addProxyModal');
-        showToast(t('toast_added'));
-    }
+    if(idx > -1) proxies[idx] = newProxy; else proxies.push(newProxy);
+    if(updateYamlPart('proxies', proxies)) { closeM('addProxyModal'); showToast(t('toast_added')); }
 }
 
 function processSubscription() {
     var link = document.getElementById('subLink').value.trim();
-    var mode = document.getElementById('subMode').value;
-    if (!link) return;
-    
-    if (mode === 'provider') {
-        addProxyProvider(link);
-    } else {
-        // Simple Link Parser (Placeholder for now, just adds as a single proxy if supported)
-        ask("One-time import logic requires backend/library support. Adding as Provider instead.", false);
-        addProxyProvider(link);
-    }
-}
-
-function addProxyProvider(link) {
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    if (!data['proxy-providers']) data['proxy-providers'] = {};
-    
+    if(!link) return;
+    var lib = window.jsyaml || window.YAML, data = lib.load(ed.getValue());
+    if(!data['proxy-providers']) data['proxy-providers'] = {};
     var name = "Sub_" + Math.floor(Math.random()*1000);
-    data['proxy-providers'][name] = {
-        type: 'http',
-        url: link,
-        interval: 3600,
-        path: `./providers/${name}.yaml`,
-        health_check: { enable: true, interval: 600, url: 'http://www.gstatic.com/generate_204' }
-    };
-    
-    var newYaml = lib.dump(data, { indent: 2 });
-    ed.setValue(newYaml);
+    data['proxy-providers'][name] = { type: 'http', url: link, interval: 3600, path: `./providers/${name}.yaml`, health_check: { enable: true, interval: 600, url: 'http://www.gstatic.com/generate_204' } };
+    ed.setValue(lib.dump(data, { indent:2, lineWidth:-1, noRefs:true }));
     closeM('addProxyModal');
     showToast(t('toast_added'));
-}
-
-function openAddTunnelToGroup(routeName) {
-    var lib = window.jsyaml || window.YAML;
-    var data = lib.load(ed.getValue());
-    var proxies = (data['proxies'] || []).map(p => p.name);
-    var groups = (data['proxy-groups'] || []).map(g => g.name);
-    
-    var all = [...proxies, ...groups].filter(n => n !== routeName);
-    
-    // Open the route edit modal with pre-filled name and focused on proxies list
-    openEditGroup(routeName);
-    document.getElementById('rg-filter').focus();
 }
 
 function reorderGroups() {
@@ -1577,6 +1592,7 @@ function openEditRule(idx = -1) {
     document.querySelector('#m-rule-add .btn-success').onclick = () => saveRule(idx);
     document.getElementById('m-rule-add').style.display = 'flex';
 }
+function openAddRule() { openEditRule(-1); }
 
 function saveRule(idx = -1) {
     var type = document.getElementById('rl-type').value, val = document.getElementById('rl-val').value.trim(), target = document.getElementById('rl-target').value;

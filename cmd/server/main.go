@@ -18,7 +18,8 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.1.8"
+// Глобальная переменная для версии, перезаписывается при сборке (ldflags)
+var Version = "2.1.9"
 
 func main() {
 	fStop := flag.Bool("stop", false, "Stop the server")
