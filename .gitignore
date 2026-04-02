@@ -1,0 +1,5 @@
+.kilocode/
+dist/
+*.exe
+*.log
+__JSON_CONTENT__
