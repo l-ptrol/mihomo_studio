@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.11</title>
+<title>Mihomo Studio v2.2.12</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -225,20 +225,11 @@ button:active { transform: scale(0.97); }
 
 .ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.ovl {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7); z-index: 999; display: none;
-    justify-content: center; align-items: center; padding: 16px;
-}
-
-.mod {
-    background: var(--bg-card); border-radius: var(--radius-lg);
-    width: 100%; max-width: 480px; border: 1px solid var(--bd-color);
-    box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh; overflow: hidden;
-}
+.ovl { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding:16px; backdrop-filter: blur(4px); }
+.mod { background: var(--bg-card); border-radius: var(--radius-lg); width: 100%; max-width: 480px; border: 1px solid var(--bd-color); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh; overflow: visible !important; }
 
 .mod-h { padding: 24px 24px 0 24px; flex-shrink: 0; }
-.mod-b { padding: 16px 24px 24px 24px; overflow-y: auto; flex-grow: 1; }
+.mod-b { padding: 16px 24px 24px 24px; flex-grow: 1; min-height: 0; overflow-y: auto; overflow-x: visible; }
 
 .mod h3 { margin: 0 0 16px 0; color: var(--txt-main); font-size: 18px; font-weight: 700; }
 
@@ -279,6 +270,18 @@ button:active { transform: scale(0.97); }
 
 #cons { background: var(--log-bg); color: var(--log-txt); font-family: monospace; padding: 12px; height: 300px; overflow: auto; white-space: pre-wrap; font-size: 12px; border: 1px solid var(--bd-color); border-radius: var(--radius-sm); }
 
+.cs-options { 
+    position: absolute; top: calc(100% + 4px); left: 0; width: 100%; 
+    background: var(--bg-card); border: 1px solid var(--bd-color); 
+    border-radius: var(--radius-sm); z-index: 1100; max-height: 200px; 
+    overflow-y: auto; display: none; box-shadow: var(--shadow-lg); 
+}
+.cs-wrap.open .cs-options { display: block; animation: slideDown 0.2s ease; }
+.cs-wrap.open-up .cs-options { top: auto; bottom: calc(100% + 4px); animation: slideUp 0.2s ease; }
+
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
 .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     background: var(--txt-main); color: var(--bg-card); padding: 10px 20px;
@@ -293,7 +296,7 @@ button:active { transform: scale(0.97); }
 .tab-pane { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
 .tab-pane.active { display: flex; }
 
-.builder-se.card { background:var(--bg-card); border:1px solid var(--bd-color); border-radius:var(--radius-md); padding:16px; transition: var(--transit); position: relative; }
+.card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
 .card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
@@ -301,6 +304,20 @@ button:active { transform: scale(0.97); }
 .sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
 
 .builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
+
+.view-toggle { display: flex; background: var(--bg-app); border: 1px solid var(--bd-color); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+.view-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--txt-sec); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; }
+.view-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+.view-btn svg { width: 16px; height: 16px; stroke-width: 2.2; }
+.view-btn:hover:not(.active) { background: rgba(255,255,255,0.05); }
+
+.rule-card { position: relative; padding-left: 36px !important; }
+.rule-num { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--txt-mut); font-size: 11px; font-weight: 800; opacity: 0.5; font-family: 'Outfit', sans-serif; pointer-events: none; width: 20px; text-align: center; border-right: 1px solid var(--bd-color); }
+.rules-list-view { grid-template-columns: 1fr !important; }
+.rules-list-view .card { max-width: 100%; }
+
+/* Scroll on drag support */
+.sortable-fallback { opacity: 0.8; }
 
 @media (max-width: 768px) {
     .app-header { flex-direction: column; padding: 16px; align-items: stretch; }
@@ -330,7 +347,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.11</div>
+            <div class="brand-version">v2.2.12</div>
         </div>
     </div>
     
@@ -420,7 +437,17 @@ button:active { transform: scale(0.97); }
         <div id="tab-rules" class="tab-pane">
             <div class="builder-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                   <h3 data-i18n="rules_title" style="margin:0;">Правила для сервисов</h3>
+                   <div style="display:flex; align-items:center; gap:12px;">
+                       <h3 data-i18n="rules_title" style="margin:0;">Правила для сервисов</h3>
+                       <div class="view-toggle">
+                           <button id="view-grid" class="view-btn active" onclick="toggleRulesView('grid')" title="Tiles">
+                               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                           </button>
+                           <button id="view-list" class="view-btn" onclick="toggleRulesView('list')" title="List">
+                               <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                           </button>
+                       </div>
+                   </div>
                    <button onclick="openAddRule()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
                        <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                        <span data-i18n="btn_add_rule">Добавить правило</span>
@@ -744,7 +771,7 @@ button:active { transform: scale(0.97); }
 
 <!-- Модалка добавления Правила -->
 <div id="m-rule-add" class="ovl"><div class="mod" style="padding: 24px;">
-    <h3 data-i18n="btn_add_rule" style="margin-top: 0;">Добавить правило</h3>
+    <h3 id="rule-modal-title" data-i18n="btn_add_rule" style="margin-top: 0;">Добавить правило</h3>
     <div style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_rule_type">Тип правила:</label>
         <div class="cs-wrap" id="cs-rl-type">
@@ -949,7 +976,13 @@ function initCS(id) {
         e.stopPropagation(); 
         const isOpen = wrap.classList.contains('open');
         document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); 
-        if(!isOpen) wrap.classList.add('open'); 
+        if(!isOpen) {
+            const rect = wrap.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            if (spaceBelow < 180) wrap.classList.add('open-up');
+            else wrap.classList.remove('open-up');
+            wrap.classList.add('open');
+        }
     };
     update(); return update;
 }
@@ -1081,7 +1114,8 @@ function renderRules() {
         data['rules'].forEach((r, idx) => {
             if (typeof r !== 'string') return;
             let p = r.split(','), type = p[0], val = p.length>2?p[1]:'', target = p[p.length-1];
-            html += `<div class="card" data-idx="${idx}" style="padding:10px;">
+            html += `<div class="card rule-card" data-idx="${idx}" style="padding:15px;">
+                <div class="rule-num">${idx + 1}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; min-width:0;">
                         <div class="drag-handle"><svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
@@ -1096,7 +1130,17 @@ function renderRules() {
             </div>`;
         });
         container.innerHTML = html;
-        if (window.Sortable) Sortable.create(container, { animation:150, handle:'.drag-handle', onEnd:()=>reorderRules() });
+        const savedMode = localStorage.getItem('rules_view_mode') || 'grid';
+        toggleRulesView(savedMode);
+        
+        if (window.Sortable) Sortable.create(container, { 
+            animation:150, 
+            handle:'.drag-handle', 
+            scroll: true, 
+            scrollSensitivity: 100, 
+            scrollSpeed: 20,
+            onEnd:()=>reorderRules() 
+        });
     } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">${t('routes_parse_err')}${e.message}</p>`; }
 }
 
@@ -1387,7 +1431,32 @@ function reorderMembers(gn, cnt) {
 function reorderRules() {
     const ord = []; document.querySelectorAll('#rules-container > .card').forEach(el => ord.push(parseInt(el.getAttribute('data-idx'))));
     const cfg = jsyaml.load(ed.getValue()), r = cfg['rules']; cfg['rules'] = ord.map(i => r[i]);
-    ed.setValue(jsyaml.dump(cfg)); renderRules();
+    ed.setValue(jsyaml.dump(cfg)); 
+    // Instead of full render, let's just update numbers to keep scroll position
+    document.querySelectorAll('#rules-container > .card').forEach((el, i) => {
+        const numEl = el.querySelector('.rule-num');
+        if(numEl) numEl.innerText = i + 1;
+        el.setAttribute('data-idx', i); // Update indexes for next reorder
+    });
+    // Finally update editor/YAML
+    updateYamlPart('rules', cfg['rules']);
+}
+
+function toggleRulesView(mode) {
+    const container = document.getElementById('rules-container');
+    const gridBtn = document.getElementById('view-grid');
+    const listBtn = document.getElementById('view-list');
+    
+    if (mode === 'list') {
+        container.classList.add('rules-list-view');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+    } else {
+        container.classList.remove('rules-list-view');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+    }
+    localStorage.setItem('rules_view_mode', mode);
 }
 
 function openEditGroup(n="") {
@@ -1442,7 +1511,11 @@ function confirmDeleteGroup(n) {
     }); 
 }
 
-function openAddRule() { document.getElementById('m-rule-add').style.display='flex'; }
+function openAddRule() { 
+    document.getElementById('rule-modal-title').innerText = t('btn_add_rule');
+    document.getElementById('btn-save-rule').innerText = t('btn_add');
+    document.getElementById('m-rule-add').style.display='flex'; 
+}
 function openEditRule(idx) {
     try {
         const cfg = jsyaml.load(ed.getValue()) || {};
@@ -1461,8 +1534,12 @@ function openEditRule(idx) {
         });
         if(typeof upRlTarget === 'function') upRlTarget();
         if(typeof upRlType === 'function') upRlType();
-        openAddRule();  
-        const sBtn = document.querySelector('#m-rule-add .btn-success'); 
+        
+        document.getElementById('rule-modal-title').innerText = t('modal_edit_rule') || 'Изменить правило';
+        document.getElementById('btn-save-rule').innerText = t('btn_save');
+        document.getElementById('m-rule-add').style.display='flex';  
+        
+        const sBtn = document.getElementById('btn-save-rule'); 
         sBtn.onclick = () => saveRule(idx);
     } catch(e) {
         console.error('Error in openEditRule:', e);
