@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.14</title>
+<title>Mihomo Studio v2.2.15</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -347,46 +347,17 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.14</div>
+            <div class="brand-version">v2.2.15</div>
         </div>
     </div>
     
     <div class="header-actions">
         <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 12px; font-weight: 500;">__TIME__</div>
         
-        <div class="header-group">
-            <div class="cs-wrap" id="cs-lang" style="width: 70px;">
-                <select id="lang-sel" onchange="setLang(this.value)" style="display:none">
-                    <option value="ru" selected>RU</option>
-                    <option value="en">EN</option>
-                    <option value="uk">UA</option>
-                </select>
-                <div class="cs-trigger"><span>RU</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-                <div class="cs-options"></div>
-            </div>
-            
-            <div style="width: 1px; height: 16px; background: var(--bd-color);"></div>
-            
-            <div class="cs-wrap" id="cs-theme" style="width: 110px;">
-                <select id="theme-sel" onchange="setTheme(this.value)" style="display:none">
-                    <option value="dark" data-i18n="theme_dark">Dark</option>
-                    <option value="light" data-i18n="theme_light">Light</option>
-                    <option value="midnight" data-i18n="theme_midnight">Midnight</option>
-                    <option value="cyber" data-i18n="theme_cyber">Cyber</option>
-                </select>
-                <div class="cs-trigger"><span>Dark</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-                <div class="cs-options"></div>
-            </div>
+        <div class="header-group" id="header-version-info" style="font-size: 11px; color: var(--txt-mut); font-weight: 500;">
+             v2.2.15
         </div>
         
-        <button onclick="save('save')" class="btn-success" >
-            <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span data-i18n="save">Сохранить</span>
-        </button>
-        <button onclick="save('restart')" class="btn-danger" >
-            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span data-i18n="restart">Рестарт</span>
-        </button>
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
@@ -394,23 +365,50 @@ button:active { transform: scale(0.97); }
         <button id="update-btn" onclick="checkUpdates(false)" class="btn-ghost btn-icon" title="Проверить обновления">
             <svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
-        <button onclick="restartService()" class="btn-ghost btn-icon" title="Перезапустить сервис">
-            <svg class="ico" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/></svg>
+        <div style="width: 1px; height: 16px; background: var(--bd-color); margin: 0 4px;"></div>
+        <button onclick="save('save')" class="btn-success" >
+            <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span data-i18n="save">Сохранить</span>
+        </button>
+        <button onclick="save('restart')" class="btn-danger" style="display:none;">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span data-i18n="restart">Рестарт</span>
         </button>
     </div>
 </header>
 
 <div class="app-content">
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
-        <div class="main-tabs">
-            <button class="active" onclick="switchMainTab(event, 'tab-editor')" data-i18n="tab_yaml">YAML Редактор</button>
-            <button onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
-            <button onclick="switchMainTab(event, 'tab-rules')" data-i18n="tab_services">Сервисы</button>
+        <div class="main-tabs" id="main-tabs">
+            <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
+            <button id="nav-routes" onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
+            <button id="nav-rules" onclick="switchMainTab(event, 'tab-rules')" data-i18n="tab_services">Сервисы</button>
+            <button id="nav-backups" onclick="switchMainTab(event, 'tab-backups')" data-i18n="tab_backups">Бэкапы</button>
+            <button id="nav-settings" onclick="switchMainTab(event, 'tab-settings')" data-i18n="tab_settings">Настройки</button>
+            <button id="nav-editor" onclick="switchMainTab(event, 'tab-editor')" data-i18n="tab_yaml">YAML Редактор</button>
         </div>
         
-        <div id="tab-editor" class="tab-pane active">
-            <div class="editor-wrapper">
-                <div id="ed"></div>
+        <div id="tab-proxies" class="tab-pane active">
+            <div class="builder-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
+                   <div style="display:flex; align-items:center; gap:12px;">
+                       <h3 data-i18n="tab_proxies" style="margin:0;">Туннели</h3>
+                       <div class="view-toggle">
+                           <button id="view-proxies-grid" class="view-btn active" onclick="toggleView('proxies', 'grid')" title="Tiles">
+                               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                           </button>
+                           <button id="view-proxies-list" class="view-btn" onclick="toggleView('proxies', 'list')" title="List">
+                               <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                           </button>
+                       </div>
+                   </div>
+                   <button onclick="openAddProxyModal()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
+                       <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                       <span data-i18n="btn_add_rule">Добавить туннель</span>
+                   </button>
+                </div>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 20px;" data-i18n="proxies_desc">Управляйте вашими прокси-серверами и подключениями.</p>
+                <div id="proxies-container" class="grid-cards">Загрузка...</div>
             </div>
         </div>
         
@@ -419,10 +417,6 @@ button:active { transform: scale(0.97); }
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
                    <h3 data-i18n="routes_title" style="margin:0;">Умные Маршруты</h3>
                    <div style="display:flex; gap:8px;">
-                       <button onclick="openAddProxyModal()" class="btn-success" style="height:32px; font-size:12px; padding:0 12px;">
-                           <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                           <span data-i18n="btn_add_to_group">Добавить туннель</span>
-                       </button>
                        <button onclick="openEditGroup()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
                            <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                            <span data-i18n="btn_add_group">Добавить группу</span>
@@ -440,10 +434,10 @@ button:active { transform: scale(0.97); }
                    <div style="display:flex; align-items:center; gap:12px;">
                        <h3 data-i18n="rules_title" style="margin:0;">Правила для сервисов</h3>
                        <div class="view-toggle">
-                           <button id="view-grid" class="view-btn active" onclick="toggleRulesView('grid')" title="Tiles">
+                           <button id="view-rules-grid" class="view-btn active" onclick="toggleView('rules', 'grid')" title="Tiles">
                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                            </button>
-                           <button id="view-list" class="view-btn" onclick="toggleRulesView('list')" title="List">
+                           <button id="view-rules-list" class="view-btn" onclick="toggleView('rules', 'list')" title="List">
                                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                            </button>
                        </div>
@@ -453,13 +447,91 @@ button:active { transform: scale(0.97); }
                        <span data-i18n="btn_add_rule">Добавить правило</span>
                    </button>
                 </div>
-                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 12px;" data-i18n="rules_desc">Управляйте направлением трафика для приложений.</p>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 20px;" data-i18n="rules_desc">Управляйте направлением трафика для приложений.</p>
                 <div id="rules-container" class="grid-cards">Загрузка...</div>
+            </div>
+        </div>
+
+        <div id="tab-backups" class="tab-pane">
+            <div class="builder-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                   <h3 data-i18n="tab_backups" style="margin:0;">Бэкапы конфигов</h3>
+                   <div class="row">
+                        <span data-i18n="keep" style="font-size: 13px; color: var(--txt-mut); margin-right:8px;">Оставить:</span>
+                        <div class="num-wrap">
+                            <button class="num-btn" onclick="adjNum('bk-lim', -1)">-</button>
+                            <input type="number" id="bk-lim" value="5" min="1" max="50" class="num-inp">
+                            <button class="num-btn" onclick="adjNum('bk-lim', 1)">+</button>
+                        </div>
+                        <button onclick="cleanBackups()" class="btn-ghost" style="margin-left:12px; border: 1px dashed var(--bd-color); height:32px; padding:0 12px; font-size:12px;" data-i18n="clean">Очистить историю</button>
+                    </div>
+                </div>
+                <p style="font-size: 13px; color: var(--txt-sec); margin-bottom: 20px;" data-i18n="backups_desc">История изменений конфигурации с возможностью отката.</p>
+                <div id="backups-container" class="grid-cards">__BACKUPS__</div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-pane">
+            <div class="builder-section">
+                <h3 data-i18n="tab_settings" style="margin-bottom:20px;">Настройки системы</h3>
+                
+                <div class="grid-cards" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                    <div class="card" style="padding:20px;">
+                        <h4 class="card-title" style="margin-bottom:15px;" data-i18n="lbl_appearance">Внешний вид</h4>
+                        <div style="display:flex; gap:15px; flex-direction:column;">
+                            <div>
+                                <label style="font-size:12px; color:var(--txt-mut); display:block; margin-bottom:8px;" data-i18n="theme_dark">Тема оформления:</label>
+                                <div class="cs-wrap" id="cs-theme-tab" style="width: 100%;">
+                                    <select id="theme-sel-tab" onchange="setTheme(this.value)" style="display:none">
+                                        <option value="dark" data-i18n="theme_dark">Dark</option>
+                                        <option value="light" data-i18n="theme_light">Light</option>
+                                        <option value="midnight" data-i18n="theme_midnight">Midnight</option>
+                                        <option value="cyber" data-i18n="theme_cyber">Cyber</option>
+                                    </select>
+                                    <div class="cs-trigger"><span>Dark</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                                    <div class="cs-options"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; color:var(--txt-mut); display:block; margin-bottom:8px;" data-i18n="cs-lang">Язык интерфейса:</label>
+                                <div class="cs-wrap" id="cs-lang-tab" style="width: 100%;">
+                                    <select id="lang-sel-tab" onchange="setLang(this.value)" style="display:none">
+                                        <option value="ru">RU</option>
+                                        <option value="en">EN</option>
+                                        <option value="uk">UA</option>
+                                    </select>
+                                    <div class="cs-trigger"><span>RU</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                                    <div class="cs-options"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding:20px;">
+                        <h4 class="card-title" style="margin-bottom:15px;" data-i18n="tab_settings">Управление сервисом</h4>
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <button onclick="save('restart')" class="btn-danger" style="width:100%;">
+                                <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                <span data-i18n="restart">Рестарт Mihomo</span>
+                            </button>
+                            <button onclick="restartService()" class="btn-ghost" style="width:100%; border:1px solid var(--bd-color);">
+                                <svg class="ico" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/></svg>
+                                <span data-i18n="btn_restart_service">Перезапустить веб-сервис</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-editor" class="tab-pane">
+            <div class="editor-wrapper">
+                <div id="ed"></div>
             </div>
         </div>
     </div>
     
-    <div class="sidebar">
+    <div class="sidebar" id="app-sidebar">
         <div class="card">
             <h3 class="card-title"><span data-i18n="profiles">Профили</span></h3>
             <div class="row sp-between">
@@ -470,9 +542,6 @@ button:active { transform: scale(0.97); }
                 </div>
                 <button onclick="switchProf()" class="btn-primary btn-icon" title="Выбрать">
                     <svg class="ico" viewBox="0 0 24 24" style="stroke-width: 3;"><polyline points="20 6 9 17 4 12"/></svg>
-                </button>
-                <button onclick="downloadProf()" class="btn-ghost btn-icon" title="Скачать">
-                    <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 </button>
             </div>
             <div class="grid-2" style="margin-top:4px;">
@@ -485,44 +554,6 @@ button:active { transform: scale(0.97); }
                     <span data-i18n="delete">Удалить</span>
                  </button>
             </div>
-        </div>
-        
-        <div class="card">
-            <h3 class="card-title"><span data-i18n="proxy_mgmt">Управление</span></h3>
-            <div class="grid-2">
-                <button onclick="openAddProxyModal()" class="btn-primary" >
-                    <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span data-i18n="add">Добавить</span>
-                </button>
-                <button onclick="openEditProxyModal()" class="btn-outline" >
-                    <svg class="ico" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    <span data-i18n="edit">Заменить</span>
-                </button>
-            </div>
-            <div class="grid-2">
-                <button onclick="showRename()" class="btn-ghost" >
-                    <svg class="ico" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                    <span data-i18n="rename">Переименовать</span>
-                </button>
-                <button onclick="showDel()" class="btn-ghost" style="color: var(--danger);" >
-                    <svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    <span data-i18n="delete">Удалить</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3 class="card-title"><span data-i18n="backups">Бэкапы</span></h3>
-            <div class="row">
-                <span data-i18n="keep" style="font-size: 13px; color: var(--txt-mut);">Оставить:</span>
-                <div class="num-wrap">
-                    <button class="num-btn" onclick="adjNum('bk-lim', -1)">-</button>
-                    <input type="number" id="bk-lim" value="5" min="1" max="50" class="num-inp">
-                    <button class="num-btn" onclick="adjNum('bk-lim', 1)">+</button>
-                </div>
-                <button onclick="cleanBackups()" class="btn-ghost" style="flex: 1; border: 1px dashed var(--bd-color); border-radius: var(--radius-sm);" data-i18n="clean">Очистить</button>
-            </div>
-            <div id="bk-list" style="display: flex; flex-direction: column; margin-top: 8px; max-height: 220px; overflow-y: auto;">__BACKUPS__</div>
         </div>
         
         <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.5;">
@@ -1113,7 +1144,7 @@ function renderRules() {
         let html = '';
         data['rules'].forEach((r, idx) => {
             if (typeof r !== 'string') return;
-            let p = r.split(','), type = p[0], val = p.length>2?p[1]:'', target = p[p.length-1];
+            let parts = r.split(','), type = parts[0], val = parts.length>2?parts[1]:'', target = parts[parts.length-1];
             html += `<div class="card rule-card" data-idx="${idx}" style="padding:15px;">
                 <div class="rule-num">${idx + 1}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1131,7 +1162,7 @@ function renderRules() {
         });
         container.innerHTML = html;
         const savedMode = localStorage.getItem('rules_view_mode') || 'grid';
-        toggleRulesView(savedMode);
+        toggleView('rules', savedMode);
         
         if (window.Sortable) Sortable.create(container, { 
             animation:150, 
@@ -1142,6 +1173,84 @@ function renderRules() {
             onEnd:()=>reorderRules() 
         });
     } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">${t('routes_parse_err')}${e.message}</p>`; }
+}
+
+function renderProxies() {
+    const container = document.getElementById('proxies-container'); if(!container) return;
+    const lib = window.jsyaml; if(!lib) return;
+    try {
+        const data = lib.load(ed.getValue());
+        if(!data || !data['proxies']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('proxies_no_items', 'Нет туннелей')}</p>`; return; }
+        let html = '';
+        data['proxies'].forEach((p, idx) => {
+            html += `<div class="card" style="padding:15px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div style="min-width:0;">
+                        <h4 style="margin:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</h4>
+                        <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">${p.type.toUpperCase()}</div>
+                    </div>
+                    <div style="display:flex; gap:4px;">
+                        <button onclick="openEditProxy(${idx})" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="deleteProxy(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    </div>
+                </div>
+                <div style="font-size:11px; color:var(--txt-sec); font-family:monospace; word-break:break-all; opacity:0.8;">
+                    ${p.server || '---'}:${p.port || '---'}
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+        const savedMode = localStorage.getItem('proxies_view_mode') || 'grid';
+        toggleView('proxies', savedMode);
+    } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">Error: ${e.message}</p>`; }
+}
+
+function openEditProxy(idx) {
+    try {
+        const cfg = jsyaml.load(ed.getValue());
+        const p = cfg.proxies[idx]; if(!p) return;
+        openEditProxyModal(p.name);
+    } catch(e) { showToast('Error: ' + e.message); }
+}
+
+function deleteProxy(idx) {
+    try {
+        const cfg = jsyaml.load(ed.getValue());
+        const p = cfg.proxies[idx]; if(!p) return;
+        ask(t('confirm_delete') + ": " + p.name).then(ok => {
+            if(!ok) return;
+            const name = p.name;
+            cfg.proxies.splice(idx, 1);
+            if(cfg['proxy-groups']) {
+                cfg['proxy-groups'].forEach(g => {
+                    if(g.proxies) g.proxies = g.proxies.filter(m => m !== name);
+                });
+            }
+            ed.setValue(jsyaml.dump(cfg));
+            renderProxies();
+            renderRoutes();
+            showToast(t('toast_deleted'));
+            save('save');
+        });
+    } catch(e) { showToast('Error: ' + e.message); }
+}
+
+function toggleView(type, mode) {
+    const container = document.getElementById(type + '-container');
+    const gridBtn = document.getElementById('view-' + type + '-grid');
+    const listBtn = document.getElementById('view-' + type + '-list');
+    if (!container || !gridBtn || !listBtn) return;
+
+    if (mode === 'list') {
+        container.classList.add('rules-list-view');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+    } else {
+        container.classList.remove('rules-list-view');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+    }
+    localStorage.setItem(type + '_view_mode', mode);
 }
 
 function smartParse(raw) {
@@ -1452,22 +1561,7 @@ function reorderRules() {
     updateYamlPart('rules', cfg['rules']);
 }
 
-function toggleRulesView(mode) {
-    const container = document.getElementById('rules-container');
-    const gridBtn = document.getElementById('view-grid');
-    const listBtn = document.getElementById('view-list');
-    
-    if (mode === 'list') {
-        container.classList.add('rules-list-view');
-        listBtn.classList.add('active');
-        gridBtn.classList.remove('active');
-    } else {
-        container.classList.remove('rules-list-view');
-        gridBtn.classList.add('active');
-        listBtn.classList.remove('active');
-    }
-    localStorage.setItem('rules_view_mode', mode);
-}
+// toggleRulesView removed in favor of toggleView
 
 function openEditGroup(n="") {
     try {
@@ -1604,7 +1698,122 @@ function confirmDeleteRule(i) {
         }
     }); 
 }
-// --- Missing utility functions ---
+
+function saveTabOrder() {
+    const order = [];
+    document.querySelectorAll('#main-tabs button').forEach(btn => { order.push(btn.id); });
+    localStorage.setItem('main_tabs_order', JSON.stringify(order));
+}
+
+function loadTabOrder() {
+    const saved = localStorage.getItem('main_tabs_order');
+    if (!saved) return;
+    try {
+        const order = JSON.parse(saved);
+        const container = document.getElementById('main-tabs');
+        order.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) container.appendChild(btn);
+        });
+    } catch(e) { console.error("Error loading tab order", e); }
+}
+
+function setupDraggableTabs() {
+    const container = document.getElementById('main-tabs');
+    if (container && window.Sortable) {
+        Sortable.create(container, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: () => saveTabOrder()
+        });
+    }
+}
+
+function renderBackupsTab() {
+    const bkList = document.getElementById('bk-list');
+    const listHtml = bkList ? bkList.innerHTML : '';
+    const container = document.getElementById('backups-container');
+    if (container) {
+        if (!listHtml || listHtml.includes('__BACKUPS__')) {
+             container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('backups_no_backups', 'Нет доступных бэкапов')}</p>`;
+        } else {
+             container.innerHTML = listHtml;
+             container.querySelectorAll('.bk-item').forEach(el => {
+                 el.classList.add('card');
+                 el.style.padding = '12px';
+                 el.style.display = 'flex';
+                 el.style.justifyContent = 'space-between';
+                 el.style.alignItems = 'center';
+                 el.style.gap = '10px';
+             });
+        }
+    }
+}
+
+var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual, upProf, upLang, upTheme;
+
+function init() {
+    loadTabOrder();
+    setupDraggableTabs();
+    
+    // Core state
+    ed.setValue(initialConfig); ed.clearSelection();
+    
+    // Custom Selects
+    upProf = initCS('cs-prof');
+    upLang = initCS('cs-lang-tab');
+    upTheme = initCS('cs-theme-tab');
+    upRgType = initCS('cs-rg-type');
+    upRlTarget = initCS('cs-rl-target');
+    upRlType = initCS('cs-rl-type');
+    upManual = initCS('cs-manual-type');
+    upEdit = initCS('cs-edit-m');
+    upRen = initCS('cs-ren-m');
+    upDel = initCS('cs-del-m');
+    
+    // Observers for recursive updates
+    new MutationObserver(upProf).observe(document.getElementById('prof-sel'), { childList:true });
+    new MutationObserver(upDel).observe(document.getElementById('sel-del'), { childList:true });
+    new MutationObserver(upRen).observe(document.getElementById('sel-ren-proxy'), { childList:true });
+    new MutationObserver(upEdit).observe(document.getElementById('edit-proxy-sel'), { childList:true });
+    
+    // Event Listeners
+    document.getElementById('rg-type').addEventListener('change', function() {
+        document.getElementById('url-test-params').style.display = this.value === 'url-test' ? 'grid' : 'none';
+    });
+    
+    // Restore saved state
+    const l = localStorage.getItem(LANG_KEY) || 'ru';
+    document.getElementById('lang-sel-tab').value = l; if(upLang) upLang(); setLang(l);
+    
+    const tH = localStorage.getItem(THM_KEY) || 'dark';
+    document.getElementById('theme-sel-tab').value = tH; if(upTheme) upTheme(); setTheme(tH);
+    
+    const bL = localStorage.getItem(LIM_KEY) || 5;
+    document.getElementById('bk-lim').value = bL;
+    
+    // Tab Activation
+    const lastTab = localStorage.getItem('lastMainTab') || 'tab-proxies';
+    const activeBtn = Array.from(document.querySelectorAll('#main-tabs button')).find(b => b.getAttribute('onclick').includes(lastTab));
+    if(activeBtn) activeBtn.click();
+    else switchMainTab(null, lastTab);
+    
+    // Rendering
+    renderRoutes();
+    renderRules();
+    renderProxies();
+    renderBackupsTab();
+    
+    applyI18n();
+    
+    // Background tasks
+    setTimeout(() => { checkUpdates(true); }, 1500);
+    setInterval(() => checkUpdates(true), 3600000);
+}
+
+window.onload = init;
+
+// --- Utility functions ---
 function tgGrp(s) { document.querySelectorAll('#g-cnt input').forEach(c => c.checked = s); }
 function toggleAllRg(s) { document.querySelectorAll('#rg-proxies-list input').forEach(c => { if(c.parentElement.style.display !== 'none') c.checked = s; }); }
 function filterRgProxies() { const val = document.getElementById('rg-filter').value.toLowerCase(); document.querySelectorAll('#rg-proxies-list .g-item').forEach(el => { el.style.display = el.innerText.toLowerCase().includes(val) ? '' : 'none'; }); }
@@ -1618,7 +1827,7 @@ function cleanBackups() {
         const p = new URLSearchParams(); p.append('act','clean_backups'); p.append('limit', lim);
         fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d => {
             showToast(t('toast_cleaned'));
-            if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
+            if(d.backups) { document.getElementById('bk-list').innerHTML = d.backups; renderBackupsTab(); }
         });
     });
 }
