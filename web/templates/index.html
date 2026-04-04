@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.10</title>
+<title>Mihomo Studio v2.2.11</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -330,7 +330,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.10</div>
+            <div class="brand-version">v2.2.11</div>
         </div>
     </div>
     
@@ -504,7 +504,7 @@ button:active { transform: scale(0.97); }
     </div>
 </div>
 
-<div id="m-grp" class="ovl"><div class="mod"><h3 data-i18n="modal_groups">Добавить в группы:</h3>
+<div id="m-grp" class="ovl"><div class="mod" style="padding: 24px;"><h3 data-i18n="modal_groups" style="margin-top: 0;">Добавить в группы:</h3>
 <div style="display:flex; gap:10px; margin-bottom:15px">
     <button onclick="tgGrp(true)" class="btn-outline" style="flex:1" data-i18n="btn_sel_all">Выбрать все</button>
     <button onclick="tgGrp(false)" class="btn-outline" style="flex:1" data-i18n="btn_sel_none">Снять все</button>
@@ -515,7 +515,7 @@ button:active { transform: scale(0.97); }
     <button onclick="closeM('m-grp')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
 </div></div></div>
 
-<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3>
+<div id="m-del" class="ovl"><div class="mod" style="padding: 24px;"><h3 data-i18n="modal_del_proxy" style="margin-top: 0;">Удалить прокси</h3>
 <div class="cs-wrap" id="cs-del-m">
     <select id="sel-del" style="display:none"></select>
     <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
@@ -525,13 +525,13 @@ button:active { transform: scale(0.97); }
     <button onclick="doDel()" class="btn-danger" data-i18n="delete">Удалить</button>
     <button onclick="closeM('m-del')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
 </div></div></div>
-<div id="m-con" class="ovl"><div class="mod" style="max-width:600px;"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+<div id="m-con" class="ovl"><div class="mod" style="max-width:600px; padding: 24px;"><h3 data-i18n="modal_console" style="margin-top: 0;">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
     <button onclick="location.reload()" class="btn-primary" data-i18n="btn_update">Обновить</button>
     <button onclick="closeM('m-con')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
 </div></div></div>
 
-<div id="m-update-proc" class="ovl"><div class="mod" style="max-width:700px; width:90vw;">
-    <h3 data-i18n="modal_update_title">Процесс обновления</h3>
+<div id="m-update-proc" class="ovl"><div class="mod" style="max-width:700px; width:90vw; padding: 24px;">
+    <h3 data-i18n="modal_update_title" style="margin-top: 0;">Процесс обновления</h3>
     <div id="update-log" style="background:#000; color:#0f0; font-family:monospace; padding:15px; height:350px; overflow-y:auto; font-size:12px; border-radius:4px; border:1px solid #333;"> Ожидание запуска... </div>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
         <button id="update-finish-btn" onclick="location.reload()" class="btn-primary" style="display:none;" data-i18n="btn_restart_ui">Перезагрузить</button>
@@ -539,8 +539,8 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="m-ren" class="ovl"><div class="mod">
-    <h3 data-i18n="modal_ren_proxy">Переименовать прокси</h3>
+<div id="m-ren" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 data-i18n="modal_ren_proxy" style="margin-top: 0;">Переименовать прокси</h3>
     <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
     <div class="cs-wrap" id="cs-ren-m">
         <select id="sel-ren-proxy" style="display:none"></select>
@@ -555,8 +555,8 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="m-add-prof" class="ovl"><div class="mod">
-    <h3 data-i18n="modal_new_prof">Новый профиль</h3>
+<div id="m-add-prof" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 data-i18n="modal_new_prof" style="margin-top: 0;">Новый профиль</h3>
     <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_prof_name">Имя (англ, без пробелов):</label>
     <input id="np-name" placeholder="my_config" style="margin-bottom:15px">
     <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
@@ -679,8 +679,8 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="m-view-bk" class="ovl"><div class="mod">
-    <h3 data-i18n="modal_view_bk">Просмотр бэкапа</h3>
+<div id="m-view-bk" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 data-i18n="modal_view_bk" style="margin-top: 0;">Просмотр бэкапа</h3>
     <div id="bk-content"></div>
     <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
         <button id="bk-restore-btn" class="btn-danger" data-i18n="btn_restore">Восстановить</button>
@@ -688,8 +688,8 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
-<div id="m-dial" class="ovl"><div class="mod">
-    <h3 id="dial-title">Confirmation</h3>
+<div id="m-dial" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 id="dial-title" style="margin-top: 0;">Confirmation</h3>
     <p id="dial-msg" style="margin-bottom: 25px; line-height: 1.5; color: var(--txt-main); font-size: 14px;"></p>
     <div style="display:flex; justify-content: flex-end; gap: 12px;">
         <button id="dial-cancel" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
@@ -698,8 +698,8 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <!-- Модалка редактирования/добавления Группы -->
-<div id="m-route-edit" class="ovl"><div class="mod">
-    <h3 id="route-edit-title" data-i18n="modal_edit_group">Настройка группы</h3>
+<div id="m-route-edit" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 id="route-edit-title" data-i18n="modal_edit_group" style="margin-top: 0;">Настройка группы</h3>
     <div style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_group_name">Имя группы:</label>
         <input id="rg-name" placeholder="MyGroup">
@@ -743,8 +743,8 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <!-- Модалка добавления Правила -->
-<div id="m-rule-add" class="ovl"><div class="mod">
-    <h3 data-i18n="btn_add_rule">Добавить правило</h3>
+<div id="m-rule-add" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 data-i18n="btn_add_rule" style="margin-top: 0;">Добавить правило</h3>
     <div style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_rule_type">Тип правила:</label>
         <div class="cs-wrap" id="cs-rl-type">
@@ -1243,7 +1243,8 @@ function saveProxyByType() {
     if (!yaml) return;
     try {
         const pObj = jsyaml.load(yaml);
-        if(!pObj.name) return ask(t('prompt_enter_name'), false);
+        const actualObj = Array.isArray(pObj) ? pObj[0] : pObj;
+        if(!actualObj || !actualObj.name) return ask(t('prompt_enter_name'), false);
         finishProxySave(yaml);
     } catch(e) { ask("YAML Error: " + e.message, false); }
 }
