@@ -376,9 +376,9 @@ button:active { transform: scale(0.97); }
         </button>
     </div>
 </header>
-
-<div class="app-content">
-    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+<div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
+<div class="app-container">
+    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative;">
         <div class="main-tabs" id="main-tabs">
             <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
             <button id="nav-routes" onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
@@ -493,7 +493,7 @@ button:active { transform: scale(0.97); }
                                 </div>
                             </div>
                             <div>
-                                <label style="font-size:12px; color:var(--txt-mut); display:block; margin-bottom:8px;" data-i18n="cs-lang">Язык интерфейса:</label>
+                                <label style="font-size:12px; color:var(--txt-mut); display:block; margin-bottom:8px;" data-i18n="lbl_lang">Язык интерфейса:</label>
                                 <div class="cs-wrap" id="cs-lang-tab" style="width: 100%;">
                                     <select id="lang-sel-tab" onchange="setLang(this.value)" style="display:none">
                                         <option value="ru">RU</option>
@@ -559,44 +559,7 @@ button:active { transform: scale(0.97); }
         <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.5;">
             Mihomo Studio &copy; 2025 - 2026
         </div>
-    </div>
-</div>
-
-<div id="m-grp" class="ovl"><div class="mod" style="padding: 24px;"><h3 data-i18n="modal_groups" style="margin-top: 0;">Добавить в группы:</h3>
-<div style="display:flex; gap:10px; margin-bottom:15px">
-    <button onclick="tgGrp(true)" class="btn-outline" style="flex:1" data-i18n="btn_sel_all">Выбрать все</button>
-    <button onclick="tgGrp(false)" class="btn-outline" style="flex:1" data-i18n="btn_sel_none">Снять все</button>
-</div>
-<div id="g-cnt" class="g-list"></div>
-<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd-color)">
-    <button onclick="applyVless()" class="btn-primary" style="flex:1" data-i18n="btn_add">Добавить</button>
-    <button onclick="closeM('m-grp')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
-</div></div></div>
-
-<div id="m-del" class="ovl"><div class="mod" style="padding: 24px;"><h3 data-i18n="modal_del_proxy" style="margin-top: 0;">Удалить прокси</h3>
-<div class="cs-wrap" id="cs-del-m">
-    <select id="sel-del" style="display:none"></select>
-    <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-    <div class="cs-options"></div>
-</div>
-<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
-    <button onclick="doDel()" class="btn-danger" data-i18n="delete">Удалить</button>
-    <button onclick="closeM('m-del')" class="btn-ghost" data-i18n="btn_cancel">Отмена</button>
-</div></div></div>
-<div id="m-con" class="ovl"><div class="mod" style="max-width:600px; padding: 24px;"><h3 data-i18n="modal_console" style="margin-top: 0;">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
-    <button onclick="location.reload()" class="btn-primary" data-i18n="btn_update">Обновить</button>
-    <button onclick="closeM('m-con')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
-</div></div></div>
-
-<div id="m-update-proc" class="ovl"><div class="mod" style="max-width:700px; width:90vw; padding: 24px;">
-    <h3 data-i18n="modal_update_title" style="margin-top: 0;">Процесс обновления</h3>
-    <div id="update-log" style="background:#000; color:#0f0; font-family:monospace; padding:15px; height:350px; overflow-y:auto; font-size:12px; border-radius:4px; border:1px solid #333;"> Ожидание запуска... </div>
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
-        <button id="update-finish-btn" onclick="location.reload()" class="btn-primary" style="display:none;" data-i18n="btn_restart_ui">Перезагрузить</button>
-        <button id="update-close-btn" onclick="closeM('m-update-proc')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
-    </div>
-</div></div>
-
+    </div></div>
 <div id="m-ren" class="ovl"><div class="mod" style="padding: 24px;">
     <h3 data-i18n="modal_ren_proxy" style="margin-top: 0;">Переименовать прокси</h3>
     <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
@@ -840,9 +803,10 @@ button:active { transform: scale(0.97); }
 <script>
 var ed=ace.edit("ed"); ed.setTheme("ace/theme/monokai"); ed.session.setMode("ace/mode/yaml");
 ed.setOptions({fontSize:14, tabSize:2, useSoftTabs:true, theme:'ace/theme/monokai'});
-var initialConfig = `__JSON_CONTENT__`;
+var initialConfig = document.getElementById('raw-config').innerText;
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
 var isEditMode = false, currLang = 'ru', curr_new_proxy_yaml = '', curr_new_proxy_name = '';
+var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual, upProf, upLang, upTheme;
 const TEMPLATES = {
     'tab-vless': { type:'vless', server:'1.2.3.4', port:443, uuid:'uuid', network:'tcp', udp:true, tls:true, sni:'example.com', 'client-fingerprint':'chrome' },
     'tab-vmess': { type:'vmess', server:'1.2.3.4', port:443, uuid:'uuid', alterId:0, cipher:'auto', network:'tcp', tls:true, udp:true },
@@ -1038,41 +1002,48 @@ function initCS(id) {
 window.onclick = () => { document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); };
 
 function setLang(l) {
-    currLang = l; localStorage.setItem(LANG_KEY, l); document.getElementById('lang-sel').value = l;
+    currLang = l; localStorage.setItem(LANG_KEY, l);
+    const sel = document.getElementById('lang-sel-tab'); if(sel) { sel.value = l; if(upLang) upLang(); }
     document.querySelectorAll('[data-i18n]').forEach(e => { let k = e.getAttribute('data-i18n'); if(TR[l][k]) e.innerText = TR[l][k]; });
     document.querySelectorAll('[data-i18n-ph]').forEach(e => { let k = e.getAttribute('data-i18n-ph'); if(TR[l][k]) e.placeholder = TR[l][k]; });
-    if(isEditMode) document.getElementById('proxyModalTitle').innerText = TR[l].modal_edit_proxy;
-    else document.getElementById('proxyModalTitle').innerText = TR[l].modal_add_proxy;
-    var timeElem = document.getElementById('last-load'), timeText = timeElem.innerText.split(': ')[1] || '';
-    if (timeText.includes('__TIME__')) timeText = ''; 
-    timeElem.innerText = (TR[l].last_load_lbl || 'Loaded: __TIME__').replace('__TIME__', timeText);
+    const modalTitle = document.getElementById('proxyModalTitle');
+    if(modalTitle) modalTitle.innerText = isEditMode ? TR[l].modal_edit_proxy : TR[l].modal_add_proxy;
 }
 
 function setTheme(tVal) {
-    document.body.className = tVal; localStorage.setItem(THM_KEY, tVal); document.getElementById('theme-sel').value = tVal;
+    document.body.className = tVal; localStorage.setItem(THM_KEY, tVal); 
+    const sel = document.getElementById('theme-sel-tab'); if(sel) { sel.value = tVal; if(upTheme) upTheme(); }
     let aceT = 'ace/theme/monokai', edBg = '#18191a';
     if(tVal==='light') { aceT='ace/theme/chrome'; edBg='#f0f2f5'; }
     else if(tVal==='midnight') { aceT='ace/theme/tomorrow_night_blue'; edBg='#0f172a'; }
     else if(tVal==='cyber') { aceT='ace/theme/terminal'; edBg='#000000'; }
-    ed.setTheme(aceT); document.getElementById('ed').style.background = edBg;
+    if(window.ed) { try { ed.setTheme(aceT); document.getElementById('ed').style.background = edBg; } catch(e){} }
 }
 
 function switchMainTab(e, tabId) {
+    const btn = e ? e.currentTarget || e.target : document.getElementById(tabId.replace('tab-', 'btn-tab-'));
     document.querySelectorAll('.main-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    e.target.classList.add('active'); document.getElementById(tabId).classList.add('active');
-    if (tabId === 'tab-editor') ed.resize();
+    if(btn && btn.classList) btn.classList.add('active');
+    const pane = document.getElementById(tabId);
+    if(pane) pane.classList.add('active');
+    localStorage.setItem('lastMainTab', tabId);
+    if (tabId === 'tab-editor' && window.ed) ed.resize();
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
+    if (tabId === 'tab-proxies') renderProxies();
+    if (tabId === 'tab-backups') renderBackupsTab();
     document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
 }
 
 function switchProxyTab(e, tabId) {
-    const p = e.target.closest('#addProxyModal');
-    p.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
-    p.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    e.target.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
+    const btn = e.currentTarget || e.target;
+    const modal = btn.closest('.modal-content') || document.getElementById('addProxyModal');
+    modal.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
+    modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const target = document.getElementById(tabId);
+    if(target) target.classList.add('active');
     if (tabId === 'tab-manual-proxy') updateManualYaml();
 }
 
@@ -1829,8 +1800,6 @@ function init() {
     setInterval(() => checkUpdates(true), 3600000);
 }
 
-window.onload = init;
-
 // --- Utility functions ---
 function tgGrp(s) { document.querySelectorAll('#g-cnt input').forEach(c => c.checked = s); }
 function toggleAllRg(s) { document.querySelectorAll('#rg-proxies-list input').forEach(c => { if(c.parentElement.style.display !== 'none') c.checked = s; }); }
@@ -1876,36 +1845,5 @@ function restoreBackup(fname) {
     });
 }
 
-var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual;
-
-(function init() {
-    let l = localStorage.getItem(LANG_KEY) || 'ru'; setLang(l);
-    let theme = localStorage.getItem(THM_KEY) || 'dark'; setTheme(theme);
-    ed.setValue(initialConfig); ed.clearSelection();
-
-    let lim = localStorage.getItem(LIM_KEY) || '5';
-    document.getElementById('bk-lim').value = lim;
-
-    initCS('cs-lang'); initCS('cs-theme'); let upProf = initCS('cs-prof');
-    upDel = initCS('cs-del-m'); upRen = initCS('cs-ren-m'); upEdit = initCS('cs-edit-m');
-    upRgType = initCS('cs-rg-type');
-    upRlType = initCS('cs-rl-type');
-    upRlTarget = initCS('cs-rl-target');
-    upManual = initCS('cs-manual-type');
-
-    document.getElementById('rg-type').addEventListener('change', function() {
-        document.getElementById('url-test-params').style.display = this.value === 'url-test' ? 'grid' : 'none';
-    });
-    document.getElementById('rl-type').addEventListener('change', function() {
-        document.getElementById('rule-val-block').style.display = this.value === 'MATCH' ? 'none' : 'block';
-    });
-
-    new MutationObserver(upProf).observe(document.getElementById('prof-sel'), { childList:true });
-    new MutationObserver(upDel).observe(document.getElementById('sel-del'), { childList:true });
-    new MutationObserver(upRen).observe(document.getElementById('sel-ren-proxy'), { childList:true });
-    new MutationObserver(upEdit).observe(document.getElementById('edit-proxy-sel'), { childList:true });
-
-    setTimeout(() => { renderRoutes(); renderRules(); checkUpdates(true); }, 1500);
-    setInterval(() => checkUpdates(true), 3600000);
-})();
+window.onload = init;
 </script></body></html>
