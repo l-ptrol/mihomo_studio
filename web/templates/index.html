@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.13</title>
+<title>Mihomo Studio v2.2.14</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -347,7 +347,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.13</div>
+            <div class="brand-version">v2.2.14</div>
         </div>
     </div>
     
@@ -801,7 +801,7 @@ button:active { transform: scale(0.97); }
     </div>
     
     <div style="display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--bd-color); padding-top:15px;">
-        <button onclick="saveRule()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+        <button id="btn-save-rule" onclick="saveRule()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
         <button onclick="closeM('m-rule-add')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
@@ -1522,9 +1522,28 @@ function confirmDeleteGroup(n) {
 }
 
 function openAddRule() { 
-    document.getElementById('rule-modal-title').innerText = t('btn_add_rule');
-    document.getElementById('btn-save-rule').innerText = t('btn_add');
-    document.getElementById('m-rule-add').style.display='flex'; 
+    try {
+        const cfg = jsyaml.load(ed.getValue()) || {};
+        const grps = Array.isArray(cfg['proxy-groups']) ? cfg['proxy-groups'] : [];
+        const tSel = document.getElementById('rl-target'); tSel.innerHTML = '';
+        grps.forEach(g => { 
+            if(!g || !g.name) return;
+            const o = document.createElement('option'); o.value=g.name; o.text=g.name; 
+            tSel.appendChild(o); 
+        });
+        document.getElementById('rl-val').value = '';
+        document.getElementById('rl-type').value = 'DOMAIN-SUFFIX';
+        if(typeof upRlTarget === 'function') upRlTarget();
+        if(typeof upRlType === 'function') upRlType();
+
+        document.getElementById('rule-modal-title').innerText = t('btn_add_rule');
+        document.getElementById('btn-save-rule').innerText = t('btn_add');
+        
+        const sBtn = document.getElementById('btn-save-rule'); 
+        sBtn.onclick = () => saveRule(-1);
+        
+        document.getElementById('m-rule-add').style.display='flex';
+    } catch(e) { console.error(e); }
 }
 function openEditRule(idx) {
     try {
