@@ -355,7 +355,7 @@ button:active { transform: scale(0.97); }
         <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 12px; font-weight: 500;">__TIME__</div>
         
         <div class="header-group" id="header-version-info" style="font-size: 11px; color: var(--txt-mut); font-weight: 500;">
-             v2.2.15
+             v2.2.16
         </div>
         
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
@@ -377,7 +377,7 @@ button:active { transform: scale(0.97); }
     </div>
 </header>
 <div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
-<div class="app-container">
+<div class="app-content">
     <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative;">
         <div class="main-tabs" id="main-tabs">
             <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
@@ -805,7 +805,7 @@ var ed=ace.edit("ed"); ed.setTheme("ace/theme/monokai"); ed.session.setMode("ace
 ed.setOptions({fontSize:14, tabSize:2, useSoftTabs:true, theme:'ace/theme/monokai'});
 var initialConfig = document.getElementById('raw-config').innerText;
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
-var isEditMode = false, currLang = 'ru', curr_new_proxy_yaml = '', curr_new_proxy_name = '';
+var isEditMode = false, currEditProxyName = '', currLang = 'ru', curr_new_proxy_yaml = '', curr_new_proxy_name = '';
 var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual, upProf, upLang, upTheme;
 const TEMPLATES = {
     'tab-vless': { type:'vless', server:'1.2.3.4', port:443, uuid:'uuid', network:'tcp', udp:true, tls:true, sni:'example.com', 'client-fingerprint':'chrome' },
@@ -916,7 +916,7 @@ const TR = {
         modal_update_title: "Процес оновлення", btn_restart_ui: "Оновити UI",
         routes_title: "Розумні Маршрути", tab_proxies: "Тунелі", tab_routes: "Маршрути",
         tab_backups: "Бекапи", tab_settings: "Налаштування", tab_yaml: "YAML Редактор",
-        tab_services: "Сервіси", rules_title: "Сервіси (Правила)", btn_ok: "ОК",
+        tab_services: "Сервиси", rules_title: "Сервиси (Правила)", btn_ok: "ОК",
         last_load_lbl: "Завантажено: __TIME__", last_saved: "Збережено:",
         confirm_switch: "Перейти на профіль {0}?", confirm_del_prof: "Видалити профіль {0}?",
         confirm_del_bk: "Видалити бекап {0}?", confirm_clean: "Залишити {0} бекапів?",
@@ -1037,11 +1037,11 @@ function switchMainTab(e, tabId) {
 }
 
 function switchProxyTab(e, tabId) {
-    const btn = e.currentTarget || e.target;
-    const modal = btn.closest('.modal-content') || document.getElementById('addProxyModal');
+    const btn = e ? (e.currentTarget || e.target) : document.querySelector(`.modal-tabs button[onclick*="${tabId}"]`);
+    const modal = document.getElementById('addProxyModal');
     modal.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
     modal.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
+    if(btn) btn.classList.add('active');
     const target = document.getElementById(tabId);
     if(target) target.classList.add('active');
     if (tabId === 'tab-manual-proxy') updateManualYaml();
@@ -1179,7 +1179,7 @@ function renderProxies() {
                         <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">${p.type.toUpperCase()}</div>
                     </div>
                     <div style="display:flex; gap:4px;">
-                        <button onclick="openEditProxy(${idx})" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="openEditProxy('${p.name}')" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                         <button onclick="deleteProxy(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
@@ -1192,14 +1192,6 @@ function renderProxies() {
         const savedMode = localStorage.getItem('proxies_view_mode') || 'grid';
         toggleView('proxies', savedMode);
     } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">Error: ${e.message}</p>`; }
-}
-
-function openEditProxy(idx) {
-    try {
-        const cfg = jsyaml.load(ed.getValue());
-        const p = cfg.proxies[idx]; if(!p) return;
-        openEditProxyModal(p.name);
-    } catch(e) { showToast('Error: ' + e.message); }
 }
 
 function deleteProxy(idx) {
@@ -1328,25 +1320,17 @@ function loadWgFileIntoFields(input) {
 
 
 function openAddProxyModal() {
-    isEditMode = false; document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
-    document.getElementById('edit-proxy-container').style.display = 'none';
-    document.getElementById('smart-link-section').style.display = 'block';
-    
-    // Reset Tabs
-    document.querySelectorAll('#addProxyModal .modal-tabs button').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('#addProxyModal .tab-content').forEach(p => p.classList.remove('active'));
-    document.querySelector('#addProxyModal .modal-tabs button').classList.add('active');
-    document.getElementById('tab-smart-link').classList.add('active');
-
+    isEditMode = false; currEditProxyName = '';
+    document.getElementById('proxyModalTitle').setAttribute('data-i18n', 'modal_add_proxy');
     document.getElementById('proxyName').value = '';
     document.getElementById('proxy-yaml-input').value = '';
-    document.getElementById('smartLink').value = ''; document.getElementById('smartLinkText').value = '';
-    document.getElementById('smartLink').style.display = 'block'; document.getElementById('smartLinkText').style.display = 'none';
+    document.getElementById('smartLink').value = '';
+    document.getElementById('smartLinkText').value = '';
     document.getElementById('parse-status').innerText = '';
     
     // Clear manual fields
     document.getElementById('manual-server').value = '';
-    document.getElementById('manual-port').value = '8080';
+    document.getElementById('manual-port').value = '1080';
     document.getElementById('manual-user').value = '';
     document.getElementById('manual-pass').value = '';
     document.getElementById('manual-tls').checked = false;
@@ -1355,50 +1339,92 @@ function openAddProxyModal() {
     if(upManual) upManual();
 }
 
-function openEditProxyModal(targetName = '') {
-    isEditMode = true; document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy');
-    document.getElementById('edit-proxy-container').style.display = 'block';
-    document.getElementById('smart-link-section').style.display = 'none';
+function openEditProxy(name) {
+    isEditMode = true; currEditProxyName = name;
+    document.getElementById('proxyModalTitle').innerText = TR[currLang].modal_edit_proxy;
+    document.getElementById('edit-proxy-container').style.display = 'none';
+    document.getElementById('smart-link-section').style.display = 'block'; 
 
-    // Reset Tabs to Manual for Editing
+    // Find proxy in ed
+    const cfg = jsyaml.load(ed.getValue());
+    const p = cfg.proxies ? cfg.proxies.find(x => x.name === name) : null;
+    if(!p) return showToast("Proxy not found");
+
+    document.getElementById('proxyName').value = p.name;
+    const yStr = jsyaml.dump(p).trim();
+    document.getElementById('proxy-yaml-input').value = yStr;
+
+    // Reset Tabs - default to Manual if simple, Smart for complex
     document.querySelectorAll('#addProxyModal .modal-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#addProxyModal .tab-content').forEach(p => p.classList.remove('active'));
-    const manualBtn = document.querySelectorAll('#addProxyModal .modal-tabs button')[1];
-    if(manualBtn) manualBtn.classList.add('active');
-    document.getElementById('tab-manual-proxy').classList.add('active');
-
-    const sel = document.getElementById('edit-proxy-sel'); sel.innerHTML = '';
-    const cfg = jsyaml.load(ed.getValue());
-    if (cfg && cfg.proxies) {
-        cfg.proxies.forEach(p => { 
-            const o = document.createElement('option'); o.value = p.name; o.text = p.name; 
-            if(p.name===targetName) { o.selected=true; document.getElementById('proxyName').value=p.name; document.getElementById('proxy-yaml-input').value = jsyaml.dump([p]).trim(); }
-            sel.appendChild(o); 
-        });
+    
+    if(p.type === 'http' || p.type === 'socks5') {
+        const manualBtn = document.querySelectorAll('#addProxyModal .modal-tabs button')[1];
+        if(manualBtn) manualBtn.classList.add('active');
+        document.getElementById('tab-manual-proxy').classList.add('active');
+        
+        document.getElementById('manual-type').value = p.type;
+        document.getElementById('manual-server').value = p.server || '';
+        document.getElementById('manual-port').value = p.port || 1080;
+        document.getElementById('manual-user').value = p.username || '';
+        document.getElementById('manual-pass').value = p.password || '';
+        document.getElementById('manual-tls').checked = !!p.tls;
+        if(upManual) upManual();
+    } else {
+        document.querySelector('#addProxyModal .modal-tabs button').classList.add('active');
+        document.getElementById('tab-smart-link').classList.add('active');
     }
-    if (upEdit) upEdit(); 
+
     document.getElementById('addProxyModal').style.display = 'flex';
 }
 
 function saveProxyByType() {
+    const name = document.getElementById('proxyName').value.trim();
     const yaml = document.getElementById('proxy-yaml-input').value.trim();
-    if (!yaml) return;
+    if(!name || !yaml) return ask(t('prompt_enter_name'), false);
+    
     try {
         const pObj = jsyaml.load(yaml);
         const actualObj = Array.isArray(pObj) ? pObj[0] : pObj;
-        if(!actualObj || !actualObj.name) return ask(t('prompt_enter_name'), false);
-        finishProxySave(yaml);
-    } catch(e) { ask("YAML Error: " + e.message, false); }
-}
+        if(!actualObj) return;
+        actualObj.name = name; // sync name
 
-function finishProxySave(proxyYAML) {
-    if (isEditMode) {
-        const target = document.getElementById('edit-proxy-sel').value;
-        const p = new URLSearchParams(); p.append('act','replace_proxy'); p.append('target_name',target); p.append('new_yaml',proxyYAML); p.append('content',ed.getValue());
-        fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d => { 
-            ed.setValue(d.new_content); ed.clearSelection(); closeM('addProxyModal'); showToast(t('toast_updated')); save('save');
-        });
-    } else { openMGrp(proxyYAML, document.getElementById('proxyName').value); }
+        const mainCfg = jsyaml.load(ed.getValue());
+        if(!mainCfg.proxies) mainCfg.proxies = [];
+
+        if (isEditMode) {
+            const idx = mainCfg.proxies.findIndex(x => x.name === currEditProxyName);
+            if(idx > -1) {
+                // Update name in groups if changed
+                if(name !== currEditProxyName && mainCfg['proxy-groups']) {
+                    mainCfg['proxy-groups'].forEach(g => {
+                        if(g.proxies) g.proxies = g.proxies.map(m => m === currEditProxyName ? name : m);
+                    });
+                }
+                mainCfg.proxies[idx] = actualObj;
+            } else {
+                mainCfg.proxies.push(actualObj);
+            }
+        } else {
+            if(mainCfg.proxies.some(x => x.name === name)) return ask(t('confirm_replace', name)).then(ok => {
+                if(ok) { isEditMode=true; currEditProxyName=name; saveProxyByType(); }
+            });
+            mainCfg.proxies.push(actualObj);
+        }
+
+        ed.setValue(jsyaml.dump(mainCfg, { indent:2, lineWidth:-1 }));
+        ed.clearSelection();
+        closeM('addProxyModal');
+        showToast(isEditMode ? t('toast_updated') : t('toast_added'));
+        renderProxies();
+        save('save');
+        
+        if(!isEditMode) {
+             // For new proxy, offer grouping
+             setTimeout(() => openMGrp(jsyaml.dump(actualObj), name), 500);
+        }
+
+    } catch(e) { ask("YAML Error: " + e.message, false); }
 }
 
 function openMGrp(yaml, name) {
