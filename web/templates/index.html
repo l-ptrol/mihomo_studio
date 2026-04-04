@@ -89,7 +89,7 @@ body {
     background: var(--bg-card); padding: 12px 20px;
     border-bottom: 1px solid var(--bd-color);
     display: flex; justify-content: space-between; align-items: center;
-    flex-shrink: 0; z-index: 10; box-shadow: var(--shadow-sm);
+    flex-shrink: 0; z-index: 1000; box-shadow: var(--shadow-sm);
 }
 
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -271,13 +271,12 @@ button:active { transform: scale(0.97); }
 #cons { background: var(--log-bg); color: var(--log-txt); font-family: monospace; padding: 12px; height: 300px; overflow: auto; white-space: pre-wrap; font-size: 12px; border: 1px solid var(--bd-color); border-radius: var(--radius-sm); }
 
 .cs-options { 
-    position: absolute; top: calc(100% + 4px); left: 0; width: 100%; 
-    background: var(--bg-card); border: 1px solid var(--bd-color); 
-    border-radius: var(--radius-sm); z-index: 1100; max-height: 200px; 
-    overflow-y: auto; display: none; box-shadow: var(--shadow-lg); 
+    position: fixed; background: var(--bg-card); 
+    border: 1px solid var(--bd-color); border-radius: var(--radius-sm); 
+    z-index: 10000; max-height: 250px; overflow-y: auto; 
+    display: none; box-shadow: var(--shadow-lg); 
 }
 .cs-wrap.open .cs-options { display: block; animation: slideDown 0.2s ease; }
-.cs-wrap.open-up .cs-options { top: auto; bottom: calc(100% + 4px); animation: slideUp 0.2s ease; }
 
 @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -347,16 +346,13 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.15</div>
+            <div class="brand-version">v2.2.17</div>
         </div>
     </div>
     
     <div class="header-actions">
         <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 12px; font-weight: 500;">__TIME__</div>
         
-        <div class="header-group" id="header-version-info" style="font-size: 11px; color: var(--txt-mut); font-weight: 500;">
-             v2.2.16
-        </div>
         
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -800,6 +796,16 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
+<!-- Модалка обновления -->
+<div id="m-update-proc" class="ovl"><div class="mod" style="width:500px; padding:24px;">
+    <h3 data-i18n="modal_update_title">Обновление Mihomo Studio</h3>
+    <pre id="update-log" style="background:#000; color:#0f0; padding:15px; height:200px; overflow:auto; font-family:monospace; font-size:12px; border-radius:4px; margin-bottom:20px;"></pre>
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+        <button id="update-finish-btn" onclick="location.reload()" class="btn-success" style="display:none;" data-i18n="btn_restart_ui">Перезагрузить UI</button>
+        <button id="update-close-btn" onclick="closeM('m-update-proc')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
+    </div>
+</div></div>
+
 <script>
 var ed=ace.edit("ed"); ed.setTheme("ace/theme/monokai"); ed.session.setMode("ace/mode/yaml");
 ed.setOptions({fontSize:14, tabSize:2, useSoftTabs:true, theme:'ace/theme/monokai'});
@@ -990,10 +996,17 @@ function initCS(id) {
         const isOpen = wrap.classList.contains('open');
         document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); 
         if(!isOpen) {
-            const rect = wrap.getBoundingClientRect();
+            const rect = trigger.getBoundingClientRect();
+            opts.style.width = rect.width + 'px';
+            opts.style.left = rect.left + 'px';
             const spaceBelow = window.innerHeight - rect.bottom;
-            if (spaceBelow < 180) wrap.classList.add('open-up');
-            else wrap.classList.remove('open-up');
+            if (spaceBelow < 260) {
+                opts.style.top = 'auto';
+                opts.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+            } else {
+                opts.style.bottom = 'auto';
+                opts.style.top = (rect.bottom + 4) + 'px';
+            }
             wrap.classList.add('open');
         }
     };
@@ -1799,19 +1812,18 @@ function init() {
     
     // Restore saved state
     const l = localStorage.getItem(LANG_KEY) || 'ru';
-    document.getElementById('lang-sel-tab').value = l; if(upLang) upLang(); setLang(l);
+    setLang(l);
     
     const tH = localStorage.getItem(THM_KEY) || 'dark';
-    document.getElementById('theme-sel-tab').value = tH; if(upTheme) upTheme(); setTheme(tH);
+    setTheme(tH);
     
     const bL = localStorage.getItem(LIM_KEY) || 5;
     document.getElementById('bk-lim').value = bL;
     
-    // Tab Activation
-    const lastTab = localStorage.getItem('lastMainTab') || 'tab-proxies';
-    const activeBtn = Array.from(document.querySelectorAll('#main-tabs button')).find(b => b.getAttribute('onclick').includes(lastTab));
-    if(activeBtn) activeBtn.click();
-    else switchMainTab(null, lastTab);
+    // Tab Activation - Always First Tab by Default
+    const firstTabBtn = document.querySelector('#main-tabs button');
+    if(firstTabBtn) firstTabBtn.click();
+    else switchMainTab(null, 'tab-proxies');
     
     // Rendering
     renderRoutes();
