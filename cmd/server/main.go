@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -18,7 +19,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.12"
+var Version = "2.2.13"
 
 func main() {
 	fStop := flag.Bool("stop", false, "Stop the server")
@@ -44,7 +45,11 @@ func main() {
 
 	if *fUpdate {
 		fmt.Println(">>> Starting update...")
-		runCmd("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh")
+		if runtime.GOOS == "windows" {
+			fmt.Println("Error: Update via script is not supported on Windows. Please update manually.")
+		} else {
+			runCmd("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh")
+		}
 		return
 	}
 
@@ -108,7 +113,12 @@ func stopService() {
 }
 
 func runCmd(c string) {
-	cmd := exec.Command("sh", "-c", c)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", c)
+	} else {
+		cmd = exec.Command("sh", "-c", c)
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Run()

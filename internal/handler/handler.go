@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -267,13 +268,18 @@ func (h *Handler) handleViewBackup(w http.ResponseWriter, params map[string]stri
 }
 
 func (h *Handler) handleUpdateService(w http.ResponseWriter) {
-	cmd := exec.Command("sh", "-c", config.UpdateCmd)
-	output, err := cmd.CombinedOutput()
-	logStr := string(output)
-	if err != nil {
-		logStr = fmt.Sprintf("Error: %v\nOutput: %s", err, logStr)
-	}
-	json.NewEncoder(w).Encode(map[string]string{"log": logStr})
+	json.NewEncoder(w).Encode(map[string]string{"status": "updating"})
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		var cmd *exec.Cmd
+		updateCmd := config.UpdateCmd + " > /tmp/mhstudio_update.log 2>&1"
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("cmd", "/C", updateCmd)
+		} else {
+			cmd = exec.Command("sh", "-c", updateCmd)
+		}
+		cmd.Run()
+	}()
 }
 
 func (h *Handler) handleCheckUpdate(w http.ResponseWriter) {
@@ -307,7 +313,11 @@ func (h *Handler) handleRestartService(w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "restarting"})
 	go func() {
 		time.Sleep(500 * time.Millisecond)
-		exec.Command("sh", "-c", config.InitScript+" restart").Start()
+		if runtime.GOOS == "windows" {
+			exec.Command("cmd", "/C", config.InitScript+" restart").Start()
+		} else {
+			exec.Command("sh", "-c", config.InitScript+" restart").Start()
+		}
 	}()
 }
 
@@ -321,7 +331,12 @@ func (h *Handler) handleSave(w http.ResponseWriter, params map[string]string, do
 	os.WriteFile(config.ConfigPath, []byte(newContent), 0644)
 
 	if doRestart {
-		cmd := exec.Command("sh", "-c", config.RestartCmd)
+		var cmd *exec.Cmd
+		if runtime.GOOS == "windows" {
+			cmd = exec.Command("cmd", "/C", config.RestartCmd)
+		} else {
+			cmd = exec.Command("sh", "-c", config.RestartCmd)
+		}
 		cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 		cmd.Run()
 		logData, _ := os.ReadFile(config.LogFile)
