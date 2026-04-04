@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.3</title>
+<title>Mihomo Studio v2.2.10</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -142,13 +142,14 @@ button {
     height: 36px; padding: 0 16px; border: 1px solid transparent; border-radius: var(--radius-sm);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+input, select { height: 36px; }
 input, select, textarea {
     font-family: inherit; font-size: 13px; color: var(--txt-main);
     border: 1px solid var(--bd-color); border-radius: var(--radius-sm);
     background: var(--bg-app); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    outline: none;
-    height: 36px; padding: 0 12px; width: 100%;
+    outline: none; padding: 0 12px; width: 100%;
 }
+textarea { padding: 8px 12px; height: auto; min-height: 80px; }
 input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
 
 /* Custom Dropdown Styles */
@@ -231,12 +232,15 @@ button:active { transform: scale(0.97); }
 }
 
 .mod {
-    background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg);
+    background: var(--bg-card); border-radius: var(--radius-lg);
     width: 100%; max-width: 480px; border: 1px solid var(--bd-color);
-    box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh;
+    box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh; overflow: hidden;
 }
 
-.mod h3 { margin: 0 0 20px 0; color: var(--txt-main); font-size: 18px; font-weight: 700; border-bottom: 1px solid var(--bd-color); padding-bottom: 12px; }
+.mod-h { padding: 24px 24px 0 24px; flex-shrink: 0; }
+.mod-b { padding: 16px 24px 24px 24px; overflow-y: auto; flex-grow: 1; }
+
+.mod h3 { margin: 0 0 16px 0; color: var(--txt-main); font-size: 18px; font-weight: 700; }
 
 .row { display: flex; gap: 8px; align-items: center; }
 .sp-between { justify-content: space-between; }
@@ -259,11 +263,11 @@ button:active { transform: scale(0.97); }
 
 #bk-content { background: var(--log-bg); color: var(--log-txt); font-family: monospace; padding: 16px; border-radius: var(--radius-sm); white-space: pre-wrap; overflow-y: auto; flex-grow: 1; font-size: 12px; }
 
-.modal-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--bd-color); margin-bottom: 20px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.modal-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--bd-color); margin-bottom: 0; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; background: var(--bg-card); }
 .modal-tabs::-webkit-scrollbar { display: none; }
-.modal-tabs button { flex-shrink: 0; flex: 1; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px 0; color: var(--txt-mut); height: auto; font-weight: 600; box-shadow: none; white-space: nowrap; }
+.modal-tabs button { flex-shrink: 0; flex: 1; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 12px 16px; color: var(--txt-mut); height: auto; font-weight: 600; box-shadow: none; white-space: nowrap; min-height: 48px; cursor: pointer; transition: all 0.2s; }
 .modal-tabs button.active { color: var(--primary); border-bottom-color: var(--primary); }
-.modal-tabs button:hover { transform: none; background: transparent; color: var(--txt-main); }
+.modal-tabs button:hover { transform: translateY(-1px); background: rgba(59, 130, 246, 0.05); color: var(--txt-main); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
@@ -326,7 +330,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.3</div>
+            <div class="brand-version">v2.2.10</div>
         </div>
     </div>
     
@@ -571,56 +575,107 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <div id="addProxyModal" class="ovl"><div class="mod" style="width:600px; max-width:95vw;">
-    <h3 id="proxyModalTitle" data-i18n="modal_add_proxy">Добавить туннель</h3>
-    
-    <div id="smart-link-section" style="margin-bottom:15px; padding:12px; background:var(--bg-app); border-radius:var(--radius-md); border:1px solid var(--bd-color);">
-        <label class="card-title" style="margin-bottom:8px; display:block;">Smart Link Parser (vless, vmess, ss, hy2):</label>
-        <div style="display:flex; gap:8px;">
-            <input id="smartLink" placeholder="vless://... или vmess://..." style="flex:1;">
-            <button onclick="parseSmartLink()" class="btn-primary" style="height:36px; padding:0 12px;" data-i18n="btn_parse">Парсить</button>
+    <div class="mod-h">
+        <h3 id="proxyModalTitle" data-i18n="modal_add_proxy">Добавить туннель</h3>
+        <div class="modal-tabs">
+            <button class="active" onclick="switchProxyTab(event, 'tab-smart-link')">Умный импорт</button>
+            <button onclick="switchProxyTab(event, 'tab-manual-proxy')">Вручную (HTTP/SOCKS)</button>
         </div>
     </div>
 
-    <div id="edit-proxy-container" style="margin-bottom:15px; display:none; padding:12px; border:1px solid var(--warn); border-radius:var(--radius-md); background:rgba(245, 158, 11, 0.05);">
-        <label class="card-title" data-i18n="lbl_edit_target" style="color:var(--warn);">Редактируемый прокси:</label>
-        <div class="cs-wrap" id="cs-edit-m">
-            <select id="edit-proxy-sel" style="display:none"></select>
-            <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-            <div class="cs-options"></div>
+    <div class="mod-b">
+        <!-- Smart Parser Tab -->
+        <div id="tab-smart-link" class="tab-content active" style="padding: 10px 0;">
+            <div id="smart-link-section" style="margin-bottom:20px; padding:20px; background:var(--bg-app); border-radius:var(--radius-md); border:1px solid var(--bd-color);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <label class="card-title" style="margin:0;">SMART LINK / CONFIG PARSER:</label>
+                    <button class="btn-icon btn-ghost" onclick="toggleParserMode()" title="Toggle Multi-line" style="width:32px; height:32px;">
+                        <svg class="ico" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                    </button>
+                </div>
+                
+                <div id="parser-input-container" style="margin-bottom:12px;">
+                    <input id="smartLink" placeholder="vless://... или vmess://..." style="display:block; width:100%;">
+                    <textarea id="smartLinkText" style="display:none; min-height:120px; font-family:monospace; font-size:12px; padding:12px; width:100%;" placeholder="Вставьте ссылку или полный конфиг Wireguard/AWG..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div id="parse-status" style="font-size:11px; font-weight:600; color:var(--primary);"></div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="document.getElementById('wg-file').click()" class="btn-outline" title="Load .conf file" style="height:36px; padding:0 12px;">
+                            <svg class="ico" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <input type="file" id="wg-file" style="display:none;" onchange="loadWgFileIntoFields(this)">
+                        <button onclick="parseSmartLink()" class="btn-primary" style="height:36px; padding:0 24px;">Парсить</button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div style="margin-bottom:15px;" id="base-proxy-fields">
-        <label class="card-title" data-i18n="lbl_group_name">Имя прокси:</label>
-        <input id="proxyName" placeholder="MyProxy" oninput="updateYamlName(this.value)">
-    </div>
-
-    <div class="modal-tabs" style="overflow-x:auto; white-space:nowrap; padding-bottom:5px; margin-bottom:15px; gap:8px;">
-        <button class="active" onclick="switchTab(event, 'tab-vless')">VLESS</button>
-        <button onclick="switchTab(event, 'tab-vmess')">VMess</button>
-        <button onclick="switchTab(event, 'tab-hy2')">Hysteria 2</button>
-        <button onclick="switchTab(event, 'tab-wg')">WG|AWG</button>
-        <button onclick="switchTab(event, 'tab-http')">HTTP|SOCKS</button>
-        <button onclick="switchTab(event, 'tab-ss')">SS|SSR</button>
-    </div>
-
-    <div id="proxy-tabs-content" style="margin-bottom:10px;">
-        <!-- VLESS, VMess, Hy2, etc. share the same textarea now -->
-        <div id="tab-wg" class="tab-content" style="margin-bottom:10px;">
-            <button onclick="document.getElementById('wg-file').click()" class="btn-outline" style="width:100%; height:32px; font-size:12px;">
-                <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span data-i18n="btn_import">Импорт .conf</span>
-            </button>
-            <input type="file" id="wg-file" style="display:none;" onchange="loadWgFileIntoFields(this)">
+        <!-- Manual Proxy Tab -->
+        <div id="tab-manual-proxy" class="tab-content" style="padding: 10px 0;">
+            <div style="margin-bottom:20px; padding:20px; background:var(--bg-app); border-radius:var(--radius-md); border:1px solid var(--bd-color);">
+                <div class="grid-2" style="margin-bottom:15px;">
+                    <div>
+                        <label class="card-title">Тип:</label>
+                        <div class="cs-wrap" id="cs-manual-type">
+                            <select id="manual-type" onchange="updateManualYaml()" style="display:none">
+                                <option value="http">HTTP</option>
+                                <option value="socks5">SOCKS5</option>
+                            </select>
+                            <div class="cs-trigger"><span>HTTP</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                            <div class="cs-options"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="card-title">Порт:</label>
+                        <input id="manual-port" type="number" value="8080" oninput="updateManualYaml()">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label class="card-title">Сервер:</label>
+                    <input id="manual-server" placeholder="1.2.3.4" oninput="updateManualYaml()">
+                </div>
+                <div class="grid-2" style="margin-bottom:12px;">
+                    <div>
+                        <label class="card-title">Логин:</label>
+                        <input id="manual-user" placeholder="user" oninput="updateManualYaml()">
+                    </div>
+                    <div>
+                        <label class="card-title">Пароль:</label>
+                        <input id="manual-pass" type="password" placeholder="pass" oninput="updateManualYaml()">
+                    </div>
+                </div>
+                <div id="manual-tls-wrap" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" id="manual-tls" onchange="updateManualYaml()" style="width:auto; height:auto;">
+                    <label for="manual-tls" style="font-size:12px; font-weight:600; color:var(--txt-mut);">TLS / SSL</label>
+                </div>
+            </div>
         </div>
-        
-        <label class="card-title">YAML Configuration:</label>
-        <textarea id="proxy-yaml-input" rows="12" style="font-family:monospace; font-size:12px; margin-top:5px; resize:vertical;" placeholder="type: vless..."></textarea>
-    </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd-color)">
-        <button onclick="saveProxyByType()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
-        <button onclick="closeM('addProxyModal')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
+        <div id="edit-proxy-container" style="margin-bottom:15px; display:none; padding:12px; border:1px solid var(--warn); border-radius:var(--radius-md); background:rgba(245, 158, 11, 0.05);">
+            <label class="card-title" data-i18n="lbl_edit_target" style="color:var(--warn);">Редактируемый прокси:</label>
+            <div class="cs-wrap" id="cs-edit-m">
+                <select id="edit-proxy-sel" style="display:none"></select>
+                <div class="cs-trigger"><span>...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                <div class="cs-options"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:15px;">
+            <label class="card-title" data-i18n="lbl_group_name">Имя прокси:</label>
+            <input id="proxyName" placeholder="MyProxy" oninput="updateYamlName(this.value)">
+        </div>
+
+        <div style="margin-bottom:10px;">
+            <label class="card-title">YAML Configuration (Result):</label>
+            <textarea id="proxy-yaml-input" style="font-family:monospace; font-size:12px; margin-top:5px; resize:vertical; min-height:150px; background:var(--bg-app); padding:10px;" placeholder="type: vless..."></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd-color)">
+            <button onclick="saveProxyByType()" class="btn-success" style="flex:1" data-i18n="btn_save">Сохранить</button>
+            <button onclick="closeM('addProxyModal')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
+        </div>
     </div>
 </div></div>
 
@@ -773,7 +828,7 @@ const TR = {
         btn_rename: "Переименовать", modal_new_prof: "Новый профиль", lbl_prof_name: "Имя (англ, без пробелов):",
         lbl_content: "Содержимое:", btn_load_file: "Загрузить файл", ph_paste_yaml: "Вставьте YAML конфиг сюда...",
         lbl_group_name: "Имя прокси/группы:", modal_view_bk: "Просмотр бэкапа", lbl_rule_type: "Тип правила:",
-        lbl_rule_val: "Значение:", lbl_rule_target: "Цель (Группа):"
+        lbl_rule_val: "Значение:", lbl_rule_target: "Цель (Группа):", detected_label: "Обнаружено: {0}"
     },
     en: {
         title: "Mihomo Studio", save: "Save", restart: "Restart", panel: "Panel",
@@ -808,7 +863,7 @@ const TR = {
         btn_rename: "Rename", modal_new_prof: "New Profile", lbl_prof_name: "Name (EN, no spaces):",
         lbl_content: "Content:", btn_load_file: "Load file", ph_paste_yaml: "Paste YAML config here...",
         lbl_group_name: "Proxy/Group name:", modal_view_bk: "View backup", lbl_rule_type: "Rule type:",
-        lbl_rule_val: "Value:", lbl_rule_target: "Target (Group):"
+        lbl_rule_val: "Value:", lbl_rule_target: "Target (Group):", detected_label: "Detected: {0}"
     },
     uk: {
         title: "Mihomo Studio", save: "Зберегти", restart: "Рестарт", panel: "Панель",
@@ -843,7 +898,7 @@ const TR = {
         btn_rename: "Перейменувати", modal_new_prof: "Новий профіль", lbl_prof_name: "Назва (англ, без пробілів):",
         lbl_content: "Вміст:", btn_load_file: "Завантажити файл", ph_paste_yaml: "Вставте YAML конфіг сюди...",
         lbl_group_name: "Назва проксі/групи:", modal_view_bk: "Перегляд бекапа", lbl_rule_type: "Тип правила:",
-        lbl_rule_val: "Значення:", lbl_rule_target: "Ціль (Група):"
+        lbl_rule_val: "Значення:", lbl_rule_target: "Ціль (Група):", detected_label: "Виявлено: {0}"
     }
 };
 
@@ -930,26 +985,53 @@ function switchMainTab(e, tabId) {
     document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
 }
 
-function switchTab(e, tabId) {
-    const parent = e.target.closest('.mod');
-    parent.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
-    parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    e.target.classList.add('active'); 
-    const targetTab = document.getElementById(tabId);
-    if(targetTab) targetTab.classList.add('active');
+function switchProxyTab(e, tabId) {
+    const p = e.target.closest('#addProxyModal');
+    p.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
+    p.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    if (tabId === 'tab-manual-proxy') updateManualYaml();
+}
+
+function updateManualYaml() {
+    const type = document.getElementById('manual-type').value;
+    const server = document.getElementById('manual-server').value || '1.2.3.4';
+    const port = parseInt(document.getElementById('manual-port').value) || 8080;
+    const user = document.getElementById('manual-user').value;
+    const pass = document.getElementById('manual-pass').value;
+    const tls = document.getElementById('manual-tls').checked;
+    const name = document.getElementById('proxyName').value || 'MyProxy';
     
-    if(!isEditMode && TEMPLATES[tabId]) {
-        const name = document.getElementById('proxyName').value || 'MyProxy';
-        const tpl = JSON.parse(JSON.stringify(TEMPLATES[tabId]));
-        tpl.name = name;
-        document.getElementById('proxy-yaml-input').value = jsyaml.dump(tpl).trim();
+    let data = { name, type, server, port };
+    if (user) data.username = user;
+    if (pass) data.password = pass;
+    if (type === 'http' && tls) data.tls = true;
+    
+    document.getElementById('proxy-yaml-input').value = jsyaml.dump([data]).trim();
+}
+
+function toggleParserMode() {
+    const inp = document.getElementById('smartLink');
+    const area = document.getElementById('smartLinkText');
+    const isArea = area.style.display === 'block';
+    if(isArea) {
+        inp.value = area.value.split('\n')[0];
+        area.style.display = 'none'; inp.style.display = 'block';
+    } else {
+        area.value = inp.value;
+        inp.style.display = 'none'; area.style.display = 'block';
     }
 }
 function updateYamlName(val) {
     try {
         const area = document.getElementById('proxy-yaml-input');
         const cfg = jsyaml.load(area.value);
-        if(cfg) { cfg.name = val; area.value = jsyaml.dump(cfg).trim(); }
+        if(cfg) { 
+            if(Array.isArray(cfg)) cfg[0].name = val;
+            else cfg.name = val;
+            area.value = jsyaml.dump(cfg).trim(); 
+        }
     } catch(e) {}
 }
 
@@ -1018,41 +1100,73 @@ function renderRules() {
     } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">${t('routes_parse_err')}${e.message}</p>`; }
 }
 
-function parseSmartLink() {
-    const raw = document.getElementById('smartLink').value.trim(); if (!raw) return;
+function smartParse(raw) {
+    let type = "", data = {}, name = "";
+    raw = raw.trim();
+    if (!raw) return null;
+
     try {
-        let proto = "", data = {}, name = "";
         if (raw.startsWith('vless://')) {
-            proto = 'tab-vless'; const url = new URL(raw), params = new URLSearchParams(url.search);
+            type = 'VLESS'; const url = new URL(raw), params = new URLSearchParams(url.search);
             data = { type:'vless', server:url.hostname, port:parseInt(url.port), uuid:url.username, network:params.get('type')||'tcp', flow:params.get('flow')||'', tls:(params.get('security')==='tls'||params.get('security')==='reality'), sni:params.get('sni')||params.get('peer')||'', udp:true };
             name = decodeURIComponent(url.hash.slice(1));
         } else if (raw.startsWith('vmess://')) {
-            proto = 'tab-vmess'; const json = JSON.parse(atob(raw.slice(8)));
+            type = 'VMess'; const json = JSON.parse(atob(raw.slice(8)));
             data = { type:'vmess', server:json.add, port:parseInt(json.port), uuid:json.id, alterId:parseInt(json.aid), cipher:json.scy||'auto', network:json.net||'tcp', tls:(json.tls==='tls'), udp:true };
             name = json.ps;
         } else if (raw.startsWith('ss://')) {
-            proto = 'tab-ss'; if (raw.includes('#')) name = decodeURIComponent(raw.split('#')[1]);
+            type = 'Shadowsocks'; if (raw.includes('#')) name = decodeURIComponent(raw.split('#')[1]);
             const content = raw.split('#')[0].slice(5);
             if (content.includes('@')) {
                 const parts = content.split('@'), userinfo = atob(parts[0]);
                 data = { type:'ss', cipher:userinfo.split(':')[0], password:userinfo.split(':')[1], server:parts[1].split(':')[0], port:parseInt(parts[1].split(':')[1]), udp:true };
             }
         } else if (raw.startsWith('hy2://')) {
-            proto = 'tab-hy2'; const url = new URL(raw), params = new URLSearchParams(url.search);
+            type = 'Hysteria 2'; const url = new URL(raw), params = new URLSearchParams(url.search);
             data = { type:'hysteria2', server:url.hostname, port:parseInt(url.port), password:url.username, sni:params.get('sni')||'', obfs:{type:'salamander', password:params.get('obfs-password')||''} };
             name = decodeURIComponent(url.hash.slice(1));
+        } else if (raw.includes('[Interface]') || raw.includes('PrivateKey') || raw.includes('[Peer]')) {
+            return { type: 'Wireguard', raw: raw };
         }
-        if (proto) {
-            const btn = document.querySelector(`.modal-tabs button[onclick*="${proto}"]`); if(btn) {
-                document.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            if(name) document.getElementById('proxyName').value = name;
-            data.name = name || 'MyProxy';
-            document.getElementById('proxy-yaml-input').value = jsyaml.dump(data).trim();
-        }
-    } catch(e) { console.error("Parse error", e); }
+        return type ? { type, data, name } : null;
+    } catch(e) {
+        console.error("Parse error", e);
+        return null;
+    }
 }
+
+function parseSmartLink() {
+    const inp = document.getElementById('smartLink'), area = document.getElementById('smartLinkText');
+    const raw = (area.style.display === 'block' ? area.value : inp.value).trim();
+    if (!raw) return;
+
+    const res = smartParse(raw);
+    if (!res) {
+        document.getElementById('parse-status').innerText = 'Unknown format';
+        return;
+    }
+
+    if (res.type === 'Wireguard') {
+        const pName = document.getElementById('proxyName').value || 'WG_Import';
+        fetch('/', {method:'POST', body:'act=add_wireguard&config_text='+encodeURIComponent(res.raw)+'&proxy_name='+encodeURIComponent(pName)})
+            .then(r=>r.json()).then(d => { 
+                if(d.error) ask(d.error, false); 
+                else {
+                    document.getElementById('proxy-yaml-input').value = d.yaml;
+                    const pObj = jsyaml.load(d.yaml);
+                    if(pObj && pObj.name) document.getElementById('proxyName').value = pObj.name;
+                    document.getElementById('parse-status').innerText = t('detected_label', 'Wireguard');
+                }
+            });
+        return;
+    }
+
+    document.getElementById('parse-status').innerText = t('detected_label', res.type);
+    if(res.name) document.getElementById('proxyName').value = res.name;
+    res.data.name = res.name || document.getElementById('proxyName').value || 'MyProxy';
+    document.getElementById('proxy-yaml-input').value = jsyaml.dump([res.data]).trim();
+}
+
 
 function loadWgFileIntoFields(input) {
     const f = input.files[0]; if(!f) return;
@@ -1075,23 +1189,48 @@ function openAddProxyModal() {
     isEditMode = false; document.getElementById('proxyModalTitle').innerText = t('modal_add_proxy');
     document.getElementById('edit-proxy-container').style.display = 'none';
     document.getElementById('smart-link-section').style.display = 'block';
+    
+    // Reset Tabs
+    document.querySelectorAll('#addProxyModal .modal-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#addProxyModal .tab-content').forEach(p => p.classList.remove('active'));
+    document.querySelector('#addProxyModal .modal-tabs button').classList.add('active');
+    document.getElementById('tab-smart-link').classList.add('active');
+
     document.getElementById('proxyName').value = '';
     document.getElementById('proxy-yaml-input').value = '';
+    document.getElementById('smartLink').value = ''; document.getElementById('smartLinkText').value = '';
+    document.getElementById('smartLink').style.display = 'block'; document.getElementById('smartLinkText').style.display = 'none';
+    document.getElementById('parse-status').innerText = '';
+    
+    // Clear manual fields
+    document.getElementById('manual-server').value = '';
+    document.getElementById('manual-port').value = '8080';
+    document.getElementById('manual-user').value = '';
+    document.getElementById('manual-pass').value = '';
+    document.getElementById('manual-tls').checked = false;
+
     document.getElementById('addProxyModal').style.display = 'flex';
-    const firstTab = document.querySelector('.modal-tabs button');
-    if(firstTab) firstTab.click();
+    if(upManual) upManual();
 }
 
 function openEditProxyModal(targetName = '') {
     isEditMode = true; document.getElementById('proxyModalTitle').innerText = t('modal_edit_proxy');
     document.getElementById('edit-proxy-container').style.display = 'block';
     document.getElementById('smart-link-section').style.display = 'none';
+
+    // Reset Tabs to Manual for Editing
+    document.querySelectorAll('#addProxyModal .modal-tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#addProxyModal .tab-content').forEach(p => p.classList.remove('active'));
+    const manualBtn = document.querySelectorAll('#addProxyModal .modal-tabs button')[1];
+    if(manualBtn) manualBtn.classList.add('active');
+    document.getElementById('tab-manual-proxy').classList.add('active');
+
     const sel = document.getElementById('edit-proxy-sel'); sel.innerHTML = '';
     const cfg = jsyaml.load(ed.getValue());
     if (cfg && cfg.proxies) {
         cfg.proxies.forEach(p => { 
             const o = document.createElement('option'); o.value = p.name; o.text = p.name; 
-            if(p.name===targetName) { o.selected=true; document.getElementById('proxyName').value=p.name; document.getElementById('proxy-yaml-input').value = jsyaml.dump(p).trim(); }
+            if(p.name===targetName) { o.selected=true; document.getElementById('proxyName').value=p.name; document.getElementById('proxy-yaml-input').value = jsyaml.dump([p]).trim(); }
             sel.appendChild(o); 
         });
     }
@@ -1125,7 +1264,8 @@ function openMGrp(yaml, name) {
     const cfg = jsyaml.load(ed.getValue());
     if (cfg && cfg['proxy-groups']) {
         cfg['proxy-groups'].forEach(g => {
-            c.innerHTML += `<div class="g-item"><input type="checkbox" id="chk-${g.name}" value="${g.name}"><label for="chk-${chk.name}">${g.name}</label></div>`;
+            if(!g || !g.name) return;
+            c.innerHTML += `<div class="g-item"><input type="checkbox" id="chk-${g.name}" value="${g.name}"><label for="chk-${g.name}">${g.name}</label></div>`;
         });
     }
     closeM('addProxyModal'); document.getElementById('m-grp').style.display='flex';
@@ -1402,7 +1542,7 @@ function restoreBackup(fname) {
     });
 }
 
-var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget;
+var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual;
 
 (function init() {
     let l = localStorage.getItem(LANG_KEY) || 'ru'; setLang(l);
@@ -1417,6 +1557,7 @@ var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget;
     upRgType = initCS('cs-rg-type');
     upRlType = initCS('cs-rl-type');
     upRlTarget = initCS('cs-rl-target');
+    upManual = initCS('cs-manual-type');
 
     document.getElementById('rg-type').addEventListener('change', function() {
         document.getElementById('url-test-params').style.display = this.value === 'url-test' ? 'grid' : 'none';
