@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-VERSION="2.2.35"
+VERSION="2.2.36"
 OUT_DIR="dist"
 
 mkdir -p "$OUT_DIR"
 
-echo "=== Сборка# === Mihomo Studio v2.2.35 (Go) — Установщик ==="
+echo "=== Сборка# === Mihomo Studio v2.2.36 (Go) — Установщик ==="
 
 # mips (big-endian)
 echo "[1/3] Компиляция linux/mips..."

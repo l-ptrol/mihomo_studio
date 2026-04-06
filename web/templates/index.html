@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.35</title>
+<title>Mihomo Studio v2.2.36</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -108,7 +108,7 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
     padding: 24px; gap: 24px; min-height: 0; position: relative;
     max-width: 1600px; margin: 0 auto; width: 100%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.app-content.full-width { max-width: 100%; padding: 0; gap: 0; }
+
 
 
 
@@ -118,7 +118,7 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
     box-shadow: var(--shadow-sm); min-width: 0; min-height: 0; 
     padding: 24px; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.main-area.no-padding { padding: 0; border-radius: 0; border-left: none; border-right: none; border-bottom: none; }
+
 
 #tab-editor { height: 100%; display: none; flex-direction: column; }
 #tab-editor.active { display: flex; }
@@ -305,7 +305,7 @@ button:active { transform: scale(0.97); }
 .main-tabs button { flex: 0 0 auto; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; font-size: 13px; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); background: rgba(255,255,255,0.03); }
-.no-padding .main-tabs { border-radius: 0; border-top: none; border-left: none; border-right: none; margin-bottom: 0; padding: 12px 24px; background: var(--bg-card); }
+
 
 
 .tab-pane { display: none; overflow-y: auto; height: 100%; width: 100%; min-height: 0; flex: 1; position: relative; }
@@ -354,7 +354,8 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.35</div>
+            <div class="brand-version">v2.2.36</div>
+
         </div>
     </div>
     
@@ -1051,17 +1052,6 @@ function switchMainTab(e, tabId) {
     const pane = document.getElementById(tabId);
     if(pane) pane.classList.add('active');
     
-    // Toggle full-width and no-padding for Editor
-    const appContent = document.querySelector('.app-content');
-    const mainArea = document.querySelector('.main-area');
-    if (tabId === 'tab-editor') {
-        appContent.classList.add('full-width');
-        mainArea.classList.add('no-padding');
-    } else {
-        appContent.classList.remove('full-width');
-        mainArea.classList.remove('no-padding');
-    }
-
     localStorage.setItem('lastMainTab', tabId);
     if (tabId === 'tab-editor' && window.ed) setTimeout(() => ed.resize(), 50);
     if (tabId === 'tab-routes') renderRoutes();
@@ -1070,6 +1060,7 @@ function switchMainTab(e, tabId) {
     if (tabId === 'tab-backups') renderBackupsTab();
     document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
 }
+
 
 
 function switchProxyTab(e, tabId) {
