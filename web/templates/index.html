@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.18</title>
+<title>Mihomo Studio v2.2.19</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -101,19 +101,16 @@ body {
 .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .header-group { display: flex; align-items: center; gap: 6px; background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
 
-.app-content {
-    display: flex; flex: 1; overflow: hidden;
-    padding: 16px; gap: 16px; position: relative;
-}
+.app-content { display: flex; flex: 1; overflow: hidden; padding: 0 16px 16px 16px; min-height: 0; position: relative; }
 
 .editor-wrapper {
     flex: 1; background: var(--bg-card);
     border-radius: var(--radius-md); box-shadow: var(--shadow-md);
     border: 1px solid var(--bd-color);
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex; flex-direction: column; overflow: hidden; min-height: 0; height: 100%;
 }
 
-#ed { flex: 1; font-size: 13px; }
+#ed { flex: 1; font-size: 13px; min-height: 0; height: 100%; }
 
 .sidebar {
     width: 320px; display: flex; flex-direction: column;
@@ -292,7 +289,7 @@ button:active { transform: scale(0.97); }
 .main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); }
-.tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; height: 0; min-height: 0; }
+.tab-pane { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; min-height: 0; }
 .tab-pane.active { display: flex; }
 
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
@@ -346,7 +343,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.18</div>
+            <div class="brand-version">v2.2.19</div>
         </div>
     </div>
     
@@ -978,8 +975,12 @@ function initCS(id) {
             d.onclick = (e) => { 
                 e.stopPropagation();
                 sel.value = o.value; 
+                
+                if (sel.id === 'lang-sel-tab') setLang(o.value);
+                else if (sel.id === 'theme-sel-tab') setTheme(o.value);
+                else if (sel.id === 'manual-type') updateManualYaml();
+                
                 sel.dispatchEvent(new Event('change', { bubbles: true })); 
-                if (sel.onchange) sel.onchange(); 
                 update(); 
                 wrap.classList.remove('open'); 
             };
@@ -1013,6 +1014,7 @@ window.onclick = () => { document.querySelectorAll('.cs-wrap').forEach(w => w.cl
 window.addEventListener('scroll', () => { document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open')); }, true);
 
 function setLang(l) {
+    if (!l || !TR[l]) l = 'ru';
     currLang = l; localStorage.setItem(LANG_KEY, l);
     const sel = document.getElementById('lang-sel-tab'); if(sel) { sel.value = l; if(upLang) upLang(); }
     document.querySelectorAll('[data-i18n]').forEach(e => { let k = e.getAttribute('data-i18n'); if(TR[l][k]) e.innerText = TR[l][k]; });
@@ -1824,7 +1826,7 @@ function init() {
     if (savedTab && document.getElementById(savedTab.replace('tab-', 'nav-'))) {
         switchMainTab(null, savedTab);
     } else if (firstTabBtn) {
-        firstTabBtn.click();
+        switchMainTab(null, firstTabBtn.id.replace('nav-', 'tab-'));
     } else {
         switchMainTab(null, 'tab-proxies');
     }
