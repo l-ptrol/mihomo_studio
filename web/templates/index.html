@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.23</title>
+<title>Mihomo Studio v2.2.24</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -104,13 +104,12 @@ body {
 .app-content { display: flex; flex: 1; overflow: hidden; padding: 0 16px 16px 16px; min-height: 0; position: relative; }
 
 .editor-wrapper {
-    background: var(--bg-card);
-    border-radius: var(--radius-md); box-shadow: var(--shadow-md);
-    border: 1px solid var(--bd-color);
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    overflow: hidden; min-height: 0;
+    flex: 1; display: flex; flex-direction: column;
+    background: var(--bg-card); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md); border: 1px solid var(--bd-color);
+    position: relative; overflow: hidden; min-height: 0;
 }
-#ed { position: absolute; top: 0; left: 0; right: 0; bottom: 0; font-size: 13px; }
+#ed { flex: 1; width: 100%; height: 100%; min-height: 0; font-size: 13px; }
 
 .sidebar {
     width: 320px; display: flex; flex-direction: column;
@@ -286,21 +285,17 @@ button:active { transform: scale(0.97); }
 }
 
 .main-tabs { display: flex; gap: 8px; margin-bottom: 12px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
-.main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
-.main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
-.main-tabs button:hover:not(.active) { color: var(--txt-main); }
-.tab-pane { display: none; flex: 1 1 100%; flex-direction: column; overflow-y: auto; min-height: 0; position: relative; height: 100%; width: 100%; }
+.tab-pane { display: none; flex-direction: column; overflow-y: auto; height: 100%; min-height: 0; }
 .tab-pane.active { display: flex; }
 #tab-editor.active { overflow: hidden; }
 
+.builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
 .card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 32px; grid-gap: 32px; padding: 8px; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
 .drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
 .drag-handle:active { cursor: grabbing; }
 .sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
-
-.builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px; }
 
 .view-toggle { display: flex; background: var(--bg-app); border: 1px solid var(--bd-color); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
 .view-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--txt-sec); cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; }
@@ -345,7 +340,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.23</div>
+            <div class="brand-version">v2.2.24</div>
         </div>
     </div>
     
@@ -373,7 +368,7 @@ button:active { transform: scale(0.97); }
 </header>
 <div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
 <div class="app-content">
-    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative; height: 100%;">
+    <div style="flex: 1; display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; overflow: hidden;">
         <div class="main-tabs" id="main-tabs">
             <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
             <button id="nav-routes" onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
@@ -470,7 +465,7 @@ button:active { transform: scale(0.97); }
             <div class="builder-section">
                 <h3 data-i18n="tab_settings" style="margin-bottom:20px;">Настройки системы</h3>
                 
-                <div class="grid-cards" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                <div class="grid-cards">
                     <div class="card" style="padding:20px;">
                         <h4 class="card-title" style="margin-bottom:15px;" data-i18n="lbl_appearance">Внешний вид</h4>
                         <div style="display:flex; gap:15px; flex-direction:column;">
