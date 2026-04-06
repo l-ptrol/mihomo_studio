@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.20</title>
+<title>Mihomo Studio v2.2.21</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -107,10 +107,10 @@ body {
     flex: 1; background: var(--bg-card);
     border-radius: var(--radius-md); box-shadow: var(--shadow-md);
     border: 1px solid var(--bd-color);
-    display: flex; flex-direction: column; overflow: hidden; min-height: 0; height: 100%;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden; min-height: 0;
 }
-
-#ed { flex: 1; font-size: 13px; min-height: 0; height: 100%; }
+#ed { position: absolute; top: 0; left: 0; right: 0; bottom: 0; font-size: 13px; }
 
 .sidebar {
     width: 320px; display: flex; flex-direction: column;
@@ -289,13 +289,13 @@ button:active { transform: scale(0.97); }
 .main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); }
-.tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; height: 100%; min-height: 0; }
+.tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; min-height: 0; }
 .tab-pane.active { display: flex; }
 #tab-editor.active { overflow: hidden; }
 
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
 .card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
 .drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
 .drag-handle:active { cursor: grabbing; }
 .sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
@@ -345,7 +345,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.20</div>
+            <div class="brand-version">v2.2.21</div>
         </div>
     </div>
     
@@ -1814,10 +1814,24 @@ function init() {
     
     // Restore saved state
     const l = localStorage.getItem(LANG_KEY) || 'ru';
-    setLang(l);
+    currLang = l;
+    document.querySelectorAll('[data-i18n]').forEach(e => { let k = e.getAttribute('data-i18n'); if(TR[l] && TR[l][k]) e.innerText = TR[l][k]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(e => { let k = e.getAttribute('data-i18n-ph'); if(TR[l] && TR[l][k]) e.placeholder = TR[l][k]; });
     
     const tH = localStorage.getItem(THM_KEY) || 'dark';
-    setTheme(tH);
+    document.body.className = tH;
+    let aceT = 'ace/theme/monokai';
+    if(tH==='light') aceT='ace/theme/chrome';
+    else if(tH==='midnight') aceT='ace/theme/tomorrow_night_blue';
+    else if(tH==='cyber') aceT='ace/theme/terminal';
+    try { ed.setTheme(aceT); } catch(e){}
+
+    const langSel = document.getElementById('lang-sel-tab');
+    if (langSel) { langSel.value = l; }
+    const themeSel = document.getElementById('theme-sel-tab');
+    if (themeSel) { themeSel.value = tH; }
+    if (upLang) upLang();
+    if (upTheme) upTheme();
     
     const bL = localStorage.getItem(LIM_KEY) || 5;
     document.getElementById('bk-lim').value = bL;
@@ -1827,8 +1841,6 @@ function init() {
     const firstTabBtn = document.querySelector('#main-tabs button');
     if (savedTab && document.getElementById(savedTab.replace('tab-', 'nav-'))) {
         switchMainTab(null, savedTab);
-    } else if (firstTabBtn) {
-        switchMainTab(null, firstTabBtn.id.replace('nav-', 'tab-'));
     } else {
         switchMainTab(null, 'tab-proxies');
     }
@@ -1838,8 +1850,6 @@ function init() {
     renderRules();
     renderProxies();
     renderBackupsTab();
-    
-    applyI18n();
     
     // Background tasks
     setTimeout(() => { checkUpdates(true); }, 1500);
