@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.17</title>
+<title>Mihomo Studio v2.2.18</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -292,11 +292,11 @@ button:active { transform: scale(0.97); }
 .main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); }
-.tab-pane { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
+.tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; height: 0; min-height: 0; }
 .tab-pane.active { display: flex; }
 
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
-.card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
 .drag-handle:active { cursor: grabbing; }
@@ -346,7 +346,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.17</div>
+            <div class="brand-version">v2.2.18</div>
         </div>
     </div>
     
@@ -366,7 +366,7 @@ button:active { transform: scale(0.97); }
             <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span data-i18n="save">Сохранить</span>
         </button>
-        <button onclick="save('restart')" class="btn-danger" style="display:none;">
+        <button onclick="save('restart')" class="btn-danger">
             <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span data-i18n="restart">Рестарт</span>
         </button>
@@ -500,20 +500,6 @@ button:active { transform: scale(0.97); }
                                     <div class="cs-options"></div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <div class="card" style="padding:20px;">
-                        <h4 class="card-title" style="margin-bottom:15px;" data-i18n="tab_settings">Управление сервисом</h4>
-                        <div style="display:flex; flex-direction:column; gap:12px;">
-                            <button onclick="save('restart')" class="btn-danger" style="width:100%;">
-                                <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                <span data-i18n="restart">Рестарт Mihomo</span>
-                            </button>
-                            <button onclick="restartService()" class="btn-ghost" style="width:100%; border:1px solid var(--bd-color);">
-                                <svg class="ico" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="1" y1="15" x2="23" y2="15"/></svg>
-                                <span data-i18n="btn_restart_service">Перезапустить веб-сервис</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -992,7 +978,8 @@ function initCS(id) {
             d.onclick = (e) => { 
                 e.stopPropagation();
                 sel.value = o.value; 
-                sel.dispatchEvent(new Event('change')); 
+                sel.dispatchEvent(new Event('change', { bubbles: true })); 
+                if (sel.onchange) sel.onchange(); 
                 update(); 
                 wrap.classList.remove('open'); 
             };
@@ -1045,7 +1032,7 @@ function setTheme(tVal) {
 }
 
 function switchMainTab(e, tabId) {
-    const btn = e ? e.currentTarget || e.target : document.getElementById(tabId.replace('tab-', 'btn-tab-'));
+    const btn = e ? e.currentTarget || e.target : document.getElementById(tabId.replace('tab-', 'nav-'));
     document.querySelectorAll('.main-tabs button').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     if(btn && btn.classList) btn.classList.add('active');
@@ -1831,10 +1818,16 @@ function init() {
     const bL = localStorage.getItem(LIM_KEY) || 5;
     document.getElementById('bk-lim').value = bL;
     
-    // Tab Activation - Always First Tab by Default
+    // Tab Activation
+    const savedTab = localStorage.getItem('lastMainTab');
     const firstTabBtn = document.querySelector('#main-tabs button');
-    if(firstTabBtn) firstTabBtn.click();
-    else switchMainTab(null, 'tab-proxies');
+    if (savedTab && document.getElementById(savedTab.replace('tab-', 'nav-'))) {
+        switchMainTab(null, savedTab);
+    } else if (firstTabBtn) {
+        firstTabBtn.click();
+    } else {
+        switchMainTab(null, 'tab-proxies');
+    }
     
     // Rendering
     renderRoutes();
