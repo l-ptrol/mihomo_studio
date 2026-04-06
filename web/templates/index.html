@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.15</title>
+<title>Mihomo Studio v2.2.17</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -714,6 +714,16 @@ button:active { transform: scale(0.97); }
     </div>
 </div></div>
 
+<!-- Модалка добавления в группу -->
+<div id="m-grp" class="ovl"><div class="mod" style="padding: 24px;">
+    <h3 data-i18n="modal_add_proxy_to_group" style="margin-top: 0;">Добавить в группу</h3>
+    <div id="g-cnt" style="margin-bottom: 20px;"></div>
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+        <button class="btn-success" onclick="applyVless()" data-i18n="btn_save">Сохранить</button>
+        <button class="btn-ghost" onclick="closeM('m-grp')" data-i18n="btn_cancel">Отмена</button>
+    </div>
+</div></div>
+
 <!-- Модалка редактирования/добавления Группы -->
 <div id="m-route-edit" class="ovl"><div class="mod" style="padding: 24px;">
     <h3 id="route-edit-title" data-i18n="modal_edit_group" style="margin-top: 0;">Настройка группы</h3>
@@ -1013,6 +1023,7 @@ function initCS(id) {
     update(); return update;
 }
 window.onclick = () => { document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); };
+window.addEventListener('scroll', () => { document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open')); }, true);
 
 function setLang(l) {
     currLang = l; localStorage.setItem(LANG_KEY, l);

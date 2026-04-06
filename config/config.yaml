@@ -1,0 +1,5 @@
+proxies:
+  - name: MihomoProxy
+    type: http
+    server: 1.2.3.4
+    port: 1080
