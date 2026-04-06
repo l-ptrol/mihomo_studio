@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.24</title>
+<title>Mihomo Studio v2.2.25</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -101,7 +101,7 @@ body {
 .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .header-group { display: flex; align-items: center; gap: 6px; background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
 
-.app-content { display: flex; flex: 1; overflow: hidden; padding: 0 16px 16px 16px; min-height: 0; position: relative; }
+.app-content { display: flex; flex: 1; overflow: hidden; padding: 20px; gap: 24px; min-height: 0; position: relative; }
 
 .editor-wrapper {
     flex: 1; display: flex; flex-direction: column;
@@ -284,15 +284,19 @@ button:active { transform: scale(0.97); }
     box-shadow: var(--shadow-lg); align-items: center; gap: 8px;
 }
 
-.main-tabs { display: flex; gap: 8px; margin-bottom: 12px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
-.tab-pane { display: none; flex-direction: column; overflow-y: auto; height: 100%; min-height: 0; }
-.tab-pane.active { display: flex; }
-#tab-editor.active { overflow: hidden; }
+.main-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); overflow-x: auto; scrollbar-width: none; }
+.main-tabs button { flex: 0 0 auto; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; transition: var(--transit); font-size: 13px; }
+.main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
+.main-tabs button:hover:not(.active) { color: var(--txt-main); background: rgba(255,255,255,0.03); }
+
+.tab-pane { display: none; flex-direction: column; min-height: 0; height: 100%; overflow-y: auto; }
+.tab-pane.active { display: flex; flex: 1; min-height: 0; }
+#tab-editor.active { overflow: hidden; display: flex; flex-direction: column; }
 
 .builder-section { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px; }
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
 .card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; padding: 2px; }
 .drag-handle { cursor: grab; color: var(--txt-mut); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin-right: 8px; flex-shrink: 0; }
 .drag-handle:active { cursor: grabbing; }
 .sortable-ghost { opacity: 0.4; border: 2px dashed var(--primary); }
@@ -340,7 +344,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.24</div>
+            <div class="brand-version">v2.2.26</div>
         </div>
     </div>
     
