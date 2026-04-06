@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.19</title>
+<title>Mihomo Studio v2.2.20</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -289,8 +289,9 @@ button:active { transform: scale(0.97); }
 .main-tabs button { flex: 1; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 8px; border-radius: 4px; border: 1px solid transparent; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); }
-.tab-pane { display: none; flex: 1; flex-direction: column; overflow: hidden; height: 100%; min-height: 0; }
+.tab-pane { display: none; flex: 1; flex-direction: column; overflow-y: auto; height: 100%; min-height: 0; }
 .tab-pane.active { display: flex; }
+#tab-editor.active { overflow: hidden; }
 
 .card { background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md); padding: 16px; transition: var(--transit); position: relative; }
 .card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -326,6 +327,7 @@ button:active { transform: scale(0.97); }
 </style>
 </head>
 <body>
+<script>try{document.body.className=localStorage.getItem('mihomo_theme')||'dark';}catch(e){document.body.className='dark';}</script>
 <div class="toast" id="toast"><span class="toast-icon"></span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
 
 <header class="app-header">
@@ -343,7 +345,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.19</div>
+            <div class="brand-version">v2.2.20</div>
         </div>
     </div>
     
@@ -371,7 +373,7 @@ button:active { transform: scale(0.97); }
 </header>
 <div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
 <div class="app-content">
-    <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative;">
+<div style="flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; position: relative;">
         <div class="main-tabs" id="main-tabs">
             <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
             <button id="nav-routes" onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
@@ -381,7 +383,7 @@ button:active { transform: scale(0.97); }
             <button id="nav-editor" onclick="switchMainTab(event, 'tab-editor')" data-i18n="tab_yaml">YAML Редактор</button>
         </div>
         
-        <div id="tab-proxies" class="tab-pane active">
+        <div id="tab-proxies" class="tab-pane">
             <div class="builder-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
                    <div style="display:flex; align-items:center; gap:12px;">
