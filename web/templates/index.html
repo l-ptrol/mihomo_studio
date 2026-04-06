@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.33</title>
+<title>Mihomo Studio v2.2.34</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -98,15 +98,16 @@ body {
 .header-group { display: flex; align-items: center; gap: 6px; background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
 
 .app-content {
-    flex: 1; display: flex; align-items: stretch; overflow: hidden; 
+    flex: 1; display: flex; overflow: hidden; 
     padding: 24px; gap: 24px; min-height: 0; position: relative;
+    max-width: 1400px; margin: 0 auto; width: 100%;
 }
 
 .main-area {
     flex: 1; display: flex; flex-direction: column; 
     background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm); min-width: 0; min-height: 0; 
-    padding: 20px; position: relative; overflow: hidden;
+    padding: 24px; position: relative; overflow: hidden;
 }
 
 .editor-wrapper {
@@ -117,20 +118,7 @@ body {
 }
 #ed { position: absolute; top:0; left:0; right:0; bottom:0; font-size: 14px; }
 
-.sidebar {
-    flex: 0 0 320px; display: flex; flex-direction: column;
-    gap: 16px; overflow-y: auto; padding-right: 4px; height: 100%;
-}
-@media (max-width: 1024px) {
-    .sidebar { display: none; }
-    .app-content { padding: 16px; }
-}
-@media (max-width: 768px) {
-    body { overflow-y: auto; height: auto; min-height: 100vh; }
-    .app-header { height: auto; padding: 16px; flex-direction: column; gap: 12px; }
-    .app-content { flex-direction: column; height: auto; overflow: visible; }
-    .editor-wrapper { height: 600px; flex: none; }
-}
+.sidebar { display: none; }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -234,7 +222,7 @@ button:active { transform: scale(0.97); }
     100% { transform: scale(0.8); opacity: 1; }
 }
 
-.ico { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ico { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2 !important; stroke-linecap: round; stroke-linejoin: round; }
 
 .ovl { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding:16px; backdrop-filter: blur(4px); }
 .mod { background: var(--bg-card); border-radius: var(--radius-lg); width: 100%; max-width: 480px; border: 1px solid var(--bd-color); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh; overflow: visible !important; }
@@ -350,7 +338,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.33</div>
+            <div class="brand-version">v2.2.34</div>
         </div>
     </div>
     
@@ -475,7 +463,6 @@ button:active { transform: scale(0.97); }
             <div class="builder-section">
                 <h3 data-i18n="tab_settings" style="margin-bottom:20px;">Настройки системы</h3>
                 
-                <div class="grid-cards">
                     <div class="card" style="padding:20px;">
                         <h4 class="card-title" style="margin-bottom:15px;" data-i18n="lbl_appearance">Внешний вид</h4>
                         <div style="display:flex; gap:15px; flex-direction:column;">
@@ -506,6 +493,34 @@ button:active { transform: scale(0.97); }
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="card" style="padding:20px;">
+                        <h4 class="card-title" style="margin-bottom:15px;" data-i18n="profiles">Профили</h4>
+                        <div class="row" style="margin-bottom:15px;">
+                            <div class="cs-wrap" id="cs-prof" style="flex: 1;">
+                                <select id="prof-sel" style="display:none">__PROFILES__</select>
+                                <div class="cs-trigger"><span>Loading...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                                <div class="cs-options"></div>
+                            </div>
+                            <button onclick="switchProf()" class="btn-primary" style="height:36px; padding:0 15px;" data-i18n="btn_apply">Применить</button>
+                        </div>
+                        <div class="grid-2">
+                             <button onclick="openAddProf()" class="btn-outline">
+                                <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span data-i18n="create">Создать</span>
+                             </button>
+                             <div class="row">
+                                 <button onclick="downloadProf()" class="btn-ghost btn-icon" title="Скачать профиль" style="border: 1px solid var(--bd-color); width: 44px; height: 36px;">
+                                    <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                 </button>
+                                 <button onclick="delProf()" class="btn-ghost" style="color:var(--danger); flex:1; border: 1px solid var(--bd-color);">
+                                    <svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    <span data-i18n="delete">Удалить</span>
+                                 </button>
+                             </div>
+                        </div>
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -517,35 +532,6 @@ button:active { transform: scale(0.97); }
         </div>
     </div>
     
-    <div class="sidebar" id="app-sidebar">
-        <div class="card">
-            <h3 class="card-title"><span data-i18n="profiles">Профили</span></h3>
-            <div class="row sp-between">
-                <div class="cs-wrap" id="cs-prof" style="flex: 1;">
-                    <select id="prof-sel" style="display:none">__PROFILES__</select>
-                    <div class="cs-trigger"><span>Loading...</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
-                    <div class="cs-options"></div>
-                </div>
-                <button onclick="switchProf()" class="btn-primary btn-icon" title="Выбрать">
-                    <svg class="ico" viewBox="0 0 24 24" style="stroke-width: 3;"><polyline points="20 6 9 17 4 12"/></svg>
-                </button>
-            </div>
-            <div class="grid-2" style="margin-top:4px;">
-                 <button onclick="openAddProf()" class="btn-outline" >
-                    <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span data-i18n="create">Создать</span>
-                 </button>
-                 <button onclick="delProf()" class="btn-ghost" style="color: var(--danger);" >
-                    <svg class="ico" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    <span data-i18n="delete">Удалить</span>
-                 </button>
-            </div>
-        </div>
-        
-        <div style="margin-top: 20px; text-align: center; font-size: 11px; opacity: 0.5;">
-            Mihomo Studio &copy; 2025 - 2026
-        </div>
-    </div>
 </div>
 <div id="m-ren" class="ovl"><div class="mod" style="padding: 24px;">
     <h3 data-i18n="modal_ren_proxy" style="margin-top: 0;">Переименовать прокси</h3>
@@ -1521,6 +1507,30 @@ function checkUpdates(isAuto = false) {
         if (d.update === "true") { document.getElementById('update-btn').classList.add('has-update'); if(!isAuto) updateStudio(); }
         else if(!isAuto) showToast(t('toast_updated'));
     });
+}
+
+function downloadProf() {
+    const name = document.getElementById('prof-sel').value;
+    if(!name) return;
+    fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'act=get_prof_content&name=' + encodeURIComponent(name)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(data.error) throw new Error(data.error);
+        const blob = new Blob([data.content], { type: 'text/yaml' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name + '.yaml';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    })
+    .catch(e => showToast(e.message, 'danger'));
 }
 
 function switchProf() {
