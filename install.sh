@@ -64,7 +64,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio v2.2.53 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.54 - Installer"
 echo "========================================"
 
 # Определяем архитектуру

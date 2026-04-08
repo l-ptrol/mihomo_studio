@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.53</title>
+<title>Mihomo Studio v2.2.54</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -356,6 +356,20 @@ button:active { transform: scale(0.97); }
 
 /* Scroll on drag support */
 .sortable-fallback { opacity: 0.8; }
+/* Log terminal colors */
+.log-line { margin: 2px 0; line-height: 1.5; font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace; }
+.log-time { color: var(--txt-mut); margin-right: 8px; font-weight: 500; }
+.log-info { color: var(--success); font-weight: 700; margin-right: 8px; }
+.log-warn { color: var(--warn); font-weight: 700; margin-right: 8px; }
+.log-err { color: var(--danger); font-weight: 700; margin-right: 8px; }
+.log-red { color: #ff5555; }
+.log-green { color: #50fa7b; }
+.log-yellow { color: #f1fa8c; }
+.log-blue { color: #8be9fd; }
+.log-magenta { color: #ff79c6; }
+.log-cyan { color: #8be9fd; }
+.log-white { color: #f8f8f2; }
+
 </style>
 </head>
 <body>
@@ -377,7 +391,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.53</div>
+            <div class="brand-version">v2.2.54</div>
 
 
 
@@ -833,6 +847,20 @@ button:active { transform: scale(0.97); }
         <button onclick="closeM('m-rule-add')" class="btn-ghost" style="flex:1" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
+
+<!-- Консоль Рестарта -->
+<div id="m-con" class="ovl"><div class="mod" style="width:700px; max-width:95vw;">
+    <div class="mod-h">
+        <h3 data-i18n="modal_console">Консоль управления</h3>
+    </div>
+    <div class="mod-b" style="padding-top:0;">
+        <div id="cons"></div>
+        <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+            <button onclick="closeM('m-con')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
+        </div>
+    </div>
+</div></div>
+
 
 <!-- Модалка обновления -->
 <div id="m-update-proc" class="ovl"><div class="mod" style="width:500px; padding:24px;">
@@ -1557,9 +1585,24 @@ function fmtLog(raw) {
     if(!raw) return "Log empty";
     return raw.split('\n').map(l => {
         if(!l.trim()) return "";
-        l = l.replace(/\x1b\[32m/g, '<span class="log-green">').replace(/\x1b\[33m/g, '<span class="log-yellow">').replace(/\x1b\[0m/g, '</span>');
+        // ANSI Colors
+        l = l.replace(/\x1b\[31m/g, '<span class="log-red">')
+             .replace(/\x1b\[32m/g, '<span class="log-green">')
+             .replace(/\x1b\[33m/g, '<span class="log-yellow">')
+             .replace(/\x1b\[34m/g, '<span class="log-blue">')
+             .replace(/\x1b\[35m/g, '<span class="log-magenta">')
+             .replace(/\x1b\[36m/g, '<span class="log-cyan">')
+             .replace(/\x1b\[37m/g, '<span class="log-white">')
+             .replace(/\x1b\[0m/g, '</span>');
+        
+        // Mihomo structured logs
         let m = l.match(/time="(.*?)"\s+level=(\w+)\s+msg="(.*)"/);
-        if(m) { let ts = new Date(m[1]).toLocaleTimeString(), lvl = m[2].toUpperCase(), cls = lvl==='WARN'?'log-warn':(lvl==='ERROR'?'log-err':'log-info'); return `<div class="log-line"><span class="log-time">[${ts}]</span><span class="${cls}">[${lvl}]</span> ${m[3]}</div>`; }
+        if(m) { 
+            let ts = new Date(m[1]).toLocaleTimeString(), 
+                lvl = m[2].toUpperCase(), 
+                cls = lvl==='WARN'?'log-warn':(lvl==='ERROR'?'log-err':'log-info'); 
+            return `<div class="log-line"><span class="log-time">[${ts}]</span><span class="${cls}">[${lvl}]</span> ${m[3]}</div>`; 
+        }
         return `<div class="log-line">${l}</div>`;
     }).join('');
 }
