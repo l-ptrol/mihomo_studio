@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.46</title>
+<title>Mihomo Studio v2.2.49</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="/static/libs/ace/ace.js"></script>
+<script src="/static/libs/js-yaml.min.js"></script>
+<script src="/static/libs/Sortable.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -146,7 +146,7 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
     border-top: 1px solid var(--bd-color);
     position: relative; overflow: hidden; min-height: 0;
 }
-#ed { position: absolute; top:0; left:0; right:0; bottom:0; }
+#ed { position: absolute; top:0; left:0; right:0; bottom:0; font-size: 14px; }
 
 .sidebar { display: none; }
 
@@ -370,7 +370,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.46</div>
+            <div class="brand-version">v2.2.49</div>
 
 
 
@@ -556,19 +556,16 @@ button:active { transform: scale(0.97); }
                              </div>
                         </div>
                     </div>
-                    </div>
                 </div>
             </div>
-        </div>
 
         <div id="tab-editor" class="tab-pane">
             <div class="editor-wrapper">
                 <div id="ed"></div>
             </div>
         </div>
-    </div>
-    
-</div>
+    </div> <!-- Ends main-area -->
+</div> <!-- Ends app-content -->
 <div id="m-ren" class="ovl"><div class="mod" style="padding: 24px;">
     <h3 data-i18n="modal_ren_proxy" style="margin-top: 0;">Переименовать прокси</h3>
     <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
@@ -830,20 +827,12 @@ button:active { transform: scale(0.97); }
 </div></div>
 
 <script>
-var ed=null, initialConfig = document.getElementById('raw-config').innerText;
+ace.config.set('basePath', '/static/libs/ace');
+var ed=ace.edit("ed"); ed.setTheme("ace/theme/monokai"); ed.session.setMode("ace/mode/yaml");
+ed.setOptions({fontSize:14, tabSize:2, useSoftTabs:true});
+var initialConfig = document.getElementById('raw-config').innerText;
+ed.setValue(initialConfig); ed.clearSelection();
 function getEdVal() { return ed ? ed.getValue() : initialConfig; }
-require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
-require(['vs/editor/editor.main'], function() {
-    ed = monaco.editor.create(document.getElementById('ed'), {
-        value: initialConfig,
-        language: 'yaml',
-        theme: localStorage.getItem(THM_KEY) === 'light' ? 'vs' : 'vs-dark',
-        fontSize: 14,
-        automaticLayout: true,
-        minimap: { enabled: true },
-        scrollbar: { vertical: 'auto', horizontal: 'auto' }
-    });
-});
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
 var isEditMode = false, currEditProxyName = '', currLang = 'ru', curr_new_proxy_yaml = '', curr_new_proxy_name = '';
 var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual, upProf, upLang, upTheme;
@@ -1067,11 +1056,11 @@ function setLang(l) {
 function setTheme(tVal) {
     document.body.className = tVal; localStorage.setItem(THM_KEY, tVal); 
     const sel = document.getElementById('theme-sel-tab'); if(sel) { sel.value = tVal; if(upTheme) upTheme(); }
-    let mTheme = 'vs-dark', edBg = '#18181b';
-    if(tVal==='light') { mTheme='vs'; edBg='#ffffff'; }
-    else if(tVal==='midnight') { mTheme='vs-dark'; edBg='#0f172a'; }
-    else if(tVal==='cyber') { mTheme='vs-dark'; edBg='#000000'; }
-    if(window.monaco) { monaco.editor.setTheme(mTheme); document.getElementById('ed').style.background = edBg; }
+    let aceT = 'ace/theme/monokai', edBg = '#18191a';
+    if(tVal==='light') { aceT='ace/theme/chrome'; edBg='#f0f2f5'; }
+    else if(tVal==='midnight') { aceT='ace/theme/tomorrow_night_blue'; edBg='#0f172a'; }
+    else if(tVal==='cyber') { aceT='ace/theme/terminal'; edBg='#000000'; }
+    if(window.ed) { try { ed.setTheme(aceT); document.getElementById('ed').style.background = edBg; } catch(e){} }
 }
 
 function switchMainTab(e, tabId) {
@@ -1084,7 +1073,7 @@ function switchMainTab(e, tabId) {
     
     localStorage.setItem('lastMainTab', tabId);
     if (tabId === 'tab-editor' && ed) {
-        setTimeout(() => { ed.layout(); }, 50);
+        setTimeout(() => { ed.resize(); }, 50);
     }
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
@@ -1614,7 +1603,7 @@ function showRename() {
 function doRename() {
     const oldN = document.getElementById('sel-ren-proxy').value, newN = document.getElementById('inp-ren-newname').value.trim(); if(!newN) return;
     fetch('/', {method:'POST', body:'act=rename_proxy&old_name='+oldN+'&new_name='+newN+'&content='+encodeURIComponent(getEdVal())}).then(r=>r.json()).then(d => {
-        if(ed) ed.setValue(d.new_content);
+        if(ed) { ed.setValue(d.new_content); ed.clearSelection(); }
         closeM('m-ren'); showToast(t('toast_renamed')); save('save');
     });
 }
@@ -1917,7 +1906,7 @@ function init() {
     // Background tasks
     setTimeout(() => { checkUpdates(true); }, 1500);
     setInterval(() => checkUpdates(true), 3600000);
-    window.addEventListener('resize', () => { if(ed) ed.layout(); });
+    window.addEventListener('resize', () => { if(ed) ed.resize(); });
 }
 
 // --- Utility functions ---

@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"io/fs"
 
 	"github.com/l-ptrol/mhstudio-go/internal/backup"
 	"github.com/l-ptrol/mhstudio-go/internal/config"
@@ -25,10 +26,11 @@ import (
 type Handler struct {
 	template string
 	Version  string
+	files    fs.FS
 }
 
-func New(version string) *Handler {
-	return &Handler{Version: version}
+func New(version string, files fs.FS) *Handler {
+	return &Handler{Version: version, files: files}
 }
 
 func (h *Handler) LoadTemplate(tmpl string) {
@@ -43,6 +45,11 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if strings.HasPrefix(r.URL.Path, "/mihomo_panel/") {
 		h.proxyPass(w, r)
+		return
+	}
+
+	if strings.HasPrefix(r.URL.Path, "/static/") {
+		http.FileServer(http.FS(h.files)).ServeHTTP(w, r)
 		return
 	}
 

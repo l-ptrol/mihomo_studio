@@ -19,7 +19,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.46"
+var Version = "2.2.49"
 
 func main() {
 	fStop := flag.Bool("stop", false, "Stop the server")
@@ -60,12 +60,12 @@ func main() {
 func startServer() {
 	config.Init()
 
-	tmplData, err := web.TemplateFS.ReadFile("templates/index.html")
+	tmplData, err := web.ContentFS.ReadFile("templates/index.html")
 	if err != nil {
 		log.Fatalf("Ошибка: %v", err)
 	}
 
-	h := handler.New(Version)
+	h := handler.New(Version, web.ContentFS)
 	h.LoadTemplate(string(tmplData))
 
 	addr := fmt.Sprintf(":%d", config.Port)
