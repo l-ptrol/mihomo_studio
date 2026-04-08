@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.45</title>
+<title>Mihomo Studio v2.2.46</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
@@ -370,7 +370,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.45</div>
+            <div class="brand-version">v2.2.46</div>
 
 
 
@@ -831,18 +831,18 @@ button:active { transform: scale(0.97); }
 
 <script>
 var ed=null, initialConfig = document.getElementById('raw-config').innerText;
+function getEdVal() { return ed ? ed.getValue() : initialConfig; }
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
 require(['vs/editor/editor.main'], function() {
     ed = monaco.editor.create(document.getElementById('ed'), {
         value: initialConfig,
         language: 'yaml',
-        theme: 'vs-dark',
+        theme: localStorage.getItem(THM_KEY) === 'light' ? 'vs' : 'vs-dark',
         fontSize: 14,
         automaticLayout: true,
         minimap: { enabled: true },
         scrollbar: { vertical: 'auto', horizontal: 'auto' }
     });
-    init(); // Restart init after editor ready
 });
 var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
 var isEditMode = false, currEditProxyName = '', currLang = 'ru', curr_new_proxy_yaml = '', curr_new_proxy_name = '';
@@ -1083,10 +1083,8 @@ function switchMainTab(e, tabId) {
     if(pane) pane.classList.add('active');
     
     localStorage.setItem('lastMainTab', tabId);
-    if (tabId === 'tab-editor' && window.ed) {
-        setTimeout(() => {
-            ed.layout();
-        }, 50);
+    if (tabId === 'tab-editor' && ed) {
+        setTimeout(() => { ed.layout(); }, 50);
     }
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
@@ -1159,7 +1157,7 @@ function showToast(msg){
 function renderRoutes() {
     var container = document.getElementById('routes-container'), lib = window.jsyaml; if (!lib) return;
     try {
-        var data = lib.load(ed.getValue());
+        var data = lib.load(getEdVal());
         if (!data || !data['proxy-groups']) { container.innerHTML = `<p style="padding:20px;opacity:0.5;">${t('routes_no_groups')}</p>`; return; }
         let html = '';
         data['proxy-groups'].forEach((g, idx) => {
@@ -1190,7 +1188,7 @@ function renderRoutes() {
 function renderRules() {
     var container = document.getElementById('rules-container'), lib = window.jsyaml; if (!lib) return;
     try {
-        var data = lib.load(ed.getValue()); if (!data || !data['rules']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('rules_no_rules')}</p>`; return; }
+        var data = lib.load(getEdVal()); if (!data || !data['rules']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('rules_no_rules')}</p>`; return; }
         let html = '';
         data['rules'].forEach((r, idx) => {
             if (typeof r !== 'string') return;
@@ -1229,7 +1227,7 @@ function renderProxies() {
     const container = document.getElementById('proxies-container'); if(!container) return;
     const lib = window.jsyaml; if(!lib) return;
     try {
-        const data = lib.load(ed.getValue());
+        const data = lib.load(getEdVal());
         if(!data || !data['proxies']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('proxies_no_items', 'Нет туннелей')}</p>`; return; }
         let html = '';
         data['proxies'].forEach((p, idx) => {
@@ -1257,7 +1255,7 @@ function renderProxies() {
 
 function deleteProxy(idx) {
     try {
-        const cfg = jsyaml.load(ed.getValue());
+        const cfg = jsyaml.load(getEdVal());
         const p = cfg.proxies[idx]; if(!p) return;
         ask(t('confirm_delete') + ": " + p.name).then(ok => {
             if(!ok) return;
@@ -1615,8 +1613,9 @@ function showRename() {
 }
 function doRename() {
     const oldN = document.getElementById('sel-ren-proxy').value, newN = document.getElementById('inp-ren-newname').value.trim(); if(!newN) return;
-    fetch('/', {method:'POST', body:'act=rename_proxy&old_name='+oldN+'&new_name='+newN+'&content='+encodeURIComponent(ed.getValue())}).then(r=>r.json()).then(d => {
-        ed.setValue(d.new_content); closeM('m-ren'); showToast(t('toast_renamed')); save('save');
+    fetch('/', {method:'POST', body:'act=rename_proxy&old_name='+oldN+'&new_name='+newN+'&content='+encodeURIComponent(getEdVal())}).then(r=>r.json()).then(d => {
+        if(ed) ed.setValue(d.new_content);
+        closeM('m-ren'); showToast(t('toast_renamed')); save('save');
     });
 }
 
@@ -1918,7 +1917,7 @@ function init() {
     // Background tasks
     setTimeout(() => { checkUpdates(true); }, 1500);
     setInterval(() => checkUpdates(true), 3600000);
-    window.addEventListener('resize', () => { if(window.ed) ed.layout(); });
+    window.addEventListener('resize', () => { if(ed) ed.layout(); });
 }
 
 // --- Utility functions ---
@@ -1966,5 +1965,5 @@ function restoreBackup(fname) {
     });
 }
 
-// window.onload = init; - Removed as initialization now happens after Monaco is ready
+window.onload = init;
 </script></body></html>
