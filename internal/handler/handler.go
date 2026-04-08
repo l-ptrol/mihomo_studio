@@ -416,19 +416,19 @@ func (h *Handler) renderBackups() string {
 	var b strings.Builder
 	for _, bk := range backups {
 		t := bk.ModTime.Format("02.01 15:04")
-		b.WriteString(fmt.Sprintf(`<div class="bk-item">
+		b.WriteString(fmt.Sprintf(`<div class="card bk-item" style="padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px;">
 			<div class="bk-info">
-				<div class="bk-name">%s</div>
-				<div class="bk-date">%s</div>
+				<div class="bk-name" style="font-weight:700; font-size:14px;">%s</div>
+				<div class="bk-date" style="font-size:12px; opacity:0.6;">%s</div>
 			</div>
-			<div class="bk-btns">
-				<button onclick="viewBackup('%s')" class="btn-icon btn-ghost" title="Просмотр">
+			<div class="bk-btns" style="display:flex; gap:4px;">
+				<button onclick="viewBackup('%s')" class="btn-icon btn-ghost" title="Просмотр" style="width:30px; height:30px;">
 					<svg class="ico" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
 				</button>
-				<button onclick="restoreBackup('%s')" class="btn-icon btn-ghost" title="Восстановить">
+				<button onclick="restoreBackup('%s')" class="btn-icon btn-ghost" title="Восстановить" style="width:30px; height:30px;">
 					<svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
 				</button>
-				<button onclick="delBackup('%s')" class="btn-icon btn-ghost" style="color:var(--danger)" title="Удалить">
+				<button onclick="delBackup('%s')" class="btn-icon btn-ghost" style="color:var(--danger); width:30px; height:30px;" title="Удалить">
 					<svg class="ico" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 				</button>
 			</div>

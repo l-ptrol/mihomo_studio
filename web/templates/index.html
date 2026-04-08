@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.51</title>
+<title>Mihomo Studio v2.2.52</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -377,7 +377,8 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.51</div>
+            <div class="brand-version">v2.2.52</div>
+
 
 
 
@@ -1095,7 +1096,7 @@ function switchMainTab(e, tabId) {
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
     if (tabId === 'tab-proxies') renderProxies();
-    if (tabId === 'tab-backups') renderBackupsTab();
+    if (tabId === 'tab-backups');
     document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
 }
 
@@ -1837,26 +1838,6 @@ function setupDraggableTabs() {
     }
 }
 
-function renderBackupsTab() {
-    const bkList = document.getElementById('bk-list');
-    const listHtml = bkList ? bkList.innerHTML : '';
-    const container = document.getElementById('backups-container');
-    if (container) {
-        if (!listHtml || listHtml.includes('__BACKUPS__')) {
-             container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('backups_no_backups', 'Нет доступных бэкапов')}</p>`;
-        } else {
-             container.innerHTML = listHtml;
-             container.querySelectorAll('.bk-item').forEach(el => {
-                 el.classList.add('card');
-                 el.style.padding = '12px';
-                 el.style.display = 'flex';
-                 el.style.justifyContent = 'space-between';
-                 el.style.alignItems = 'center';
-                 el.style.gap = '10px';
-             });
-        }
-    }
-}
 
 var upDel, upRen, upEdit, upRgType, upRlType, upRlTarget, upManual, upProf, upLang, upTheme;
 
