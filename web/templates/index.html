@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.49</title>
+<title>Mihomo Studio v2.2.50</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -161,8 +161,8 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
 }
 
 .card-title {
-    margin: 0 0 4px 0; font-size: 12px; font-weight: 700; color: var(--txt-mut);
-    text-transform: uppercase; letter-spacing: 0.05em;
+    margin: 0 0 4px 0; font-size: 13px; font-weight: 700; color: var(--txt-mut);
+    text-transform: uppercase; letter-spacing: 0.05em; line-height: 1.4;
 }
 
 button {
@@ -252,7 +252,14 @@ button:active { transform: scale(0.97); }
     100% { transform: scale(0.8); opacity: 1; }
 }
 
-.ico { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2 !important; stroke-linecap: round; stroke-linejoin: round; }
+.ico { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2 !important; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.drag-handle { 
+    display: flex; align-items: center; justify-content: center; 
+    padding: 6px; cursor: grab; color: var(--txt-mut); 
+    transition: color 0.2s; border-radius: 4px;
+}
+.drag-handle:hover { color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+.drag-handle:active { cursor: grabbing; }
 
 .ovl { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding:16px; backdrop-filter: blur(4px); }
 .mod { background: var(--bg-card); border-radius: var(--radius-lg); width: 100%; max-width: 480px; border: 1px solid var(--bd-color); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 90vh; overflow: visible !important; }
@@ -370,7 +377,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.49</div>
+            <div class="brand-version">v2.2.50</div>
 
 
 
@@ -439,10 +446,20 @@ button:active { transform: scale(0.97); }
         <div id="tab-routes" class="tab-pane">
             <div class="builder-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
-                   <h3 data-i18n="routes_title" style="margin:0;">Умные Маршруты</h3>
+                   <div style="display:flex; align-items:center; gap:12px;">
+                       <h3 data-i18n="routes_title" style="margin:0;">Умные Маршруты</h3>
+                       <div class="view-toggle">
+                           <button id="view-routes-grid" class="view-btn active" onclick="toggleView('routes', 'grid')" title="Tiles">
+                               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                           </button>
+                           <button id="view-routes-list" class="view-btn" onclick="toggleView('routes', 'list')" title="List">
+                               <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                           </button>
+                       </div>
+                   </div>
                    <div style="display:flex; gap:8px;">
                        <button onclick="openEditGroup()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
-                           <svg class="ico" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                           <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                            <span data-i18n="btn_add_group">Добавить группу</span>
                        </button>
                    </div>
@@ -1150,23 +1167,25 @@ function renderRoutes() {
         if (!data || !data['proxy-groups']) { container.innerHTML = `<p style="padding:20px;opacity:0.5;">${t('routes_no_groups')}</p>`; return; }
         let html = '';
         data['proxy-groups'].forEach((g, idx) => {
-            html += `<div class="card" data-idx="${idx}">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items:center;">
+            html += `<div class="card" data-idx="${idx}" style="padding:14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
                     <div style="display:flex; align-items:center; min-width:0;">
-                        <div class="drag-handle"><svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
-                        <div style="font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.name} <small style="opacity:0.6; font-weight:400;">(${g.type})</small></div>
+                        <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.5; stroke-width:3 !important;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+                        <div style="font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-left:4px;">${g.name} <small style="opacity:0.6; font-weight:500; font-size:11px;">(${g.type})</small></div>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
-                        <button onclick="openEditGroup('${g.name}')" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        <button onclick="confirmDeleteGroup('${g.name}')" class="btn-icon btn-ghost" style="color:var(--danger);"><svg viewBox="0 0 24 24" class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        <button onclick="openEditGroup('${g.name}')" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="confirmDeleteGroup('${g.name}')" class="btn-icon btn-ghost" style="color:var(--danger); width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
-                <div id="members-${idx}" class="members-grid" style="display:flex; flex-wrap:wrap; gap:4px; max-height:80px; overflow-y:auto; padding:6px; background:rgba(0,0,0,0.1); border-radius:4px;">
-                    ${(g.proxies||[]).map(m => `<div class="member-item" style="font-size:10px; background:var(--bg-card); border:1px solid var(--bd-color); padding:2px 6px; border-radius:3px;">${m}</div>`).join('')}
+                <div id="members-${idx}" class="members-grid" style="display:flex; flex-wrap:wrap; gap:6px; max-height:100px; overflow-y:auto; padding:8px; background:rgba(0,0,0,0.08); border-radius:6px; border:1px solid var(--bd-color);">
+                    ${(g.proxies||[]).map(m => `<div class="member-item" style="font-size:12px; background:var(--bg-card); border:1px solid var(--bd-color); padding:3px 8px; border-radius:4px; font-weight:500;">${m}</div>`).join('')}
                 </div>
             </div>`;
         });
         container.innerHTML = html;
+        const savedMode = localStorage.getItem('routes_view_mode') || 'grid';
+        toggleView('routes', savedMode);
         if (window.Sortable) {
             Sortable.create(container, { animation:150, handle:'.drag-handle', onEnd:()=>reorderGroups() });
             data['proxy-groups'].forEach((g, i) => Sortable.create(document.getElementById('members-'+i), { animation:150, onEnd:(e)=>reorderMembers(g.name, e.to) }));
@@ -1182,19 +1201,19 @@ function renderRules() {
         data['rules'].forEach((r, idx) => {
             if (typeof r !== 'string') return;
             let parts = r.split(','), type = parts[0], val = parts.length>2?parts[1]:'', target = parts[parts.length-1];
-            html += `<div class="card rule-card" data-idx="${idx}" style="padding:15px;">
-                <div class="rule-num">${idx + 1}</div>
+            html += `<div class="card rule-card" data-idx="${idx}" style="padding:14px;">
+                <div class="rule-num" style="font-weight:800; opacity:0.3;">${idx + 1}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; min-width:0;">
-                        <div class="drag-handle"><svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:currentColor;"><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg></div>
-                        <div style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><b>${type}</b> <small style="color:var(--primary); font-weight:700;">➔ ${target}</small></div>
+                        <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.5; stroke-width:3 !important;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+                        <div style="font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-left:4px;"><b>${type}</b> <small style="color:var(--primary); font-weight:800;">➔ ${target}</small></div>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
-                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico" style="width:12px; height:12px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);"><svg viewBox="0 0 24 24" class="ico" style="width:12px; height:12px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger); width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
-                ${val ? `<div style="font-size:10px; font-family:monospace; margin-top:4px; opacity:0.6; word-break:break-all;">${val}</div>` : ''}
+                ${val ? `<div style="font-size:12px; font-family:monospace; margin-top:6px; opacity:0.7; word-break:break-all; line-height:1.4;">${val}</div>` : ''}
             </div>`;
         });
         container.innerHTML = html;
@@ -1220,18 +1239,18 @@ function renderProxies() {
         if(!data || !data['proxies']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('proxies_no_items', 'Нет туннелей')}</p>`; return; }
         let html = '';
         data['proxies'].forEach((p, idx) => {
-            html += `<div class="card" style="padding:15px; display:flex; flex-direction:column; justify-content:space-between;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+            html += `<div class="card" style="padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                     <div style="min-width:0;">
-                        <h4 style="margin:0; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</h4>
-                        <div style="font-size:11px; color:var(--primary); font-weight:700; margin-top:2px;">${p.type.toUpperCase()}</div>
+                        <h4 style="margin:0; font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</h4>
+                        <div style="font-size:12px; color:var(--primary); font-weight:800; margin-top:3px; opacity:0.8;">${p.type.toUpperCase()}</div>
                     </div>
                     <div style="display:flex; gap:4px;">
-                        <button onclick="openEditProxy('${p.name}')" class="btn-icon btn-ghost"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        <button onclick="deleteProxy(${idx})" class="btn-icon btn-ghost" style="color:var(--danger);"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        <button onclick="openEditProxy('${p.name}')" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="deleteProxy(${idx})" class="btn-icon btn-ghost" style="color:var(--danger); width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
-                <div style="font-size:11px; color:var(--txt-sec); font-family:monospace; word-break:break-all; opacity:0.8;">
+                <div style="font-size:12px; color:var(--txt-sec); font-family:monospace; word-break:break-all; opacity:0.7; font-weight:500;">
                     ${p.server || '---'}:${p.port || '---'}
                 </div>
             </div>`;
