@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.50</title>
+<title>Mihomo Studio v2.2.51</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -377,7 +377,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.50</div>
+            <div class="brand-version">v2.2.51</div>
 
 
 
@@ -459,7 +459,7 @@ button:active { transform: scale(0.97); }
                    </div>
                    <div style="display:flex; gap:8px;">
                        <button onclick="openEditGroup()" class="btn-primary" style="height:32px; font-size:12px; padding:0 12px;">
-                           <svg class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                           <svg class="ico" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                            <span data-i18n="btn_add_group">Добавить группу</span>
                        </button>
                    </div>
@@ -1171,7 +1171,7 @@ function renderRoutes() {
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
                     <div style="display:flex; align-items:center; min-width:0;">
                         <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.5; stroke-width:3 !important;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
-                        <div style="font-weight:700; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-left:4px;">${g.name} <small style="opacity:0.6; font-weight:500; font-size:11px;">(${g.type})</small></div>
+                        <div style="font-weight:700; font-size:15px; overflow-wrap:anywhere; margin-left:4px; line-height:1.2;">${g.name} <small style="opacity:0.6; font-weight:500; font-size:11px;">(${g.type})</small></div>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
                         <button onclick="openEditGroup('${g.name}')" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -1206,7 +1206,7 @@ function renderRules() {
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; min-width:0;">
                         <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.5; stroke-width:3 !important;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
-                        <div style="font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-left:4px;"><b>${type}</b> <small style="color:var(--primary); font-weight:800;">➔ ${target}</small></div>
+                        <div style="font-size:14px; overflow-wrap:anywhere; margin-left:4px; line-height:1.2;"><b>${type}</b> <small style="color:var(--primary); font-weight:800;">➔ ${target}</small></div>
                     </div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
                         <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -1242,7 +1242,7 @@ function renderProxies() {
             html += `<div class="card" style="padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                     <div style="min-width:0;">
-                        <h4 style="margin:0; font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</h4>
+                        <h4 style="margin:0; font-size:15px; font-weight:700; overflow-wrap:anywhere; line-height:1.2;">${p.name}</h4>
                         <div style="font-size:12px; color:var(--primary); font-weight:800; margin-top:3px; opacity:0.8;">${p.type.toUpperCase()}</div>
                     </div>
                     <div style="display:flex; gap:4px;">

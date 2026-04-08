@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"runtime"
 	"strconv"
+	"path/filepath"
 	"strings"
 	"time"
 	"io/fs"
@@ -399,7 +400,17 @@ func (h *Handler) getPanelPort() string {
 func (h *Handler) renderBackups() string {
 	backups, err := backup.ListBackups()
 	if err != nil || len(backups) == 0 {
-		return `<div style="color:var(--txt-sec);font-size:13px;text-align:center;padding:15px">Нет бэкапов</div>`
+		absPath, _ := filepath.Abs(config.BackupDir)
+		count := 0
+		if files, err := filepath.Glob(filepath.Join(config.BackupDir, "*.yaml")); err == nil {
+			count = len(files)
+		}
+		return fmt.Sprintf(`<div style="color:var(--txt-sec);font-size:13px;text-align:center;padding:20px">
+			Нет бэкапов в системе.<br>
+			<small style="opacity:0.5">Путь: %s</small><br>
+			<small style="opacity:0.5">Найдено файлов (*.yaml): %d</small>
+			<div style="margin-top:10px;"><button class="btn-ghost" onclick="save('save')" style="height:28px;font-size:11px;">Создать первый бэкап</button></div>
+		</div>`, absPath, count)
 	}
 
 	var b strings.Builder
