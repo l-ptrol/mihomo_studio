@@ -13,13 +13,14 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/l-ptrol/mhstudio-go/internal/config"
 	"github.com/l-ptrol/mhstudio-go/internal/handler"
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.63"
+var Version = "2.2.64"
 
 func main() {
 	fStart := flag.Bool("start", false, "Start the server")
@@ -51,7 +52,7 @@ func main() {
 		if runtime.GOOS == "windows" {
 			fmt.Println("Error: Update via script is not supported on Windows. Please update manually.")
 		} else {
-			runCmd("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh")
+			runCmd(fmt.Sprintf("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh?t=%d | sh", time.Now().Unix()))
 		}
 		return
 	}

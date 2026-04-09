@@ -286,7 +286,7 @@ func (h *Handler) handleUpdateService(w http.ResponseWriter) {
 		time.Sleep(500 * time.Millisecond)
 		var cmd *exec.Cmd
 		// Используем bash для перенаправления если доступно, иначе sh
-		updateCmd := "wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh > /tmp/mhstudio_update.log 2>&1"
+		updateCmd := fmt.Sprintf("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh?t=%d | sh > /tmp/mhstudio_update.log 2>&1", time.Now().Unix())
 		if runtime.GOOS == "windows" {
 			cmd = exec.Command("cmd", "/C", updateCmd)
 		} else {
