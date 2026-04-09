@@ -19,9 +19,10 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.60"
+var Version = "2.2.61"
 
 func main() {
+	fStart := flag.Bool("start", false, "Start the server")
 	fStop := flag.Bool("stop", false, "Stop the server")
 	fRestart := flag.Bool("restart", false, "Restart the server")
 	fUpdate := flag.Bool("update", false, "Update the service")
@@ -39,7 +40,8 @@ func main() {
 	}
 
 	if *fRestart {
-		runCmd(config.InitScript + " restart")
+		stopService()
+		startServer()
 		return
 	}
 
@@ -54,11 +56,17 @@ func main() {
 	}
 
 	// Default or explicit -start
-	startServer()
+	if *fStart || len(os.Args) == 1 {
+		startServer()
+	} else {
+		flag.Usage()
+	}
 }
 
 func startServer() {
 	config.Init()
+	// Kill potentially hanging process on our port before starting
+	killProcessByPort(config.Port)
 
 	tmplData, err := web.ContentFS.ReadFile("templates/index.html")
 	if err != nil {
@@ -95,21 +103,45 @@ func startServer() {
 	}
 }
 
-func stopService() {
-	data, err := ioutil.ReadFile(config.PidFile)
-	if err != nil {
-		// FALLBACK: pkill if no pid file
-		exec.Command("pkill", "-f", "mhstudio").Run()
-		fmt.Println("Service stop requested (via pkill).")
+func killProcessByPort(port int) {
+	if runtime.GOOS == "windows" {
 		return
 	}
-	pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	process, err := os.FindProcess(pid)
-	if err == nil {
-		process.Signal(syscall.SIGTERM)
-		fmt.Printf("Stopped Mihomo Studio (PID %d)\n", pid)
+
+	// Attempt to find PID as simply as possible for busybox/router environments
+	// Method 1: fuser
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("fuser -k %d/tcp", port))
+	if err := cmd.Run(); err == nil {
+		fmt.Printf("Process using port %d was terminated (fuser).\n", port)
+		return
 	}
-	os.Remove(config.PidFile)
+
+	// Method 2: lsof + kill
+	cmdText := fmt.Sprintf("lsof -ti:%d | xargs kill -9", port)
+	cmd = exec.Command("sh", "-c", cmdText)
+	if err := cmd.Run(); err == nil {
+		fmt.Printf("Process using port %d was terminated (lsof).\n", port)
+		return
+	}
+
+	// If no process found or tools not available, we just continue
+}
+
+func stopService() {
+	// Try port-based first as requested
+	config.Init()
+	killProcessByPort(config.Port)
+
+	// Still try PID file as fallback/cleanup
+	data, err := ioutil.ReadFile(config.PidFile)
+	if err == nil {
+		pid, _ := strconv.Atoi(strings.TrimSpace(string(data)))
+		process, err := os.FindProcess(pid)
+		if err == nil {
+			process.Signal(syscall.SIGTERM)
+		}
+		os.Remove(config.PidFile)
+	}
 }
 
 func runCmd(c string) {
