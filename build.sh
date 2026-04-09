@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-VERSION="2.2.59"
+VERSION="2.2.60"
 OUT_DIR="dist"
 
 mkdir -p "$OUT_DIR"
 
-echo "=== Сборка# === Mihomo Studio v2.2.59 (Go) — Установщик ==="
+echo "=== Сборка# Mihomo Studio (Go) Installer v2.2.60 - Installer ==="
 
 # mips (big-endian)
-echo "[1/3] Компиляция linux/mips..."
+echo "[1/5] Компиляция linux/mips..."
 GOOS=linux GOARCH=mips GOMIPS=softfloat go build -ldflags="-s -w -X main.Version=${VERSION}" -o "${OUT_DIR}/mhstudio-mips" ./cmd/server
 
 # mipsle (little-endian)
