@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.83 (Go) — Установщик ===
+# === Mihomo Studio v2.2.84 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -71,7 +71,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.83 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.84 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
@@ -110,9 +110,11 @@ fi
 
 chmod +x /opt/bin/mhstudio
 
-# Скачиваем init-скрипт
+# Скачиваем init-скрипт с очисткой от CRLF
 echo ">>> Скачивание init-скрипта..."
-download_file "${BASE_URL}/S95mihomo-web" "${INIT_DIR}/S95mihomo-web"
+download_file "${BASE_URL}/S95mihomo-web?t=$(date +%s)" "${INIT_DIR}/S95mihomo-web.tmp"
+tr -d '\r' < "${INIT_DIR}/S95mihomo-web.tmp" > "${INIT_DIR}/S95mihomo-web"
+rm "${INIT_DIR}/S95mihomo-web.tmp"
 chmod +x "${INIT_DIR}/S95mihomo-web"
 
 echo "=== Установка завершена! ==="
