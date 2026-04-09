@@ -12,11 +12,12 @@ case "$1" in
   stop)
     echo "Stopping Mihomo Studio..."
     if [ -f $PIDfile ]; then
-        kill $(cat $PIDfile)
+        kill $(cat $PIDfile) 2>/dev/null || true
         rm $PIDfile
-    else
-        pkill -f "mhstudio"
     fi
+    # Запасной вариант если PID файл не сработал
+    PID=$(ps | grep "mhstudio" | grep -v grep | awk '{print $1}')
+    [ -n "$PID" ] && kill -9 $PID 2>/dev/null || true
     ;;
   restart)
     $0 stop

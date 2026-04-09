@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.61 (Go) — Установщик ===
+# === Mihomo Studio v2.2.62 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -71,7 +71,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.61 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.62 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
@@ -94,7 +94,9 @@ mkdir -p "${MIHOMO_ETC_DIR}/backup"
 # Остановка старой версии для предотвращения ошибки "Text file busy"
 echo ">>> Остановка старой версии (если запущена)..."
 [ -f "${INIT_DIR}/S95mihomo-web" ] && "${INIT_DIR}/S95mihomo-web" stop 2>/dev/null || true
-pkill -9 -f mhstudio 2>/dev/null || true
+# Запасной вариант если init-скрипт не справился
+PID=$(ps | grep "mhstudio" | grep -v grep | awk '{print $1}')
+[ -n "$PID" ] && kill -9 $PID 2>/dev/null || true
 
 # Скачиваем бинарник
 BINARY_NAME="mhstudio-${TARGET_ARCH}"
