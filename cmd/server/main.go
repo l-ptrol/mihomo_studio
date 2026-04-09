@@ -20,7 +20,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.68"
+var Version = "2.2.69"
 
 func main() {
 	fStart := flag.Bool("start", false, "Start the server")
@@ -79,7 +79,13 @@ func maybeDaemonize(version string) {
 		cmd.Stdout = nil
 		cmd.Stderr = nil
 		cmd.Start()
-		fmt.Printf(">>> Mihomo Studio v%s запускается в фоновом режиме...\n", version)
+		// Не выводим версию здесь, чтобы соответствовать запросу пользователя
+		if strings.Contains(strings.Join(os.Args, " "), "-restart") {
+			// При рестарте Stop уже выведен, просто подтверждаем запуск
+			fmt.Println("Starting Mihomo Studio (Go)...")
+		} else {
+			fmt.Println("Starting Mihomo Studio (Go)...")
+		}
 		os.Exit(0)
 	}
 }
@@ -149,6 +155,7 @@ func killProcessByPort(port int) {
 }
 
 func stopService() {
+	fmt.Println("Stopping Mihomo Studio...")
 	// Try port-based first as requested
 	config.Init()
 	killProcessByPort(config.Port)
