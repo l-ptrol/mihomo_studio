@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.79</title>
+<title>Mihomo Studio v2.2.80</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -447,7 +447,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.79</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.80</div>
             </div>
         </div>
     </div>
@@ -961,14 +961,14 @@ const TR = {
         title: "Mihomo Studio", save: "Сохранить", restart: "Рестарт", panel: "Панель",
         update_btn: "Проверить обновления", restart_service: "Рестарт", profiles: "Профили",
         create: "Создать", delete: "Удалить", proxy_mgmt: "Управление", add: "Добавить",
-        edit: "Заменить", rename: "Переименовать", backups: "Бэкапы", keep: "Оставить:",
+        edit: "Изменить", rename: "Переименовать", backups: "Бэкапы", keep: "Оставить:",
         clean: "Очистить", theme_dark: "Тёмная", theme_light: "Светлая", theme_midnight: "Midnight",
         theme_cyber: "Cyber", toast_saved: "Сохранено", toast_cleaned: "Очищено",
         toast_deleted: "Удалено", toast_restored: "Восстановлено", toast_added: "Добавлено",
         toast_updated: "Обновлено", toast_checking: "Проверка...", confirm_update: "Обновить Mihomo Studio?",
         confirm_del_proxy: "Удалить прокси?", confirm_restart_service: "Перезапустить сервис?",
         modal_add_proxy: "Добавить туннель", modal_edit_proxy: "Изменить прокси",
-        lbl_edit_target: "Редактируемый прокси:", btn_add: "Добавить", btn_save: "Сохранить",
+        lbl_edit_target: "Редактирование прокси:", btn_add: "Добавить", btn_save: "Сохранить",
         btn_cancel: "Отмена", btn_close: "Закрыть", btn_parse: "Парсить",
         btn_add_to_group: "Добавить в YAML", btn_add_group: "Добавить группу",
         modal_update_title: "Процесс обновления", btn_restart_ui: "Перезагрузить UI",
@@ -981,8 +981,8 @@ const TR = {
         confirm_restore: "Восстановить {0}?", confirm_replace: "Заменить данные для {0}?",
         prompt_enter_name: "Введите имя!", error_invalid_name: "Недопустимое имя!",
         log_loading: "Выполнение рестарта...", routes_no_groups: "Группы не найдены",
-        routes_parse_err: "Ошибка YAML: ", rules_no_rules: "Правила не найдены",
-        proxies_no_items: "Туннели не найдены", backups_no_backups: "Нет доступных бэкапов",
+        routes_parse_err: "Ошибка YAML: ", rules_no_rules: "Правил не найдено",
+        proxies_no_items: "Туннелей не найдено", backups_no_backups: "Нет доступных бэкапов",
         lbl_appearance: "Внешний вид", lbl_system: "Система", lbl_lang: "Язык интерфейса:",
         lbl_theme: "Цветовая схема:", proxies_desc: "Управление вашими прокси-серверами",
         backups_desc: "Управление резервными копиями конфигурации",
@@ -1043,14 +1043,14 @@ const TR = {
         title: "Mihomo Studio", save: "Зберегти", restart: "Рестарт", panel: "Панель",
         update_btn: "Оновити", restart_service: "Перезапуск", profiles: "Профілі",
         create: "Створити", delete: "Видалити", proxy_mgmt: "Управління", add: "Додати",
-        edit: "Замінити", rename: "Перейменувати", backups: "Бекапи", keep: "Залишити:",
+        edit: "Змінити", rename: "Перейменувати", backups: "Бекапи", keep: "Залишити:",
         clean: "Очистити", theme_dark: "Темна", theme_light: "Світла", theme_midnight: "Midnight",
         theme_cyber: "Cyber", toast_saved: "Збережено", toast_cleaned: "Очищено",
         toast_deleted: "Видалено", toast_restored: "Відновлено", toast_added: "Додано",
         toast_updated: "Оновлено", toast_checking: "Перевірка...", confirm_update: "Оновити Mihomo Studio?",
         confirm_del_proxy: "Видалити проксі?", confirm_restart_service: "Перезапустити сервіс?",
         modal_add_proxy: "Додати тунель", modal_edit_proxy: "Змінити проксі",
-        lbl_edit_target: "Проксі:", btn_add: "Додати", btn_save: "Зберегти",
+        lbl_edit_target: "Редагування проксі:", btn_add: "Додати", btn_save: "Зберегти",
         btn_cancel: "Скасувати", btn_close: "Закрити", btn_parse: "Парсити",
         btn_add_to_group: "Додати в YAML", btn_add_group: "Додати групу",
         modal_update_title: "Процес оновлення", btn_restart_ui: "Оновити UI",
@@ -1060,11 +1060,11 @@ const TR = {
         last_load_lbl: "Завантажено: __TIME__", last_saved: "Збережено:",
         confirm_switch: "Перейти на профіль {0}?", confirm_del_prof: "Видалити профіль {0}?",
         confirm_del_bk: "Видалити бекап {0}?", confirm_clean: "Залишити {0} бекапів?",
-        confirm_restore: "Відновлено {0}?", confirm_replace: "Замінити дані для {0}?",
+        confirm_restore: "Відновити {0}?", confirm_replace: "Замінити дані для {0}?",
         prompt_enter_name: "Вкажіть ім'я!", error_invalid_name: "Неприпустиме ім'я!",
         log_loading: "Рестарт...", routes_no_groups: "Групи не знайдено",
-        routes_parse_err: "Помилка YAML: ", rules_no_rules: "Правила не знайдено",
-        proxies_no_items: "Тунелі не знайдено", backups_no_backups: "Немає доступних бекапів",
+        routes_parse_err: "Помилка YAML: ", rules_no_rules: "Правил не знайдено",
+        proxies_no_items: "Тунелів не знайдено", backups_no_backups: "Немає доступних бекапів",
         lbl_appearance: "Зовнішній вигляд", lbl_system: "Система", lbl_lang: "Мова інтерфейсу:",
         lbl_theme: "Кольорова схема:", proxies_desc: "Керування вашими проксі-серверами",
         backups_desc: "Керування резервними копіями конфігурації",
