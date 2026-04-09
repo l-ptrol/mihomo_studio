@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.70</title>
+<title>Mihomo Studio v2.2.71</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -100,7 +100,7 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
 .brand-name { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: var(--txt-main); margin: 0; }
 .brand-version { font-size: 10px; font-weight: 700; color: var(--primary); background: rgba(59, 130, 246, 0.1); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
 
-.header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.header-actions { display: flex; gap: 12px; align-items: center; }
 .header-group { display: flex; align-items: center; gap: 6px; background: var(--bg-app); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); }
 
 .app-content {
@@ -370,6 +370,25 @@ button:active { transform: scale(0.97); }
 .log-cyan { color: #8be9fd; }
 .log-white { color: #f8f8f2; }
 
+@media (max-width: 768px) {
+    .app-header { padding: 0 12px; height: 56px; }
+    .brand-name { display: none; } 
+    .brand-version { background: transparent; padding: 0; }
+    .header-info { display: none !important; }
+    .header-actions { gap: 6px; }
+    .header-actions button span { display: none; }
+    .header-actions button { padding: 0 10px; }
+    
+    .app-content { padding: 12px; gap: 12px; height: calc(100vh - 56px); }
+    .main-tabs { margin: 12px 12px 10px 12px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
+    .main-tabs::-webkit-scrollbar { display: none; }
+    .main-tabs button { padding: 8px 12px; font-size: 13px; }
+    .tab-pane { padding: 0 12px 12px 12px; }
+    .builder-section { padding: 16px; margin-bottom: 12px; }
+    
+    .grid-cards { grid-template-columns: 1fr; }
+    .view-toggle { display: none; } /* On mobile, grid is bad, maybe just force list? Wait, let's just keep the toggle, or hide it to save space */
+}
 </style>
 </head>
 <body>
@@ -391,7 +410,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.70</div>
+            <div class="brand-version">v2.2.71</div>
 
 
 
@@ -489,7 +508,7 @@ button:active { transform: scale(0.97); }
         
         <div id="tab-rules" class="tab-pane">
             <div class="builder-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
                    <div style="display:flex; align-items:center; gap:12px;">
                        <h3 data-i18n="rules_title" style="margin:0;">Правила для сервисов</h3>
                        <div class="view-toggle">
@@ -513,9 +532,9 @@ button:active { transform: scale(0.97); }
 
         <div id="tab-backups" class="tab-pane">
             <div class="builder-section">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 12px;">
                    <h3 data-i18n="tab_backups" style="margin:0;">Бэкапы конфигов</h3>
-                   <div class="row">
+                   <div style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
                         <span data-i18n="keep" style="font-size: 13px; color: var(--txt-mut); margin-right:8px;">Оставить:</span>
                         <div class="num-wrap">
                             <button class="num-btn" onclick="adjNum('bk-lim', -1)">-</button>
