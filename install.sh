@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.84 (Go) — Установщик ===
+# === Mihomo Studio v2.2.85 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -71,7 +71,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.84 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.85 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
@@ -110,9 +110,48 @@ fi
 
 chmod +x /opt/bin/mhstudio
 
-# Скачиваем init-скрипт с очисткой от CRLF
-echo ">>> Скачивание init-скрипта..."
-download_file "${BASE_URL}/S95mihomo-web?t=$(date +%s)" "${INIT_DIR}/S95mihomo-web.tmp"
+# Создание init-скрипта (Heredoc)
+echo ">>> Создание init-скрипта..."
+cat > "${INIT_DIR}/S95mihomo-web.tmp" <<EOF
+#!/bin/sh
+
+PROG=/opt/bin/mhstudio
+PIDfile=/opt/var/run/mhstudio.pid
+
+case "\$1" in
+  start)
+    echo "Starting Mihomo Studio (Go)..."
+    \$PROG -start
+    ;;
+  stop)
+    echo "Stopping Mihomo Studio..."
+    if [ -f \$PIDfile ]; then
+        kill \$(cat \$PIDfile) 2>/dev/null || true
+        rm \$PIDfile
+    fi
+    PID=\$(ps | grep "mhstudio" | grep -v grep | awk '{print \$1}')
+    [ -n "\$PID" ] && kill -9 \$PID 2>/dev/null || true
+    ;;
+  restart)
+    \$0 stop
+    sleep 2
+    \$0 start
+    ;;
+  update)
+    \$PROG -update
+    ;;
+  uninstall)
+    \$PROG -uninstall
+    ;;
+  *)
+    echo "Usage: \$0 {start|stop|restart|update|uninstall}"
+    exit 1
+esac
+
+exit 0
+EOF
+
+# Очистка от возможных CRLF и установка прав
 tr -d '\r' < "${INIT_DIR}/S95mihomo-web.tmp" > "${INIT_DIR}/S95mihomo-web"
 rm "${INIT_DIR}/S95mihomo-web.tmp"
 chmod +x "${INIT_DIR}/S95mihomo-web"
