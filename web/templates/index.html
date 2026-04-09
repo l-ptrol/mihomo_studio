@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.69</title>
+<title>Mihomo Studio v2.2.70</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -391,7 +391,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.69</div>
+            <div class="brand-version">v2.2.70</div>
 
 
 
@@ -1552,6 +1552,7 @@ function updateStudio() {
         const m = document.getElementById('m-update-proc'), log = document.getElementById('update-log'), fBtn = document.getElementById('update-finish-btn'), cBtn = document.getElementById('update-close-btn');
         m.style.display = 'flex'; log.innerHTML = '>>> ' + t('toast_checking') + '\n';
         fBtn.style.display = 'none'; cBtn.style.display = 'inline-flex';
+        let isUpdateSuccessful = false;
         fetch('/', {method:'POST', body:'act=update_service'}).then(r=>r.json()).then(d => {
             if (d.status === "updating") {
                 let lastLog = "";
@@ -1563,9 +1564,11 @@ function updateStudio() {
                             lastLog = logData.log;
                             
                             if (logData.log.includes("[DONE]")) {
+                                isUpdateSuccessful = true;
                                 clearInterval(pollInterval);
-                                log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено! Перезагрузка...': (currLang==='uk'?'Оновлення завершено! Перезавантаження...':'Update finished! Reloading...')) + '</div>';
-                                setTimeout(() => location.reload(), 2000);
+                                log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено!': (currLang==='uk'?'Оновлення завершено!':'Update finished!')) + '</div>';
+                                fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
+                                fBtn.onclick = () => location.reload();
                             }
                         }
                     });
@@ -1575,6 +1578,12 @@ function updateStudio() {
                 fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
             }
         }).catch(err => { log.innerHTML += '\nError: ' + err; });
+
+        // Update close button to reload if success
+        cBtn.onclick = () => {
+            if (isUpdateSuccessful) location.reload();
+            else m.style.display = 'none';
+        };
     });
 }
 function restartService() {
