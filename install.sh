@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.77 (Go) — Установщик ===
+# === Mihomo Studio v2.2.78 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -71,7 +71,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.77 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.78 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
@@ -125,3 +125,4 @@ echo "  mhstudio -restart   — Перезапустить"
 
 # Запускаем сервис
 "${INIT_DIR}/S95mihomo-web" restart
+echo "[DONE]"
