@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.74</title>
+<title>Mihomo Studio v2.2.75</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -412,7 +412,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.74</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.75</div>
             </div>
         </div>
     </div>
@@ -840,6 +840,10 @@ button:active { transform: scale(0.97); }
                 <option value="DOMAIN-KEYWORD">DOMAIN-KEYWORD</option>
                 <option value="IP-CIDR">IP-CIDR</option>
                 <option value="GEOIP">GEOIP</option>
+                <option value="RULE-SET">RULE-SET</option>
+                <option value="AND">AND</option>
+                <option value="OR">OR</option>
+                <option value="NOT">NOT</option>
                 <option value="MATCH">MATCH</option>
             </select>
             <div class="cs-trigger"><span>DOMAIN</span><svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
@@ -849,6 +853,15 @@ button:active { transform: scale(0.97); }
     <div id="rule-val-block" style="margin-bottom:15px;">
         <label class="card-title" data-i18n="lbl_rule_val">Значение:</label>
         <input id="rl-val" placeholder="google.com">
+    </div>
+    <div id="logical-rules-wrap" style="display:none; margin-bottom:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label class="card-title" style="margin:0;">Подправила (Conditions):</label>
+            <button onclick="addSubRule()" class="btn-ghost btn-icon" style="width:24px; height:24px; color:var(--success); border:1px solid var(--bd-color);">
+                <svg viewBox="0 0 24 24" class="ico"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>
+        <div id="sub-rules-list" style="display:flex; flex-direction:column; gap:8px; max-height:160px; overflow-y:auto; padding-right:4px;"></div>
     </div>
     <div style="margin-bottom:20px;">
         <label class="card-title" data-i18n="lbl_rule_target">Цель (Группа):</label>
@@ -1072,6 +1085,7 @@ function initCS(id) {
                 if (sel.id === 'lang-sel-tab') setLang(o.value);
                 else if (sel.id === 'theme-sel-tab') setTheme(o.value);
                 else if (sel.id === 'manual-type') updateManualYaml();
+                else if (sel.id === 'rl-type') onRuleTypeChange();
                 
                 sel.dispatchEvent(new Event('change', { bubbles: true })); 
                 update(); 
@@ -1769,17 +1783,13 @@ function reorderRules() {
     const ord = []; document.querySelectorAll('#rules-container > .card').forEach(el => ord.push(parseInt(el.getAttribute('data-idx'))));
     const cfg = jsyaml.load(ed.getValue()), r = cfg['rules']; cfg['rules'] = ord.map(i => r[i]);
     ed.setValue(jsyaml.dump(cfg)); 
-    // Instead of full render, let's just update numbers to keep scroll position
     document.querySelectorAll('#rules-container > .card').forEach((el, i) => {
         const numEl = el.querySelector('.rule-num');
         if(numEl) numEl.innerText = i + 1;
-        el.setAttribute('data-idx', i); // Update indexes for next reorder
+        el.setAttribute('data-idx', i);
     });
-    // Finally update editor/YAML
     updateYamlPart('rules', cfg['rules']);
 }
-
-// toggleRulesView removed in favor of toggleView
 
 function openEditGroup(n="") {
     try {
@@ -1833,6 +1843,36 @@ function confirmDeleteGroup(n) {
     }); 
 }
 
+function onRuleTypeChange() {
+    const type = document.getElementById('rl-type').value;
+    const isLogical = ['AND', 'OR', 'NOT'].includes(type);
+    document.getElementById('rule-val-block').style.display = (type === 'MATCH' || isLogical) ? 'none' : 'block';
+    document.getElementById('logical-rules-wrap').style.display = isLogical ? 'block' : 'none';
+}
+
+function addSubRule(type = 'DOMAIN', val = '') {
+    const list = document.getElementById('sub-rules-list');
+    const row = document.createElement('div');
+    row.className = 'sub-rule-row';
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+    
+    // Types select for sub-rule
+    const types = ['DOMAIN', 'DOMAIN-SUFFIX', 'DOMAIN-KEYWORD', 'IP-CIDR', 'IP-CIDR6', 'GEOIP', 'SRC-IP-CIDR', 'SRC-PORT', 'DST-PORT', 'PROCESS-NAME', 'PROCESS-PATH', 'NETWORK'];
+    let optionsHtml = '';
+    types.forEach(t => optionsHtml += `<option value="${t}" ${t===type?'selected':''}>${t}</option>`);
+    
+    row.innerHTML = `
+        <select class="sub-rl-type" style="flex:1; padding:4px; font-size:11px; height:30px;">${optionsHtml}</select>
+        <input class="sub-rl-val" value="${val}" placeholder="Value" style="flex:2; padding:4px; font-size:11px; height:30px;">
+        <button onclick="this.parentElement.remove()" class="btn-ghost btn-icon" style="width:30px; height:30px; color:var(--danger);">
+            <svg viewBox="0 0 24 24" class="ico" style="width:14px;height:14px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+    list.appendChild(row);
+}
+
 function openAddRule() { 
     try {
         const cfg = jsyaml.load(ed.getValue()) || {};
@@ -1843,8 +1883,11 @@ function openAddRule() {
             const o = document.createElement('option'); o.value=g.name; o.text=g.name; 
             tSel.appendChild(o); 
         });
+        document.getElementById('sub-rules-list').innerHTML = '';
         document.getElementById('rl-val').value = '';
         document.getElementById('rl-type').value = 'DOMAIN-SUFFIX';
+        onRuleTypeChange();
+        
         if(typeof upRlTarget === 'function') upRlTarget();
         if(typeof upRlType === 'function') upRlType();
 
@@ -1857,13 +1900,41 @@ function openAddRule() {
         document.getElementById('m-rule-add').style.display='flex';
     } catch(e) { console.error(e); }
 }
+
 function openEditRule(idx) {
     try {
         const cfg = jsyaml.load(ed.getValue()) || {};
         const rules = Array.isArray(cfg['rules']) ? cfg['rules'] : [];
         const r = rules[idx]; if(!r) return;
-        const parts = r.split(','), type = parts[0], val = parts.length>2?parts[1]:'', target = parts[parts.length-1];
-        document.getElementById('rl-type').value = type; document.getElementById('rl-val').value = val;
+        
+        document.getElementById('sub-rules-list').innerHTML = '';
+        
+        let type, val = '', target;
+        const logicalMatch = r.match(/^(AND|OR|NOT),\((.*)\),([^,]+)$/);
+        
+        if (logicalMatch) {
+            type = logicalMatch[1];
+            target = logicalMatch[3];
+            const inner = logicalMatch[2];
+            const subs = inner.split(/\s*\)\s*,\s*\(\s*/).map(s => s.replace(/^\s*\(\s*/, '').replace(/\s*\)\s*$/, ''));
+            subs.forEach(s => {
+                const sp = s.split(',');
+                if (sp.length >= 2) addSubRule(sp[0].trim(), sp[1].trim());
+            });
+        } else {
+            const parts = r.split(',');
+            type = parts[0];
+            if (type === 'MATCH') {
+                target = parts[parts.length-1];
+            } else {
+                val = parts.length > 2 ? parts[1] : '';
+                target = parts[parts.length-1];
+            }
+        }
+        
+        document.getElementById('rl-type').value = type; 
+        document.getElementById('rl-val').value = val;
+        onRuleTypeChange();
         
         const grps = Array.isArray(cfg['proxy-groups']) ? cfg['proxy-groups'] : [];
         const tSel = document.getElementById('rl-target'); tSel.innerHTML = '';
@@ -1887,10 +1958,29 @@ function openEditRule(idx) {
         showToast('Error: ' + e.message);
     }
 }
+
 function saveRule(ei=-1) {
     try {
-        const type = document.getElementById('rl-type').value, val = document.getElementById('rl-val').value.trim(), target = document.getElementById('rl-target').value;
-        const ruleStr = type === 'MATCH' ? `MATCH,${target}` : `${type},${val},${target}`;
+        const type = document.getElementById('rl-type').value;
+        const target = document.getElementById('rl-target').value;
+        let ruleStr;
+        
+        if (['AND', 'OR', 'NOT'].includes(type)) {
+            const rows = document.querySelectorAll('#sub-rules-list .sub-rule-row');
+            const subs = Array.from(rows).map(row => {
+                const t = row.querySelector('.sub-rl-type').value;
+                const v = row.querySelector('.sub-rl-val').value.trim();
+                return `(${t},${v})`;
+            });
+            if (subs.length === 0) { showToast('Add at least one sub-rule', 'danger'); return; }
+            ruleStr = `${type},(${subs.join(',')}),${target}`;
+        } else if (type === 'MATCH') {
+            ruleStr = `MATCH,${target}`;
+        } else {
+            const val = document.getElementById('rl-val').value.trim();
+            ruleStr = `${type},${val},${target}`;
+        }
+        
         const cfg = jsyaml.load(ed.getValue()) || {};
         const rules = Array.isArray(cfg['rules']) ? cfg['rules'] : [];
         if(ei > -1) rules[ei] = ruleStr; else rules.push(ruleStr);
@@ -1900,6 +1990,7 @@ function saveRule(ei=-1) {
         showToast('Error: ' + e.message);
     }
 }
+
 function confirmDeleteRule(i) { 
     ask(t('confirm_delete')).then(ok => { 
         if(!ok) return;
