@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.78</title>
+<title>Mihomo Studio v2.2.79</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -447,7 +447,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.78</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.79</div>
             </div>
         </div>
     </div>
@@ -974,7 +974,7 @@ const TR = {
         modal_update_title: "Процесс обновления", btn_restart_ui: "Перезагрузить UI",
         routes_title: "Умные Маршруты", tab_proxies: "Туннели", tab_routes: "Маршруты",
         tab_backups: "Бэкапы", tab_settings: "Настройки", tab_yaml: "YAML Редактор",
-        tab_services: "Сервисы", rules_title: "Сервисы (Правила)", btn_ok: "ОК",
+        tab_services: "Правила", rules_title: "Правила", btn_ok: "ОК",
         last_load_lbl: "Загружено: __TIME__", last_saved: "Сохранено:",
         confirm_switch: "Перейти на профиль {0}?", confirm_del_prof: "Удалить профиль {0}?",
         confirm_del_bk: "Удалить бэкап {0}?", confirm_clean: "Оставить {0} бэкапов?",
@@ -1015,7 +1015,7 @@ const TR = {
         modal_update_title: "Update Process", btn_restart_ui: "Reload UI",
         routes_title: "Smart Routes", tab_proxies: "Tunnels", tab_routes: "Routes",
         tab_backups: "Backups", tab_settings: "Settings", tab_yaml: "YAML Editor",
-        tab_services: "Services", rules_title: "Services (Rules)", btn_ok: "OK",
+        tab_services: "Rules", rules_title: "Rules", btn_ok: "OK",
         last_load_lbl: "Loaded: __TIME__", last_saved: "Saved:",
         confirm_switch: "Switch to profile {0}?", confirm_del_prof: "Delete profile {0}?",
         confirm_del_bk: "Delete backup {0}?", confirm_clean: "Keep {0} backups?",
@@ -1056,7 +1056,7 @@ const TR = {
         modal_update_title: "Процес оновлення", btn_restart_ui: "Оновити UI",
         routes_title: "Розумні Маршрути", tab_proxies: "Тунелі", tab_routes: "Маршрути",
         tab_backups: "Бекапи", tab_settings: "Налаштування", tab_yaml: "YAML Редактор",
-        tab_services: "Сервиси", rules_title: "Сервиси (Правила)", btn_ok: "ОК",
+        tab_services: "Правила", rules_title: "Правила", btn_ok: "ОК",
         last_load_lbl: "Завантажено: __TIME__", last_saved: "Збережено:",
         confirm_switch: "Перейти на профіль {0}?", confirm_del_prof: "Видалити профіль {0}?",
         confirm_del_bk: "Видалити бекап {0}?", confirm_clean: "Залишити {0} бекапів?",
@@ -1346,7 +1346,7 @@ function renderRules() {
             }
 
             html += `<div class="card rule-card" data-idx="${idx}" data-cat="${getCat(type)}" style="padding:14px; position:relative;">
-                <div class="rule-num" style="font-weight:800; opacity:0.2;">${idx + 1}</div>
+                <div class="rule-num" style="font-weight:900; opacity:0.6; color:var(--primary);">${idx + 1}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="display:flex; align-items:center; min-width:0;">
                         <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.4;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
