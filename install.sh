@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.56 (Go) — Установщик ===
+# === Mihomo Studio v2.2.57 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -17,9 +17,16 @@ MIHOMO_ETC_DIR="/opt/etc/mihomo"
 
 # === Автоопределение архитектуры ===
 detect_arch() {
-    ARCH=$(uname -m 2>/dev/null || echo "unknown")
+    # 1. Попытка через opkg (самый точный метод для Keenetic/Entware)
+    OPKG_ARCH=$(opkg print-architecture 2>/dev/null | grep -E 'arch (mipsel|mips|aarch64|arm64)' | sort -k3 -nr | head -n 1 | awk '{print $2}')
+    if [ -n "$OPKG_ARCH" ]; then
+        ARCH=$(echo "$OPKG_ARCH" | sed -E 's/[-_].*//')
+    else
+        # 2. Традиционный метод через uname
+        ARCH=$(uname -m 2>/dev/null || echo "unknown")
+    fi
     
-    # HACK: Проверка MT7621/Keenetic для роутеров (часто показывают mips, но они mipsel)
+    # HACK: Дополнительная проверка MT7621/Keenetic если uname врет
     if [ "$ARCH" = "mips" ] || [ "$ARCH" = "unknown" ]; then
         if grep -qiE "MediaTek|Ralink|MT76|RT3|RT5|Little|1004Kc|74Kc" /proc/cpuinfo 2>/dev/null || uname -a | grep -qiE "ndm|keenetic"; then
             ARCH="mipsel"
@@ -70,7 +77,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.56 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.57 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
