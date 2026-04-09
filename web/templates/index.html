@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.73</title>
+<title>Mihomo Studio v2.2.74</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -412,7 +412,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.73</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.74</div>
             </div>
         </div>
     </div>
@@ -880,9 +880,9 @@ button:active { transform: scale(0.97); }
 
 
 <!-- Модалка обновления -->
-<div id="m-update-proc" class="ovl"><div class="mod" style="width:500px; padding:24px;">
+<div id="m-update-proc" class="ovl"><div class="mod" style="width:100%; max-width:500px; padding:24px;">
     <h3 data-i18n="modal_update_title">Обновление Mihomo Studio</h3>
-    <pre id="update-log" style="background:#000; color:#0f0; padding:15px; height:200px; overflow:auto; font-family:monospace; font-size:12px; border-radius:4px; margin-bottom:20px;"></pre>
+    <pre id="update-log" style="background:#000; color:#0f0; padding:15px; height:200px; overflow-y:auto; overflow-x:hidden; white-space:pre-wrap; word-break:break-word; font-family:monospace; font-size:12px; border-radius:4px; margin-bottom:20px;"></pre>
     <div style="display:flex; justify-content:flex-end; gap:12px;">
         <button id="update-finish-btn" onclick="location.reload()" class="btn-success" style="display:none;" data-i18n="btn_restart_ui">Перезагрузить UI</button>
         <button id="update-close-btn" onclick="closeM('m-update-proc')" class="btn-ghost" data-i18n="btn_close">Закрыть</button>
@@ -1587,9 +1587,10 @@ function updateStudio() {
                             if (logData.log.includes("[DONE]")) {
                                 isUpdateSuccessful = true;
                                 clearInterval(pollInterval);
-                                log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено!': (currLang==='uk'?'Оновлення завершено!':'Update finished!')) + '</div>';
+                                log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено! Перезагрузка...': (currLang==='uk'?'Оновлення завершено! Перезавантаження...':'Update finished! Reloading...')) + '</div>';
                                 fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
                                 fBtn.onclick = () => location.reload();
+                                setTimeout(() => location.reload(), 3000);
                             }
                         }
                     });
