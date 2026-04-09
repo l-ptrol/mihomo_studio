@@ -19,13 +19,14 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.62"
+var Version = "2.2.63"
 
 func main() {
 	fStart := flag.Bool("start", false, "Start the server")
 	fStop := flag.Bool("stop", false, "Stop the server")
 	fRestart := flag.Bool("restart", false, "Restart the server")
 	fUpdate := flag.Bool("update", false, "Update the service")
+	fUninstall := flag.Bool("uninstall", false, "Uninstall the service")
 	fVersion := flag.Bool("v", false, "Show version")
 	flag.Parse()
 
@@ -52,6 +53,11 @@ func main() {
 		} else {
 			runCmd("wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh")
 		}
+		return
+	}
+
+	if *fUninstall {
+		uninstallService()
 		return
 	}
 
@@ -142,6 +148,37 @@ func stopService() {
 		}
 		os.Remove(config.PidFile)
 	}
+}
+
+func uninstallService() {
+	config.Init()
+	fmt.Println(">>> Удаление Mihomo Studio...")
+	stopService()
+
+	// Удаляем бинарник
+	progPath := "/opt/bin/mhstudio"
+	if _, err := os.Stat(progPath); err == nil {
+		os.Remove(progPath)
+		fmt.Println("[-] Бинарный файл удален.")
+	}
+
+	// Удаляем init-скрипт
+	initPath := "/opt/etc/init.d/S95mihomo-web"
+	if _, err := os.Stat(initPath); err == nil {
+		os.Remove(initPath)
+		fmt.Println("[-] Скрипт инициализации удален.")
+	}
+
+	// Спрашиваем про конфиги
+	fmt.Print("Удалить конфигурационные файлы и профили (/opt/etc/mihomo)? [y/N]: ")
+	var resp string
+	fmt.Scanln(&resp)
+	if strings.ToLower(resp) == "y" {
+		os.RemoveAll("/opt/etc/mihomo")
+		fmt.Println("[-] Конфигурации и профили удалены.")
+	}
+
+	fmt.Println(">>> Удаление завершено.")
 }
 
 func runCmd(c string) {

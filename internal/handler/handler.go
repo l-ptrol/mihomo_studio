@@ -138,6 +138,8 @@ func (h *Handler) handlePost(w http.ResponseWriter, r *http.Request) {
 		h.handleUpdateService(w)
 	case "check_update":
 		h.handleCheckUpdate(w)
+	case "get_update_log":
+		h.handleGetUpdateLog(w)
 	case "restart_service":
 		h.handleRestartService(w)
 	case "save", "restart":
@@ -276,32 +278,76 @@ func (h *Handler) handleViewBackup(w http.ResponseWriter, params map[string]stri
 }
 
 func (h *Handler) handleUpdateService(w http.ResponseWriter) {
+	// Очищаем лог перед началом
+	os.Remove("/tmp/mhstudio_update.log")
+	
 	json.NewEncoder(w).Encode(map[string]string{"status": "updating"})
 	go func() {
 		time.Sleep(500 * time.Millisecond)
 		var cmd *exec.Cmd
-		updateCmd := config.UpdateCmd + " > /tmp/mhstudio_update.log 2>&1"
+		// Используем bash для перенаправления если доступно, иначе sh
+		updateCmd := "wget -O - https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/install.sh | sh > /tmp/mhstudio_update.log 2>&1"
 		if runtime.GOOS == "windows" {
 			cmd = exec.Command("cmd", "/C", updateCmd)
 		} else {
 			cmd = exec.Command("sh", "-c", updateCmd)
 		}
 		cmd.Run()
+		
+		// Добавляем финальную метку в лог
+		f, _ := os.OpenFile("/tmp/mhstudio_update.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+		if f != nil {
+			f.WriteString("\n[DONE] Update process finished.\n")
+			f.Close()
+		}
 	}()
+}
+
+func (h *Handler) handleGetUpdateLog(w http.ResponseWriter) {
+	content, err := os.ReadFile("/tmp/mhstudio_update.log")
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{"log": ""})
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"log": string(content)})
 }
 
 func (h *Handler) handleCheckUpdate(w http.ResponseWriter) {
 	latest := h.GetLatestVersion()
+	hasUpdate := false
+	if latest != "" && latest != h.Version {
+		hasUpdate = h.isNewerVersion(latest, h.Version)
+	}
+	
 	json.NewEncoder(w).Encode(map[string]string{
 		"current": h.Version,
 		"latest":  latest,
-		"update":  strconv.FormatBool(latest != "" && latest != h.Version),
+		"update":  strconv.FormatBool(hasUpdate),
 	})
+}
+
+func (h *Handler) isNewerVersion(latest, current string) bool {
+	lParts := strings.Split(strings.TrimPrefix(latest, "v"), ".")
+	cParts := strings.Split(strings.TrimPrefix(current, "v"), ".")
+	
+	for i := 0; i < len(lParts) && i < len(cParts); i++ {
+		l, _ := strconv.Atoi(lParts[i])
+		c, _ := strconv.Atoi(cParts[i])
+		if l > c {
+			return true
+		}
+		if l < c {
+			return false
+		}
+	}
+	return len(lParts) > len(cParts)
 }
 
 func (h *Handler) GetLatestVersion() string {
 	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get("https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/cmd/server/main.go")
+	// Добавляем параметр t для обхода кеша GitHub
+	url := fmt.Sprintf("https://raw.githubusercontent.com/l-ptrol/mihomo_studio/test-go/cmd/server/main.go?t=%d", time.Now().Unix())
+	resp, err := client.Get(url)
 	if err != nil {
 		return ""
 	}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.62</title>
+<title>Mihomo Studio v2.2.63</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -391,7 +391,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.62</div>
+            <div class="brand-version">v2.2.63</div>
 
 
 
@@ -1551,12 +1551,21 @@ function updateStudio() {
         fBtn.style.display = 'none'; cBtn.style.display = 'inline-flex';
         fetch('/', {method:'POST', body:'act=update_service'}).then(r=>r.json()).then(d => {
             if (d.status === "updating") {
-                let s = 30;
-                log.innerHTML += '>>> ' + (currLang==='ru'?'Обновление запущено. Сервер перезагрузится через ': (currLang==='uk'?'Оновлення запущено. Сервер перезавантажиться через ':'Update started. Server will restart in ')) + s + 's...\n';
-                const sInterval = setInterval(() => {
-                    s--;
-                    log.innerHTML = log.innerHTML.replace(/\d+s\.\.\.\n$/, s + 's...\n');
-                    if (s <= 0) { clearInterval(sInterval); location.reload(); }
+                let lastLog = "";
+                const pollInterval = setInterval(() => {
+                    fetch('/', {method:'POST', body:'act=get_update_log'}).then(r=>r.json()).then(logData => {
+                        if (logData.log && logData.log !== lastLog) {
+                            log.innerHTML = fmtLog(logData.log);
+                            log.scrollTop = log.scrollHeight;
+                            lastLog = logData.log;
+                            
+                            if (logData.log.includes("[DONE]")) {
+                                clearInterval(pollInterval);
+                                log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено! Перезагрузка...': (currLang==='uk'?'Оновлення завершено! Перезавантаження...':'Update finished! Reloading...')) + '</div>';
+                                setTimeout(() => location.reload(), 2000);
+                            }
+                        }
+                    });
                 }, 1000);
             } else {
                 log.innerHTML += d.log; log.scrollTop = log.scrollHeight;

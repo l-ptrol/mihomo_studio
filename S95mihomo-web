@@ -19,13 +19,14 @@ case "$1" in
     PID=$(ps | grep "mhstudio" | grep -v grep | awk '{print $1}')
     [ -n "$PID" ] && kill -9 $PID 2>/dev/null || true
     ;;
-  restart)
-    $0 stop
-    sleep 1
-    $0 start
+  update)
+    $PROG -update
+    ;;
+  uninstall)
+    $PROG -uninstall
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart}"
+    echo "Usage: $0 {start|stop|restart|update|uninstall}"
     exit 1
 esac
 
