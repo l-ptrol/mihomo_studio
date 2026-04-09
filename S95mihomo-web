@@ -6,8 +6,7 @@ PIDfile=/opt/var/run/mhstudio.pid
 case "$1" in
   start)
     echo "Starting Mihomo Studio (Go)..."
-    $PROG > /dev/null 2>&1 &
-    echo $! > $PIDfile
+    $PROG -start
     ;;
   stop)
     echo "Stopping Mihomo Studio..."

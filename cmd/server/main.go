@@ -20,7 +20,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.65"
+var Version = "2.2.66"
 
 func main() {
 	fStart := flag.Bool("start", false, "Start the server")
@@ -64,6 +64,15 @@ func main() {
 
 	// Default or explicit -start
 	if *fStart || len(os.Args) == 1 {
+		if os.Getenv("MHSTUDIO_DAEMON") != "1" && runtime.GOOS != "windows" {
+			cmd := exec.Command(os.Args[0], os.Args[1:]...)
+			cmd.Env = append(os.Environ(), "MHSTUDIO_DAEMON=1")
+			cmd.Stdout = nil
+			cmd.Stderr = nil
+			cmd.Start()
+			fmt.Printf(">>> Mihomo Studio v%s запускается в фоновом режиме...\n", Version)
+			os.Exit(0)
+		}
 		startServer()
 	} else {
 		flag.Usage()
