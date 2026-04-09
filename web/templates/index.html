@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.80</title>
+<title>Mihomo Studio v2.2.81</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -447,7 +447,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.80</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.81</div>
             </div>
         </div>
     </div>
@@ -1668,11 +1668,44 @@ function updateStudio() {
         const m = document.getElementById('m-update-proc'), log = document.getElementById('update-log'), fBtn = document.getElementById('update-finish-btn'), cBtn = document.getElementById('update-close-btn');
         m.style.display = 'flex'; log.innerHTML = '>>> ' + t('toast_checking') + '\n';
         fBtn.style.display = 'none'; cBtn.style.display = 'inline-flex';
+        
         let isUpdateSuccessful = false;
+        let lastLog = "";
+        let pollInterval = null;
+        let reconnectInterval = null;
+        let checkCount = 0;
+
+        const stopAll = () => { if(pollInterval) clearInterval(pollInterval); if(reconnectInterval) clearInterval(reconnectInterval); };
+
+        const startReconnecting = () => {
+            if (reconnectInterval) return;
+            stopAll();
+            log.innerHTML += '\n<div style="color:var(--primary); font-weight:700;">>>> ' + (currLang==='ru'?'Ожидание перезапуска сервера...': (currLang==='uk'?'Очікування перезапуску сервера...':'Waiting for server restart...')) + '</div>';
+            log.scrollTop = log.scrollHeight;
+            
+            reconnectInterval = setInterval(() => {
+                checkCount++;
+                fetch('/', {method:'POST', body:'act=check_update', signal: AbortSignal.timeout(2000)}).then(r=>r.json()).then(d => {
+                    // Server is back!
+                    stopAll();
+                    isUpdateSuccessful = true;
+                    log.innerHTML += '\n<div style="color:var(--success); font-weight:700;">>>> ' + (currLang==='ru'?'Сервер успешно перезапущен!': (currLang==='uk'?'Сервер успішно перезапущено!':'Server restarted successfully!')) + '</div>';
+                    log.scrollTop = log.scrollHeight;
+                    fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
+                    fBtn.onclick = () => location.reload();
+                    setTimeout(() => location.reload(), 1500);
+                }).catch(() => {
+                    if (checkCount % 5 === 0) {
+                        log.innerHTML += '.';
+                        log.scrollTop = log.scrollHeight;
+                    }
+                });
+            }, 2000);
+        };
+
         fetch('/', {method:'POST', body:'act=update_service'}).then(r=>r.json()).then(d => {
             if (d.status === "updating") {
-                let lastLog = "";
-                const pollInterval = setInterval(() => {
+                pollInterval = setInterval(() => {
                     fetch('/', {method:'POST', body:'act=get_update_log'}).then(r=>r.json()).then(logData => {
                         if (logData.log && logData.log !== lastLog) {
                             log.innerHTML = fmtLog(logData.log);
@@ -1681,7 +1714,7 @@ function updateStudio() {
                             
                             if (logData.log.includes("[DONE]")) {
                                 isUpdateSuccessful = true;
-                                clearInterval(pollInterval);
+                                stopAll();
                                 log.innerHTML += '\n<div style="color:var(--success); font-weight:700; padding:10px 0;">>>> ' + (currLang==='ru'?'Обновление завершено! Перезагрузка...': (currLang==='uk'?'Оновлення завершено! Перезавантаження...':'Update finished! Reloading...')) + '</div>';
                                 log.scrollTop = log.scrollHeight;
                                 fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
@@ -1690,19 +1723,22 @@ function updateStudio() {
                             }
                         }
                     }).catch(err => { 
-                        // If fetch fails during update, it might be the server restarting
                         if (isUpdateSuccessful) return;
-                        console.log("Poll error:", err);
+                        // If log contained restart signal or was already very long, likely server is restarting
+                        if (lastLog.includes("Starting Mihomo Studio") || lastLog.includes("запущен на") || lastLog.length > 500) {
+                            startReconnecting();
+                        }
                     });
                 }, 1000);
             } else {
-                log.innerHTML += d.log; log.scrollTop = log.scrollHeight;
+                log.innerHTML += (d.log || 'Error starting update');
+                log.scrollTop = log.scrollHeight;
                 fBtn.style.display = 'inline-flex'; cBtn.style.display = 'none';
             }
         }).catch(err => { log.innerHTML += '\nError: ' + err; });
 
-        // Update close button to reload if success
         cBtn.onclick = () => {
+            stopAll();
             if (isUpdateSuccessful) location.reload();
             else m.style.display = 'none';
         };

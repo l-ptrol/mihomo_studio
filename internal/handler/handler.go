@@ -291,13 +291,6 @@ func (h *Handler) handleUpdateService(w http.ResponseWriter) {
 			cmd = exec.Command("sh", "-c", updateCmd)
 		}
 		cmd.Run()
-		
-		// Добавляем финальную метку в лог
-		f, _ := os.OpenFile("/tmp/mhstudio_update.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-		if f != nil {
-			f.WriteString("\n[DONE] Update process finished.\n")
-			f.Close()
-		}
 	}()
 }
 
