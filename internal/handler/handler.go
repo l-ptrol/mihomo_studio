@@ -84,13 +84,11 @@ func (h *Handler) handleGet(w http.ResponseWriter, r *http.Request) {
 
 	backupsHTML := h.renderBackups()
 	profilesOpts := h.renderProfileOptions()
-	now := time.Now().Format("15:04:05")
 
 	out := h.template
 	out = strings.Replace(out, "__JSON_CONTENT__", string(content), 1)
 	out = strings.Replace(out, "__BACKUPS__", backupsHTML, 1)
 	out = strings.Replace(out, "__PROFILES__", profilesOpts, 1)
-	out = strings.Replace(out, "__TIME__", now, 1)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
@@ -400,9 +398,8 @@ func (h *Handler) handleSave(w http.ResponseWriter, params map[string]string, do
 		}
 		json.NewEncoder(w).Encode(map[string]string{"log": log})
 	} else {
-		json.NewEncoder(w).Encode(map[string]string{
+		json.NewEncoder(w).Encode(map[string]interface{}{
 			"status":  "ok",
-			"time":    time.Now().Format("15:04:05"),
 			"backups": h.renderBackups(),
 		})
 	}

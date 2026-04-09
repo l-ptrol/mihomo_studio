@@ -20,7 +20,7 @@ import (
 	"github.com/l-ptrol/mhstudio-go/web"
 )
 
-var Version = "2.2.67"
+var Version = "2.2.68"
 
 func main() {
 	fStart := flag.Bool("start", false, "Start the server")

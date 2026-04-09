@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.67</title>
+<title>Mihomo Studio v2.2.68</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -391,7 +391,7 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.67</div>
+            <div class="brand-version">v2.2.68</div>
 
 
 
@@ -401,7 +401,10 @@ button:active { transform: scale(0.97); }
     </div>
     
     <div class="header-actions">
-        <div id="last-load" style="font-size: 11px; color: var(--txt-mut); margin-right: 12px; font-weight: 500;">__TIME__</div>
+        <div class="header-info" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 16px;">
+            <div id="app-clock" style="font-size: 13px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono', monospace;">00:00:00</div>
+            <div id="last-load" style="font-size: 10px; color: var(--txt-mut); font-weight: 500; opacity: 0.8;"></div>
+        </div>
         
         
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
@@ -1585,7 +1588,12 @@ function save(mode) {
     const p = new URLSearchParams(); p.append('act',mode); p.append('content', ed.getValue());
     if(mode==='restart') { document.getElementById('m-con').style.display='flex'; document.getElementById('cons').innerHTML='<div style="padding:20px;">' + t('log_loading') + '</div>'; }
     fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d => {
-        if(mode==='save'){ showToast(t('toast_saved')); document.getElementById('last-load').innerText = t('last_saved') + " " + d.time; }
+        if(mode==='save'){ 
+            showToast(t('toast_saved')); 
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' });
+            document.getElementById('last-load').innerText = t('last_saved') + " " + timeStr; 
+        }
         else { document.getElementById('cons').innerHTML = fmtLog(d.log); document.getElementById('cons').scrollTop = document.getElementById('cons').scrollHeight; }
     }).catch(e => ask("Error: " + e, false));
 }
@@ -2006,5 +2014,16 @@ function restoreBackup(fname) {
     });
 }
 
-window.onload = init;
+function updateClock() {
+    const clockEl = document.getElementById('app-clock');
+    if (!clockEl) return;
+    const now = new Date();
+    clockEl.innerText = now.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateClock, 1000);
+
+window.onload = () => {
+    init();
+    updateClock();
+};
 </script></body></html>
