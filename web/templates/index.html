@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.76</title>
+<title>Mihomo Studio v2.2.77</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -37,6 +37,12 @@
 
    --log-bg: #0f172a;
    --log-txt: #f8fafc;
+   
+   --rule-domain: #3b82f6;
+   --rule-ip: #10b981;
+   --rule-logic: #f59e0b;
+   --rule-set: #8b5cf6;
+   --rule-match: #64748b;
 }
 
 body.dark {
@@ -298,6 +304,35 @@ button:active { transform: scale(0.97); }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+.sub-rule-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(var(--primary-rgb), 0.05);
+    border: 1px solid var(--bd-color);
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: monospace;
+    margin-bottom: 4px;
+}
+.sub-rule-item .sub-rl-tag {
+    font-weight: 700;
+    opacity: 0.8;
+}
+.sub-rule-item .sub-rl-val {
+    color: var(--primary);
+    word-break: break-all;
+}
+
+.rule-card {
+    border-left-width: 4px !important;
+}
+.rule-card[data-cat="domain"] { border-left-color: var(--rule-domain) !important; }
+.rule-card[data-cat="ip"] { border-left-color: var(--rule-ip) !important; }
+.rule-card[data-cat="logic"] { border-left-color: var(--rule-logic) !important; }
+.rule-card[data-cat="set"] { border-left-color: var(--rule-set) !important; }
+.rule-card[data-cat="match"] { border-left-color: var(--rule-match) !important; }
+
 .g-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; overflow-y: auto; max-height: 250px; }
 .g-item { position: relative; }
 .g-item input { position: absolute; opacity: 0; pointer-events: none; }
@@ -412,7 +447,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.76</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.77</div>
             </div>
         </div>
     </div>
@@ -1260,10 +1295,35 @@ function renderRoutes() {
     } catch(e) { container.innerHTML = `<p style="color:red;padding:20px;">${t('routes_parse_err')}${e.message}</p>`; }
 }
 
+function renderRuleValue(type, val) {
+    if (!val) return '';
+    const isLogic = ['AND', 'OR', 'NOT'].includes(type);
+    if (!isLogic) return `<div style="font-size:12px; font-family:monospace; opacity:0.8; word-break:break-all; line-height:1.4; background:var(--bg-app); padding:8px 12px; border-radius:8px; border:1px solid var(--bd-color); color:var(--txt-main); font-weight:500;">${val}</div>`;
+    
+    const subs = val.split(/\s*\)\s*,\s*\(\s*/).map(s => s.replace(/^\(\s*/, '').replace(/\s*\)$/, ''));
+    let html = '<div style="display:flex; flex-direction:column; gap:4px; margin:4px 0;">';
+    subs.forEach(s => {
+        const p = s.split(',');
+        const t = p[0].trim(), v = p.length > 1 ? p[p.length-1].trim() : '';
+        html += `<div class="sub-rule-item"><span class="sub-rl-tag">${t}:</span><span class="sub-rl-val">${v}</span></div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
 function renderRules() {
     var container = document.getElementById('rules-container'), lib = window.jsyaml; if (!lib) return;
     try {
         var data = lib.load(getEdVal()); if (!data || !data['rules']) { container.innerHTML = `<p style="opacity:0.5;padding:20px;">${t('rules_no_rules')}</p>`; return; }
+        
+        const getCat = (t) => {
+            if (['AND','OR','NOT'].includes(t)) return 'logic';
+            if (t.startsWith('DOMAIN')) return 'domain';
+            if (t.includes('IP') || t === 'GEOIP') return 'ip';
+            if (t === 'RULE-SET') return 'set';
+            return 'match';
+        };
+
         let html = '';
         data['rules'].forEach((r, idx) => {
             if (typeof r !== 'string') return;
@@ -1285,20 +1345,23 @@ function renderRules() {
                 }
             }
 
-            html += `<div class="card rule-card" data-idx="${idx}" style="padding:14px; display:flex; flex-direction:column; gap:8px;">
-                <div class="rule-num" style="font-weight:800; opacity:0.3;">${idx + 1}</div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+            html += `<div class="card rule-card" data-idx="${idx}" data-cat="${getCat(type)}" style="padding:14px; position:relative;">
+                <div class="rule-num" style="font-weight:800; opacity:0.2;">${idx + 1}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="display:flex; align-items:center; min-width:0;">
-                        <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.5; stroke-width:3 !important;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
-                        <div style="font-size:14px; font-weight:700; margin-left:4px;">${type}</div>
+                        <div class="drag-handle"><svg viewBox="0 0 24 24" class="ico" style="opacity:0.4;"><circle cx="9" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg></div>
+                        <div style="font-size:13px; font-weight:800; color:var(--txt-main); margin-left:4px; text-transform:uppercase; letter-spacing:0.03em;">${type}</div>
                     </div>
-                    <div style="display:flex; gap:4px; flex-shrink:0;">
-                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger); width:28px; height:28px;"><svg viewBox="0 0 24 24" class="ico"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    <div style="display:flex; gap:6px; flex-shrink:0;">
+                        <button onclick="openEditRule(${idx})" class="btn-icon btn-ghost" style="width:28px; height:28px; border-radius:6px;"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        <button onclick="confirmDeleteRule(${idx})" class="btn-icon btn-ghost" style="color:var(--danger); width:28px; height:28px; border-radius:6px;"><svg viewBox="0 0 24 24" class="ico" style="width:14px; height:14px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                 </div>
-                ${val ? `<div style="font-size:12px; font-family:monospace; opacity:0.7; word-break:break-all; line-height:1.4; background:var(--bg-body); padding:6px 10px; border-radius:4px; border:1px solid var(--bd-color); color:var(--primary);">${val}</div>` : ''}
-                <div style="font-size:12px; color:var(--primary); font-weight:800; opacity:0.9; margin-top:2px;">➔ ${target}</div>
+                ${renderRuleValue(type, val)}
+                <div style="margin-top:12px; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--primary); font-weight:700;">
+                    <svg viewBox="0 0 24 24" class="ico" style="width:12px; height:12px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <span>${target}</span>
+                </div>
             </div>`;
         });
         container.innerHTML = html;
