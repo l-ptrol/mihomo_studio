@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.57 (Go) — Установщик ===
+# === Mihomo Studio v2.2.59 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -77,7 +77,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.57 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.59 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
