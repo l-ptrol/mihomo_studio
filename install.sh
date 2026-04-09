@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.55 (Go) — Установщик ===
+# === Mihomo Studio v2.2.56 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -19,9 +19,9 @@ MIHOMO_ETC_DIR="/opt/etc/mihomo"
 detect_arch() {
     ARCH=$(uname -m 2>/dev/null || echo "unknown")
     
-    # HACK: Проверка MT7621/Ralink Little Endian для роутеров Keenetic/Netis
-    if [ "$ARCH" = "mips" ]; then
-        if grep -qiE "MediaTek|Ralink|MT76|RT3|RT5|Little" /proc/cpuinfo 2>/dev/null; then
+    # HACK: Проверка MT7621/Keenetic для роутеров (часто показывают mips, но они mipsel)
+    if [ "$ARCH" = "mips" ] || [ "$ARCH" = "unknown" ]; then
+        if grep -qiE "MediaTek|Ralink|MT76|RT3|RT5|Little|1004Kc|74Kc" /proc/cpuinfo 2>/dev/null || uname -a | grep -qiE "ndm|keenetic"; then
             ARCH="mipsel"
         fi
     fi
@@ -30,11 +30,17 @@ detect_arch() {
         aarch64|arm64|armv8*|armv7l|armv6l|arm*)
             echo "aarch64"
             ;;
-        mips|mips64)
+        mips)
             echo "mips"
             ;;
-        mipsel|mips32el|mips64el)
+        mips64)
+            echo "mips64"
+            ;;
+        mipsel|mips32el)
             echo "mipsel"
+            ;;
+        mips64el|mips64le)
+            echo "mips64le"
             ;;
         *)
             echo "unknown"
@@ -64,7 +70,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.55 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.56 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
