@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.71</title>
+<title>Mihomo Studio v2.2.72</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -324,8 +324,9 @@ button:active { transform: scale(0.97); }
     box-shadow: var(--shadow-lg); align-items: center; gap: 8px;
 }
 
-.main-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); flex-shrink: 0; }
-.main-tabs button { flex: 0 0 auto; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; font-size: 13px; }
+.main-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 8px; margin-bottom: 20px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); flex-shrink: 0; scrollbar-width: none; -ms-overflow-style: none; }
+.main-tabs::-webkit-scrollbar { display: none; }
+.main-tabs button { flex: 0 0 auto; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; font-size: 13px; white-space: nowrap; }
 .main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
 .main-tabs button:hover:not(.active) { color: var(--txt-main); background: rgba(255,255,255,0.03); }
 
@@ -380,9 +381,9 @@ button:active { transform: scale(0.97); }
     .header-actions button { padding: 0 10px; }
     
     .app-content { padding: 12px; gap: 12px; height: calc(100vh - 56px); }
-    .main-tabs { margin: 12px 12px 10px 12px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; }
+    .main-tabs { margin: 12px 12px 10px 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     .main-tabs::-webkit-scrollbar { display: none; }
-    .main-tabs button { padding: 8px 12px; font-size: 13px; }
+    .main-tabs button { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
     .tab-pane { padding: 0 12px 12px 12px; }
     .builder-section { padding: 16px; margin-bottom: 12px; }
     
@@ -410,12 +411,9 @@ button:active { transform: scale(0.97); }
         </svg>
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
-            <div class="brand-version">v2.2.71</div>
-
-
-
-
-
+            <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.72</div>
+            </div>
         </div>
     </div>
     
@@ -429,9 +427,6 @@ button:active { transform: scale(0.97); }
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
-        </button>
-        <button id="update-btn" onclick="checkUpdates(false)" class="btn-ghost btn-icon" title="Проверить обновления">
-            <svg class="ico" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
         <div style="width: 1px; height: 16px; background: var(--bd-color); margin: 0 4px;"></div>
         <button onclick="save('save')" class="btn-success" >
@@ -1108,8 +1103,15 @@ function initCS(id) {
     };
     update(); return update;
 }
-window.onclick = () => { document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open')); };
-window.addEventListener('scroll', () => { document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open')); }, true);
+document.addEventListener('click', (e) => { 
+    if (!e.target.closest('.cs-wrap')) { 
+        document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open')); 
+    } 
+});
+window.addEventListener('scroll', (e) => { 
+    if (e.target && e.target.nodeType === 1 && e.target.classList.contains('cs-options')) return;
+    document.querySelectorAll('.cs-wrap.open').forEach(w => w.classList.remove('open')); 
+}, true);
 
 function setLang(l) {
     if (!l || !TR[l]) l = 'ru';
@@ -1653,9 +1655,27 @@ function fmtLog(raw) {
 }
 
 function checkUpdates(isAuto = false) {
+    if(!isAuto) showToast(t('toast_checking') || 'Проверка...');
     fetch('/', {method:'POST', body:'act=check_update'}).then(r=>r.json()).then(d => {
-        if (d.update === "true") { document.getElementById('update-btn').classList.add('has-update'); if(!isAuto) updateStudio(); }
-        else if(!isAuto) showToast(t('toast_updated'));
+        if (d.update === "true") { 
+            let badge = document.getElementById('update-badge');
+            if(!badge) {
+                badge = document.createElement('div');
+                badge.id = 'update-badge';
+                badge.className = 'brand-version';
+                badge.style.cursor = 'pointer';
+                badge.style.background = 'var(--success)';
+                badge.style.color = '#fff';
+                badge.onclick = () => updateStudio();
+                document.getElementById('brand-version-wrap').appendChild(badge);
+            }
+            badge.innerText = '↑ v' + d.latest;
+            
+            if(!isAuto) updateStudio(); 
+        }
+        else if(!isAuto) showToast('У вас последняя версия!');
+    }).catch(e => {
+        if(!isAuto) showToast('Ошибка проверки обновлений', 'danger');
     });
 }
 
