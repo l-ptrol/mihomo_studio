@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VERSION="2.2.75"
+VERSION="2.2.76"
 OUT_DIR="dist"
 
 mkdir -p "$OUT_DIR"
