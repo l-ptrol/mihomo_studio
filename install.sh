@@ -1,5 +1,5 @@
 #!/bin/sh
-# === Mihomo Studio v2.2.87 (Go) — Установщик ===
+# === Mihomo Studio v2.2.88 (Go) — Установщик ===
 # Автоопределение архитектуры и установка бинарника
 
 set -e
@@ -71,7 +71,7 @@ download_file() {
 }
 
 echo "========================================"
-echo "# Mihomo Studio (Go) Installer v2.2.87 - Installer"
+echo "# Mihomo Studio (Go) Installer v2.2.88 - Installer"
 echo "========================================"
 
 # Определяем архитектуру
@@ -112,39 +112,42 @@ chmod +x /opt/bin/mhstudio
 
 # Создание init-скрипта (Heredoc)
 echo ">>> Создание init-скрипта..."
-cat > "${INIT_DIR}/S95mihomo-web.tmp" <<EOF
+cat > "${INIT_DIR}/S95mihomo-web.tmp" <<'EOF'
 #!/bin/sh
 
 PROG=/opt/bin/mhstudio
 PIDfile=/opt/var/run/mhstudio.pid
 
-case "\$1" in
+# Очистка аргумента от возможных символов возврата каретки (CRLF)
+ACTION=$(echo "$1" | tr -d '\r')
+
+case "$ACTION" in
   start)
     echo "Starting Mihomo Studio (Go)..."
-    \$PROG -start
+    $PROG -start
     ;;
   stop)
     echo "Stopping Mihomo Studio..."
-    if [ -f \$PIDfile ]; then
-        kill \$(cat \$PIDfile) 2>/dev/null || true
-        rm \$PIDfile
+    if [ -f $PIDfile ]; then
+        kill $(cat $PIDfile) 2>/dev/null || true
+        rm $PIDfile
     fi
-    PID=\$(ps | grep "mhstudio" | grep -v grep | awk '{print \$1}')
-    [ -n "\$PID" ] && kill -9 \$PID 2>/dev/null || true
+    PID=$(ps | grep "mhstudio" | grep -v grep | awk '{print $1}')
+    [ -n "$PID" ] && kill -9 $PID 2>/dev/null || true
     ;;
   restart)
-    \$0 stop
+    $0 stop
     sleep 2
-    \$0 start
+    $0 start
     ;;
   update)
-    \$PROG -update
+    $PROG -update
     ;;
   uninstall)
-    \$PROG -uninstall
+    $PROG -uninstall
     ;;
   *)
-    echo "Usage: \$0 {start|stop|restart|update|uninstall}"
+    echo "Usage: $0 {start|stop|restart|update|uninstall}"
     exit 1
 esac
 
