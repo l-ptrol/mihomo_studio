@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.85</title>
+<title>Mihomo Studio v2.2.86</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -447,7 +447,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.85</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.86</div>
             </div>
         </div>
     </div>
@@ -1923,7 +1923,11 @@ function openEditGroup(n="") {
         document.getElementById('rg-type').value = g ? g.type : 'select';
         if (typeof upRgType === 'function') upRgType();
         const list = document.getElementById('rg-proxies-list'); list.innerHTML = '';
-        [...prx.map(p => p && p.name ? p.name : ''), ...grps.map(x => x && x.name ? x.name : '')].filter(Boolean).forEach(opt => {
+        const special = ['DIRECT', 'REJECT', 'REJECT-DROP', 'GLOBAL'];
+        const allTargets = [...special, ...prx.map(p => p && p.name ? p.name : ''), ...grps.map(x => x && x.name ? x.name : '')].filter(Boolean);
+        const uniqueTargets = [...new Set(allTargets)];
+        
+        uniqueTargets.forEach(opt => {
             if(opt === n) return; 
             const check = g && Array.isArray(g.proxies) && g.proxies.includes(opt);
             list.innerHTML += `<div class="g-item"><input type="checkbox" id="rgp_${opt}" value="${opt}" ${check?'checked':''}><label for="rgp_${opt}">${opt}</label></div>`;
@@ -2000,6 +2004,11 @@ function openAddRule() {
         const cfg = jsyaml.load(ed.getValue()) || {};
         const grps = Array.isArray(cfg['proxy-groups']) ? cfg['proxy-groups'] : [];
         const tSel = document.getElementById('rl-target'); tSel.innerHTML = '';
+        const special = ['DIRECT', 'REJECT', 'REJECT-DROP', 'GLOBAL'];
+        special.forEach(s => {
+            const o = document.createElement('option'); o.value = s; o.text = s;
+            tSel.appendChild(o);
+        });
         grps.forEach(g => { 
             if(!g || !g.name) return;
             const o = document.createElement('option'); o.value=g.name; o.text=g.name; 
@@ -2060,6 +2069,14 @@ function openEditRule(idx) {
         
         const grps = Array.isArray(cfg['proxy-groups']) ? cfg['proxy-groups'] : [];
         const tSel = document.getElementById('rl-target'); tSel.innerHTML = '';
+        
+        const special = ['DIRECT', 'REJECT', 'REJECT-DROP', 'GLOBAL'];
+        special.forEach(s => {
+            const o = document.createElement('option'); o.value = s; o.text = s;
+            if(s === target) o.selected = true;
+            tSel.appendChild(o);
+        });
+
         grps.forEach(g => { 
             if(!g || !g.name) return;
             const o = document.createElement('option'); o.value=g.name; o.text=g.name; 

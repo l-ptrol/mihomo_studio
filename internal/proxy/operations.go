@@ -106,6 +106,12 @@ func InsertProxyLogic(content, proxyName, proxyYAML string, targetGroups []strin
 					newLines = append(newLines, line)
 					continue
 				}
+
+				// Проверка на дубликат, чтобы не добавлять прокси дважды
+				if stripped == "- "+proxyName || stripped == "- \""+proxyName+"\"" || stripped == "- '"+proxyName+"'" {
+					insertedInGroup[currentGroupName] = true
+				}
+
 				if (strings.Contains(stripped, "DIRECT") || strings.Contains(stripped, "REJECT")) && !insertedInGroup[currentGroupName] {
 					prefix := strings.Repeat(" ", indent)
 					newLines = append(newLines, prefix+`- "`+proxyName+`"`)
