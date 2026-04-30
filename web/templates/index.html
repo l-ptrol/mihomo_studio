@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.86</title>
+<title>Mihomo Studio v2.2.87</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -416,14 +416,25 @@ button:active { transform: scale(0.97); }
     .header-actions button { padding: 0 10px; }
     
     .app-content { padding: 12px; gap: 12px; height: calc(100vh - 56px); }
-    .main-tabs { margin: 12px 12px 10px 12px; display: flex; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .main-tabs { 
+        margin: 12px 12px 10px 12px; 
+        display: flex; 
+        flex-wrap: nowrap; 
+        overflow-x: auto; 
+        white-space: nowrap; 
+        -ms-overflow-style: none; 
+        scrollbar-width: none; 
+        -webkit-overflow-scrolling: touch;
+        mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
+    }
     .main-tabs::-webkit-scrollbar { display: none; }
     .main-tabs button { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
     .tab-pane { padding: 0 12px 12px 12px; }
     .builder-section { padding: 16px; margin-bottom: 12px; }
     
     .grid-cards { grid-template-columns: 1fr; }
-    .view-toggle { display: none; } /* On mobile, grid is bad, maybe just force list? Wait, let's just keep the toggle, or hide it to save space */
+    .view-toggle { display: none; }
 }
 </style>
 </head>
@@ -447,7 +458,7 @@ button:active { transform: scale(0.97); }
         <div class="brand-text">
             <div class="brand-name">Mihomo Studio</div>
             <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.86</div>
+                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.87</div>
             </div>
         </div>
     </div>
@@ -459,16 +470,16 @@ button:active { transform: scale(0.97); }
         </div>
         
         
-        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" >
+        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" aria-label="Панель">
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
         </button>
         <div style="width: 1px; height: 16px; background: var(--bd-color); margin: 0 4px;"></div>
-        <button onclick="save('save')" class="btn-success" >
+        <button onclick="save('save')" class="btn-success" aria-label="Сохранить">
             <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span data-i18n="save">Сохранить</span>
         </button>
-        <button onclick="save('restart')" class="btn-danger">
+        <button onclick="save('restart')" class="btn-danger" aria-label="Рестарт">
             <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span data-i18n="restart">Рестарт</span>
         </button>
