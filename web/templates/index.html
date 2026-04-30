@@ -471,34 +471,96 @@ button:active { transform: scale(0.97); }
 <script>try{document.body.className=localStorage.getItem('mihomo_theme')||'dark';}catch(e){document.body.className='dark';}</script>
 <div class="toast" id="toast"><span class="toast-icon"></span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
 
-        <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" aria-label="Панель">
-            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span data-i18n="panel">Панель</span>
-        </button>
-        <div style="width: 1px; height: 16px; background: var(--bd-color); margin: 0 4px;"></div>
-        <button onclick="save('save')" class="btn-success" aria-label="Сохранить">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span data-i18n="save">Сохранить</span>
-        </button>
-        <button onclick="save('restart')" class="btn-danger" aria-label="Рестарт">
-            <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span data-i18n="restart">Рестарт</span>
-        </button>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="brand">
+            <svg class="logo-svg" viewBox="0 0 32 32">
+                <rect width="32" height="32" rx="8" fill="var(--primary)"/>
+                <path d="M9 22V10L16 16L23 10V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M16 16V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5" fill="none"/>
+            </svg>
+            <div class="brand-text">
+                <div class="brand-name">Mihomo Studio</div>
+                <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
+                    <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.3.00</div>
+                </div>
+            </div>
+        </div>
     </div>
-</header>
-<div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
-<div class="app-content">
-    <div class="main-area">
-        <div class="main-tabs" id="main-tabs">
-            <button id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')" data-i18n="tab_proxies">Туннели</button>
-            <button id="nav-routes" onclick="switchMainTab(event, 'tab-routes')" data-i18n="tab_routes">Маршруты</button>
-            <button id="nav-rules" onclick="switchMainTab(event, 'tab-rules')" data-i18n="tab_services">Сервисы</button>
-            <button id="nav-backups" onclick="switchMainTab(event, 'tab-backups')" data-i18n="tab_backups">Бэкапы</button>
-            <button id="nav-settings" onclick="switchMainTab(event, 'tab-settings')" data-i18n="tab_settings">Настройки</button>
-            <button id="nav-editor" onclick="switchMainTab(event, 'tab-editor')" data-i18n="tab_yaml">YAML Редактор</button>
+    
+    <nav class="sidebar-nav" id="sidebar-tabs">
+        <div class="nav-item active" id="nav-proxies" onclick="switchMainTab(event, 'tab-proxies')">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <span data-i18n="tab_proxies">Туннели</span>
+        </div>
+        <div class="nav-item" id="nav-routes" onclick="switchMainTab(event, 'tab-routes')">
+            <svg class="ico" viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            <span data-i18n="tab_routes">Маршруты</span>
+        </div>
+        <div class="nav-item" id="nav-rules" onclick="switchMainTab(event, 'tab-rules')">
+            <svg class="ico" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span data-i18n="tab_services">Правила</span>
+        </div>
+        <div class="nav-item" id="nav-backups" onclick="switchMainTab(event, 'tab-backups')">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+            <span data-i18n="tab_backups">Бекапы</span>
+        </div>
+        <div class="nav-item" id="nav-editor" onclick="switchMainTab(event, 'tab-editor')">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span data-i18n="tab_yaml">YAML Редактор</span>
+        </div>
+        <div class="nav-item" id="nav-settings" onclick="switchMainTab(event, 'tab-settings')">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span data-i18n="tab_settings">Настройки</span>
+        </div>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div id="app-clock" style="font-family:monospace; font-weight:700; opacity:0.6; font-size:12px;">00:00:00</div>
+    </div>
+</div>
+
+<div class="main-layout">
+    <header class="app-header">
+        <div style="display:flex; align-items:center;">
+            <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Меню">
+                <svg class="ico" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <div class="header-group header-info">
+                <svg class="ico" viewBox="0 0 24 24" style="margin-left:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <div id="prof-sel-wrap" class="cs-wrap" style="min-width:140px; height:32px;">
+                    <select id="prof-sel" style="display:none;"></select>
+                    <div class="cs-trigger" style="height:32px; background:transparent; border:none; padding:0 8px;">
+                        <span style="font-weight:700;">Loading...</span>
+                        <svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                    </div>
+                    <div class="cs-options"></div>
+                </div>
+            </div>
         </div>
         
-        <div id="tab-proxies" class="tab-pane">
+        <div class="header-actions">
+            <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" aria-label="Панель">
+                <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span data-i18n="panel">Панель</span>
+            </button>
+            <button onclick="save('save')" class="btn-success" aria-label="Сохранить">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <span data-i18n="save">Сохранить</span>
+            </button>
+            <button onclick="save('restart')" class="btn-danger" aria-label="Рестарт">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span data-i18n="restart">Рестарт</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-content">
+        <div id="raw-config" style="display:none;">__JSON_CONTENT__</div>
+        <div class="main-area">
+            <div id="tab-proxies" class="tab-pane active">
             <div class="builder-section">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap: wrap; gap: 8px;">
                    <div style="display:flex; align-items:center; gap:12px;">
