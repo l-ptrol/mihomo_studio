@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v2.2.89</title>
+<title>Mihomo Studio v2.3.00</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233b82f6'/%3E%3Cpath d='M9 22V10L16 16L23 10V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M16 16V22' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' opacity='0.5' fill='none'/%3E%3C/svg%3E">
 <script src="/static/libs/ace/ace.js"></script>
 <script src="/static/libs/js-yaml.min.js"></script>
@@ -82,16 +82,54 @@ body.cyber {
 }
 
 body {
-    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    display: flex; height: 100vh; overflow: hidden;
     background: var(--bg-app); color: var(--txt-main);
     font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
     margin: 0;
 }
 * { box-sizing: border-box; }
 
+.app-container {
+    display: flex; width: 100%; height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px; background: var(--bg-card); border-right: 1px solid var(--bd-color);
+    display: flex; flex-direction: column; flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2000;
+}
+
+.sidebar-header {
+    height: 64px; display: flex; align-items: center; padding: 0 24px;
+    border-bottom: 1px solid var(--bd-color); flex-shrink: 0;
+}
+
+.sidebar-nav {
+    flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+}
+
+.nav-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    border-radius: var(--radius-sm); color: var(--txt-mut); font-weight: 600;
+    font-size: 14px; transition: all 0.2s; cursor: pointer; border: 1px solid transparent;
+}
+.nav-item:hover { background: rgba(59, 130, 246, 0.05); color: var(--txt-main); }
+.nav-item.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
+.nav-item .ico { width: 20px; height: 20px; }
+
+.sidebar-footer {
+    padding: 16px 24px; border-top: 1px solid var(--bd-color); display: flex; align-items: center; gap: 10px;
+}
+
+.main-layout {
+    flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100vh; background: var(--bg-app);
+}
+
 .app-header {
     display: flex; align-items: center; justify-content: space-between; 
-    padding: 0 32px; background: rgba(255, 255, 255, 0.7); 
+    padding: 0 24px; background: rgba(255, 255, 255, 0.7); 
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--bd-color); 
     height: 64px; flex-shrink: 0; z-index: 1000; box-shadow: var(--shadow-sm);
@@ -99,6 +137,12 @@ body {
 body.dark .app-header { background: rgba(24, 24, 27, 0.8); }
 body.midnight .app-header { background: rgba(15, 23, 42, 0.8); }
 body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
+
+.menu-toggle { display: none; width: 40px; height: 40px; align-items: center; justify-content: center; background: none; border: none; color: var(--txt-main); cursor: pointer; border-radius: var(--radius-sm); margin-right: 8px; }
+.menu-toggle:hover { background: rgba(59, 130, 246, 0.1); }
+.menu-toggle .ico { width: 24px; height: 24px; }
+
+.sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1500; display: none; opacity: 0; transition: opacity 0.3s; }
 
 .brand { display: flex; align-items: center; gap: 12px; }
 .logo-svg { width: 32px; height: 32px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
@@ -112,8 +156,7 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
 .app-content {
     flex: 1; display: flex; overflow: hidden; 
     padding: 24px; gap: 24px; min-height: 0; position: relative;
-    height: calc(100vh - 64px);
-    max-width: 1600px; margin: 0 auto; width: 100%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 100%; margin: 0; width: 100%; transition: all 0.3s;
 }
 
 
@@ -123,19 +166,12 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
     flex: 1; display: flex; flex-direction: column;
     background: var(--bg-card); border: 1px solid var(--bd-color); border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm); min-width: 0; min-height: 0;
-    position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.main-tabs { 
-    display: flex; flex-wrap: wrap; gap: 8px; 
-    margin: 24px 24px 20px 24px; 
-    background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); 
-    border: 1px solid var(--bd-color); flex-shrink: 0; 
+    position: relative; overflow: hidden;
 }
 
 .tab-pane { 
     display: none; width: 100%; flex: 1; min-height: 0; position: relative; 
-    overflow-y: auto; padding: 0 24px 24px 24px;
+    overflow-y: auto; padding: 24px;
 }
 .tab-pane.active { display: flex !important; flex-direction: column; flex: 1; height: 100%; min-height: 0; }
 #tab-editor.active { padding: 0; overflow: hidden; }
@@ -406,6 +442,14 @@ button:active { transform: scale(0.97); }
 .log-cyan { color: #8be9fd; }
 .log-white { color: #f8f8f2; }
 
+@media (max-width: 1024px) {
+    .sidebar { position: fixed; transform: translateX(-100%); top: 0; bottom: 0; }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; opacity: 1; }
+    .menu-toggle { display: flex; }
+    .app-header { padding: 0 16px; }
+}
+
 @media (max-width: 768px) {
     .app-header { padding: 0 12px; height: 56px; }
     .brand-name { display: none; } 
@@ -416,22 +460,7 @@ button:active { transform: scale(0.97); }
     .header-actions button { padding: 0 10px; }
     
     .app-content { padding: 12px; gap: 12px; height: calc(100vh - 56px); }
-    .main-tabs { 
-        margin: 12px 12px 10px 12px; 
-        display: flex; 
-        flex-wrap: nowrap; 
-        overflow-x: auto; 
-        white-space: nowrap; 
-        -ms-overflow-style: none; 
-        scrollbar-width: none; 
-        -webkit-overflow-scrolling: touch;
-        mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
-        -webkit-mask-image: linear-gradient(to right, transparent, black 15px, black calc(100% - 15px), transparent);
-    }
-    .main-tabs::-webkit-scrollbar { display: none; }
-    .main-tabs button { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
-    .tab-pane { padding: 0 12px 12px 12px; }
-    .builder-section { padding: 16px; margin-bottom: 12px; }
+    .tab-pane { padding: 16px; }
     
     .grid-cards { grid-template-columns: 1fr; }
     .view-toggle { display: none; }
@@ -442,34 +471,6 @@ button:active { transform: scale(0.97); }
 <script>try{document.body.className=localStorage.getItem('mihomo_theme')||'dark';}catch(e){document.body.className='dark';}</script>
 <div class="toast" id="toast"><span class="toast-icon"></span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
 
-<header class="app-header">
-    <div class="brand">
-        <svg class="logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="32" height="32" rx="8" fill="url(#logo_grad)"/>
-            <path d="M9 22V10L16 16L23 10V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M16 16V22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
-            <defs>
-                <linearGradient id="logo_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                    <stop stop-color="var(--primary)"/>
-                    <stop offset="1" stop-color="var(--primary-h)"/>
-                </linearGradient>
-            </defs>
-        </svg>
-        <div class="brand-text">
-            <div class="brand-name">Mihomo Studio</div>
-            <div style="display:flex; align-items:center; gap:4px;" id="brand-version-wrap">
-                <div class="brand-version" onclick="checkUpdates(false)" style="cursor:pointer" title="Проверить обновления">v2.2.89</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="header-actions">
-        <div class="header-info" style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 16px;">
-            <div id="app-clock" style="font-size: 13px; font-weight: 700; color: var(--primary); font-family: 'JetBrains Mono', monospace;">00:00:00</div>
-            <div id="last-load" style="font-size: 10px; color: var(--txt-mut); font-weight: 500; opacity: 0.8;"></div>
-        </div>
-        
-        
         <button onclick="openPanel()" class="btn-outline" title="Открыть встроенную панель Mihomo" aria-label="Панель">
             <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             <span data-i18n="panel">Панель</span>
@@ -1208,8 +1209,24 @@ function switchMainTab(e, tabId) {
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
     if (tabId === 'tab-proxies') renderProxies();
-    if (tabId === 'tab-backups');
-    document.querySelectorAll('.cs-wrap').forEach(w => w.classList.remove('open'));
+    
+    // Close sidebar on mobile after selection
+    if (window.innerWidth <= 1024) toggleSidebar(false);
+}
+
+function toggleSidebar(force) {
+    const sb = document.getElementById('sidebar');
+    const ovl = document.querySelector('.sidebar-overlay');
+    const isOpen = sb.classList.contains('open');
+    const next = force !== undefined ? force : !isOpen;
+    
+    if (next) {
+        sb.classList.add('open');
+        ovl.classList.add('open');
+    } else {
+        sb.classList.remove('open');
+        ovl.classList.remove('open');
+    }
 }
 
 
@@ -2242,7 +2259,6 @@ function init() {
     
     // Tab Activation
     const savedTab = localStorage.getItem('lastMainTab');
-    const firstTabBtn = document.querySelector('#main-tabs button');
     if (savedTab && document.getElementById(savedTab.replace('tab-', 'nav-'))) {
         switchMainTab(null, savedTab);
     } else {
@@ -2254,7 +2270,6 @@ function init() {
     renderRules();
     renderProxies();
 
-    
     // Background tasks
     setTimeout(() => { checkUpdates(true); }, 1500);
     setInterval(() => checkUpdates(true), 3600000);
