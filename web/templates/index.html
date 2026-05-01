@@ -1167,6 +1167,8 @@ function ask(m, c=true, tit) {
 function initCS(id) {
     const wrap = document.getElementById(id); if(!wrap) return;
     const sel = wrap.querySelector('select'), trigger = wrap.querySelector('.cs-trigger'), opts = wrap.querySelector('.cs-options');
+    if (!sel || !trigger || !opts) return;
+
     const update = () => {
         opts.innerHTML = '';
         Array.from(sel.options).forEach(o => {
@@ -1188,7 +1190,7 @@ function initCS(id) {
         });
         const active = sel.options[sel.selectedIndex];
         const span = trigger.querySelector('span');
-        if (span) span.innerText = active ? (active.label || active.text) : '...';
+        if (span) span.innerText = active ? (active.label || active.text || active.value) : '...';
     };
     trigger.onclick = (e) => { 
         e.stopPropagation(); 
@@ -2285,16 +2287,18 @@ function init() {
     // Core state - initialized via Monaco loader
     
     // Custom Selects
-    upProf = initCS('cs-prof');
-    initCS('cs-prof-header');
-    upLang = initCS('cs-lang-tab');
-    upTheme = initCS('cs-theme-tab');
-    upRgType = initCS('cs-rg-type');
-    upRlTarget = initCS('cs-rl-target');
-    upRlType = initCS('cs-rl-type');
-    upManual = initCS('cs-manual-type');
-    upEdit = initCS('cs-edit-m');
-    upRen = initCS('cs-ren-m');
+    try {
+        upProf = initCS('cs-prof');
+        initCS('cs-prof-header');
+        upLang = initCS('cs-lang-tab');
+        upTheme = initCS('cs-theme-tab');
+        upRgType = initCS('cs-rg-type');
+        upRlTarget = initCS('cs-rl-target');
+        upRlType = initCS('cs-rl-type');
+        upManual = initCS('cs-manual-type');
+        upEdit = initCS('cs-edit-m');
+        upRen = initCS('cs-ren-m');
+    } catch(e) { console.error("InitCS error", e); }
     
     // Observers for recursive updates
     new MutationObserver(upProf).observe(document.getElementById('prof-sel'), { childList:true });
