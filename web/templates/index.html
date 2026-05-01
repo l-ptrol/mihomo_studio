@@ -395,11 +395,7 @@ button:active { transform: scale(0.97); }
     box-shadow: var(--shadow-lg); align-items: center; gap: 8px;
 }
 
-.main-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 8px; margin-bottom: 20px; background: var(--bg-card); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--bd-color); flex-shrink: 0; scrollbar-width: none; -ms-overflow-style: none; }
-.main-tabs::-webkit-scrollbar { display: none; }
-.main-tabs button { flex: 0 0 auto; border: none; background: transparent; color: var(--txt-mut); font-weight: 600; padding: 10px 20px; border-radius: 4px; border: 1px solid transparent; transition: all 0.2s; font-size: 13px; white-space: nowrap; }
-.main-tabs button.active { background: var(--bg-app); color: var(--primary); border-color: var(--bd-color); box-shadow: var(--shadow-sm); }
-.main-tabs button:hover:not(.active) { color: var(--txt-main); background: rgba(255,255,255,0.03); }
+
 
 
 
@@ -1257,22 +1253,34 @@ function setTheme(tVal) {
 }
 
 function switchMainTab(e, tabId) {
-    const btn = e ? e.currentTarget || e.target : document.getElementById(tabId.replace('tab-', 'nav-'));
-    document.querySelectorAll('.main-tabs button').forEach(b => b.classList.remove('active'));
+    // 1. Убираем активный класс со всех пунктов сайдбара
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    
+    // 2. Определяем целевой пункт меню
+    let navId = tabId.replace('tab-', 'nav-');
+    let navEl = document.getElementById(navId);
+    
+    // Если кликнули вручную, берем элемент из события, иначе ищем по ID
+    let btn = e ? e.currentTarget : navEl;
+    if (btn) btn.classList.add('active');
+
+    // 3. Переключаем видимость контента
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    if(btn && btn.classList) btn.classList.add('active');
     const pane = document.getElementById(tabId);
     if(pane) pane.classList.add('active');
     
+    // 4. Сохраняем состояние
     localStorage.setItem('lastMainTab', tabId);
-    if (tabId === 'tab-editor' && ed) {
+    
+    // 5. Специфические действия для разделов
+    if (tabId === 'tab-editor' && window.ed) {
         setTimeout(() => { ed.resize(); }, 50);
     }
     if (tabId === 'tab-routes') renderRoutes();
     if (tabId === 'tab-rules') renderRules();
     if (tabId === 'tab-proxies') renderProxies();
     
-    // Close sidebar on mobile after selection
+    // 6. Закрываем сайдбар на мобилках после выбора
     if (window.innerWidth <= 1024) toggleSidebar(false);
 }
 
@@ -2239,7 +2247,7 @@ function confirmDeleteRule(i) {
 
 function saveTabOrder() {
     const order = [];
-    document.querySelectorAll('#main-tabs button').forEach(btn => { order.push(btn.id); });
+    document.querySelectorAll('#sidebar-tabs .nav-item').forEach(el => { order.push(el.id); });
     localStorage.setItem('main_tabs_order', JSON.stringify(order));
 }
 
@@ -2248,16 +2256,17 @@ function loadTabOrder() {
     if (!saved) return;
     try {
         const order = JSON.parse(saved);
-        const container = document.getElementById('main-tabs');
+        const container = document.getElementById('sidebar-tabs');
+        if (!container) return;
         order.forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) container.appendChild(btn);
+            const el = document.getElementById(id);
+            if (el) container.appendChild(el);
         });
     } catch(e) { console.error("Error loading tab order", e); }
 }
 
 function setupDraggableTabs() {
-    const container = document.getElementById('main-tabs');
+    const container = document.getElementById('sidebar-tabs');
     if (container && window.Sortable) {
         Sortable.create(container, {
             animation: 150,
