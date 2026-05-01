@@ -88,7 +88,7 @@ func (h *Handler) handleGet(w http.ResponseWriter, r *http.Request) {
 	out := h.template
 	out = strings.Replace(out, "__JSON_CONTENT__", string(content), 1)
 	out = strings.Replace(out, "__BACKUPS__", backupsHTML, 1)
-	out = strings.Replace(out, "__PROFILES__", profilesOpts, 1)
+	out = strings.ReplaceAll(out, "__PROFILES__", profilesOpts)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)

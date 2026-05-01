@@ -174,21 +174,9 @@ body.cyber .app-header { background: rgba(0, 0, 0, 0.9); }
     overflow-y: auto; padding: 24px;
 }
 .tab-pane.active { display: flex !important; flex-direction: column; flex: 1; height: 100%; min-height: 0; }
-#tab-editor.active { padding: 0; overflow: hidden; }
-
-
-
-
-
-
-
-.editor-wrapper {
-    flex: 1; display: flex; flex-direction: column;
-    background: var(--bg-app);
-    border-top: 1px solid var(--bd-color);
-    position: relative; overflow: hidden; min-height: 0;
-}
-#ed { position: absolute; top:0; left:0; right:0; bottom:0; font-size: 14px; }
+#tab-editor.active { padding: 0; overflow: hidden; display: flex !important; flex-direction: column; }
+.editor-wrapper { flex: 1; position: relative; width: 100%; height: 100%; min-height: 0; }
+#ed { position: absolute; top:0; left:0; right:0; bottom:0; font-size: 14px; width: 100%; height: 100%; }
 
 
 
@@ -526,8 +514,8 @@ button:active { transform: scale(0.97); }
             </button>
             <div class="header-group header-info">
                 <svg class="ico" viewBox="0 0 24 24" style="margin-left:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <div id="prof-sel-wrap" class="cs-wrap" style="min-width:140px; height:32px;">
-                    <select id="prof-sel" style="display:none;"></select>
+                <div id="cs-prof-header" class="cs-wrap" style="min-width:140px; height:32px;">
+                    <select id="prof-sel-header" onchange="switchProfDirect(this.value)" style="display:none">__PROFILES__</select>
                     <div class="cs-trigger" style="height:32px; background:transparent; border:none; padding:0 8px;">
                         <span style="font-weight:700;">Loading...</span>
                         <svg class="cs-arrow" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
@@ -1199,7 +1187,8 @@ function initCS(id) {
             opts.appendChild(d);
         });
         const active = sel.options[sel.selectedIndex];
-        trigger.querySelector('span').innerText = active ? (active.label || active.text) : '...';
+        const span = trigger.querySelector('span');
+        if (span) span.innerText = active ? (active.label || active.text) : '...';
     };
     trigger.onclick = (e) => { 
         e.stopPropagation(); 
@@ -1938,6 +1927,14 @@ function downloadProf() {
     .catch(e => showToast(e.message, 'danger'));
 }
 
+function switchProfDirect(p) {
+    if(!p) return;
+    ask(t('confirm_switch', p)).then(ok => { 
+        if(ok) fetch('/', {method:'POST', body:'act=switch_prof&name='+p}).then(()=>location.reload()); 
+        else location.reload();
+    });
+}
+
 function switchProf() {
     const p = document.getElementById('prof-sel').value; if(!p) return;
     ask(t('confirm_switch', p)).then(ok => { if(ok) fetch('/', {method:'POST', body:'act=switch_prof&name='+p}).then(()=>location.reload()); });
@@ -2289,6 +2286,7 @@ function init() {
     
     // Custom Selects
     upProf = initCS('cs-prof');
+    initCS('cs-prof-header');
     upLang = initCS('cs-lang-tab');
     upTheme = initCS('cs-theme-tab');
     upRgType = initCS('cs-rg-type');
