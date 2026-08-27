@@ -25,17 +25,26 @@ RESTART_CMD = "xkeen -restart > " + LOG_FILE + " 2>&1"
 UPDATE_CMD = "/opt/bin/mhstudio -update"
 
 # --- ИНИЦИАЛИЗАЦИЯ ---
-if not os.path.exists(BACKUP_DIR): os.makedirs(BACKUP_DIR)
-if not os.path.exists(PROFILES_DIR): os.makedirs(PROFILES_DIR)
+def init_system():
+    if not os.path.exists(BACKUP_DIR):
+        try: os.makedirs(BACKUP_DIR)
+        except Exception: pass
+    if not os.path.exists(PROFILES_DIR):
+        try: os.makedirs(PROFILES_DIR)
+        except Exception: pass
 
-if os.path.exists(CONFIG_PATH) and not os.path.islink(CONFIG_PATH):
-    shutil.move(CONFIG_PATH, os.path.join(PROFILES_DIR, "default.yaml"))
-    os.symlink(os.path.join(PROFILES_DIR, "default.yaml"), CONFIG_PATH)
-elif not os.path.exists(CONFIG_PATH):
-    def_prof = os.path.join(PROFILES_DIR, "default.yaml")
-    with open(def_prof, 'w') as f:
-        f.write("proxies: []\n")
-    os.symlink(def_prof, CONFIG_PATH)
+    if os.path.exists(CONFIG_PATH) and not os.path.islink(CONFIG_PATH):
+        try:
+            shutil.move(CONFIG_PATH, os.path.join(PROFILES_DIR, "default.yaml"))
+            os.symlink(os.path.join(PROFILES_DIR, "default.yaml"), CONFIG_PATH)
+        except Exception: pass
+    elif not os.path.exists(CONFIG_PATH) and os.path.exists(PROFILES_DIR):
+        def_prof = os.path.join(PROFILES_DIR, "default.yaml")
+        try:
+            with open(def_prof, 'w') as f:
+                f.write("proxies: []\n")
+            os.symlink(def_prof, CONFIG_PATH)
+        except Exception: pass
 
 
 # --- ПАРСЕРЫ ---
@@ -59,7 +68,7 @@ def parse_vless(link, custom_name=None):
             return None, "No UUID"
         if ':' in srv_port:
             if ']' in srv_port:
-                srv, port = srv_port.rsplit(':', 1);
+                srv, port = srv_port.rsplit(':', 1)
                 srv = srv.replace('[', '').replace(']', '')
             else:
                 srv, port = srv_port.split(':')
@@ -71,11 +80,13 @@ def parse_vless(link, custom_name=None):
 
         y = ['- name: "' + name + '"', '  type: vless', '  server: ' + srv, '  port: ' + port, '  uuid: ' + uuid,
              '  udp: true']
-        y.append('  network: ' + (get('type') or 'tcp'))
+        network = get('type') or 'tcp'
+        y.append('  network: ' + network)
         if get('flow'): y.append('  flow: ' + get('flow'))
-        if get('security'):
+        sec = get('security')
+        if sec:
             y.append('  tls: true')
-            if get('security') == 'reality':
+            if sec == 'reality':
                 y.extend(['  servername: ' + get('sni'), '  client-fingerprint: ' + (get('fp') or 'chrome'),
                           '  reality-opts:', '    public-key: ' + get('pbk')])
                 if get('sid'): y.append('    short-id: ' + get('sid'))
@@ -85,13 +96,23 @@ def parse_vless(link, custom_name=None):
                 if get('alpn'):
                     av = get("alpn").replace(",", '", "')
                     y.append('  alpn: ["' + av + '"]')
-        if get('type') == 'ws':
+        if network == 'ws':
             y.append('  ws-opts:')
             if get('path'): y.append('    path: ' + get('path'))
             if get('host'): y.extend(['    headers:', '      Host: ' + get('host')])
-        elif get('type') == 'grpc' and get('serviceName'):
+        elif network == 'grpc' and get('serviceName'):
             y.extend(['  grpc-opts:', '    grpc-service-name: ' + get('serviceName')])
-        return {"yaml": "\n".join(y), "name": name}, None
+
+        if sec == 'reality':
+            proto = "VLESS Reality"
+        elif network == 'ws':
+            proto = "VLESS WS"
+        elif network == 'grpc':
+            proto = "VLESS gRPC"
+        else:
+            proto = "VLESS"
+
+        return {"yaml": "\n".join(y), "name": name, "protocol": proto}, None
     except Exception as e:
         return None, str(e)
 
@@ -107,7 +128,7 @@ def parse_wireguard(config_text, custom_name=None):
 
             if line.startswith('[') and line.endswith(']'):
                 s_name = line[1:-1].lower()
-                if s_name == 'interface' or s_name == 'peer':
+                if s_name in ('interface', 'peer'):
                     section = s_name
                 else:
                     section = None
@@ -115,15 +136,25 @@ def parse_wireguard(config_text, custom_name=None):
 
             if section and '=' in line:
                 key, val = line.split('=', 1)
-                conf[section][key.strip().lower()] = val.strip()
+                conf[section][key.strip()] = val.strip()
 
-        iface = conf['interface']
-        peer = conf['peer']
+        iface_raw = conf['interface']
+        peer_raw = conf['peer']
 
-        if not iface or not peer:
+        if not iface_raw or not peer_raw:
             return None, "Invalid WireGuard config: missing Interface or Peer"
 
-        endpoint = peer.get('endpoint', '')
+        iface = {k.lower().replace('_', '').replace('-', ''): (k, v) for k, v in iface_raw.items()}
+        peer = {k.lower().replace('_', '').replace('-', ''): (k, v) for k, v in peer_raw.items()}
+
+        def get_val(d, *keys):
+            for k in keys:
+                norm_k = k.lower().replace('_', '').replace('-', '')
+                if norm_k in d:
+                    return d[norm_k][1]
+            return None
+
+        endpoint = get_val(peer, 'endpoint')
         if not endpoint: return None, "No Endpoint found"
 
         if ']:' in endpoint:
@@ -144,7 +175,7 @@ def parse_wireguard(config_text, custom_name=None):
             else:
                 name = f"WG_{server}"
 
-        address_raw = iface.get('address', '')
+        address_raw = get_val(iface, 'address')
         if not address_raw: return None, "No Address found"
 
         ips = [x.strip() for x in address_raw.split(',')]
@@ -152,7 +183,7 @@ def parse_wireguard(config_text, custom_name=None):
         ip_v6 = None
 
         for ip in ips:
-            clean_ip = ip.split('/')[0]
+            clean_ip = ip.split('/')[0].strip()
             if ':' in clean_ip:
                 if not ip_v6: ip_v6 = clean_ip
             else:
@@ -163,67 +194,144 @@ def parse_wireguard(config_text, custom_name=None):
 
         y = []
         y.append(f'- name: "{name}"')
-        y.append(f'  type: wireguard')
+        y.append('  type: wireguard')
         y.append(f'  server: {server}')
         y.append(f'  port: {port}')
 
         if ip_v4: y.append(f'  ip: {ip_v4}')
         if ip_v6: y.append(f'  ipv6: {ip_v6}')
 
-        pk = iface.get('privatekey')
+        pk = get_val(iface, 'privatekey', 'private-key')
         if pk: y.append(f'  private-key: {pk}')
 
-        pubk = peer.get('publickey')
+        pubk = get_val(peer, 'publickey', 'public-key')
         if pubk: y.append(f'  public-key: {pubk}')
 
-        psk = peer.get('presharedkey')
+        psk = get_val(peer, 'presharedkey', 'pre-shared-key')
         if psk: y.append(f'  pre-shared-key: {psk}')
 
-        dns_raw = iface.get('dns')
+        dns_raw = get_val(iface, 'dns')
         if dns_raw:
             dns_list = [d.strip() for d in dns_raw.split(',')]
             y.append(f'  dns: {json.dumps(dns_list)}')
 
-        mtu = iface.get('mtu')
+        mtu = get_val(iface, 'mtu')
         if mtu: y.append(f'  mtu: {mtu}')
 
         y.append('  udp: true')
 
-        # AmneziaWG options
-        std_wg_keys = ['privatekey', 'address', 'dns', 'mtu', 'listenport', 'table', 'preup', 'postup', 'predown',
-                       'postdown']
-        amn_opts = {}
+        AWG_KEY_MAP = {
+            'headerprotectionkey': 'header-protection-key',
+            'contentpaddingaddition': 'content-padding-addition',
+            'rekeyaftertime': 'rekey-after-time',
+            'rekeytimeout': 'rekey-timeout',
+            'rejectaftertime': 'reject-after-time',
+            'keepalivetimeout': 'keepalive-timeout',
+            'maxhandshakeattempts': 'max-handshake-attempts',
+            'randomtrailers': 'random-trailers',
+            'disablecookies': 'disable-cookies',
+            'jc': 'jc',
+            'jmin': 'jmin',
+            'jmax': 'jmax',
+            's1': 's1',
+            's2': 's2',
+            's3': 's3',
+            's4': 's4',
+            'h1': 'h1',
+            'h2': 'h2',
+            'h3': 'h3',
+            'h4': 'h4',
+            'i1': 'i1',
+            'i2': 'i2',
+            'i3': 'i3',
+            'i4': 'i4',
+            'i5': 'i5',
+            'j1': 'j1',
+            'j2': 'j2',
+            'j3': 'j3',
+            'itime': 'itime',
+            'version': 'version'
+        }
 
-        for k, v in iface.items():
-            if k not in std_wg_keys:
-                # Проверяем, является ли значение числом
-                if v.isdigit() or (v.startswith('-') and v[1:].isdigit()):
-                    amn_opts[k] = int(v)
+        std_wg_keys = {
+            'privatekey', 'address', 'dns', 'mtu', 'listenport', 'table',
+            'preup', 'postup', 'predown', 'postdown', 'saveconfig'
+        }
+
+        amn_opts = {}
+        for norm_k, (orig_k, v) in iface.items():
+            if norm_k in std_wg_keys:
+                continue
+
+            target_key = AWG_KEY_MAP.get(norm_k, orig_k.lower())
+            val_lower = v.lower()
+
+            if target_key in ('random-trailers', 'disable-cookies'):
+                if val_lower in ('on', 'true', 'yes', '1', 'enable', 'enabled'):
+                    amn_opts[target_key] = True
+                elif val_lower in ('off', 'false', 'no', '0', 'disable', 'disabled'):
+                    amn_opts[target_key] = False
                 else:
-                    # Если не число, сохраняем как есть (строкой)
-                    amn_opts[k] = v
+                    amn_opts[target_key] = v
+            elif v.isdigit() or (v.startswith('-') and v[1:].isdigit()):
+                amn_opts[target_key] = int(v)
+            else:
+                amn_opts[target_key] = v
+
+        v3_keys = {
+            'header-protection-key', 'content-padding-addition', 'rekey-after-time',
+            'rekey-timeout', 'reject-after-time', 'keepalive-timeout',
+            'max-handshake-attempts', 'random-trailers', 'disable-cookies'
+        }
+        has_v3 = any(k in amn_opts for k in v3_keys)
+        has_v3_1 = 'random-trailers' in amn_opts or 'disable-cookies' in amn_opts
+
+        if has_v3 and 'version' not in amn_opts:
+            amn_opts['version'] = 3
 
         if amn_opts:
             y.append('  amnezia-wg-option:')
+            if 'version' in amn_opts:
+                y.append(f'    version: {amn_opts["version"]}')
+
             for k, v in amn_opts.items():
-                if isinstance(v, str):
-                    if not v:  # Пустая строка
+                if k == 'version': continue
+                if isinstance(v, bool):
+                    y.append(f'    {k}: {"true" if v else "false"}')
+                elif isinstance(v, str):
+                    if not v:
                         y.append(f'    {k}: ""')
                     else:
                         y.append(f'    {k}: {v}')
                 else:
                     y.append(f'    {k}: {v}')
 
-        allowed = peer.get('allowedips')
+        allowed = get_val(peer, 'allowedips', 'allowed-ips')
         if allowed:
             al_list = [x.strip() for x in allowed.split(',')]
             y.append(f'  allowed-ips: {json.dumps(al_list)}')
 
-        ka = peer.get('persistentkeepalive')
+        ka = get_val(peer, 'persistentkeepalive', 'persistent-keepalive')
         if ka:
-            y.append(f'  persistent-keepalive: {ka}')
+            ka_clean = ka.split('-')[0].strip() if '-' in ka and not ka.strip().startswith('-') else ka.strip()
+            try:
+                y.append(f'  persistent-keepalive: {int(ka_clean)}')
+            except ValueError:
+                pass
 
-        return {"yaml": "\n".join(y), "name": name}, None
+        if amn_opts:
+            if has_v3_1 or amn_opts.get('version') == 3:
+                proto = "AmneziaWG v3.1"
+            elif any(k in amn_opts for k in ('s1', 's2', 's3', 's4', 'h1', 'h2', 'h3', 'h4', 'i1', 'i2', 'i3', 'i4', 'i5', 'j1', 'j2', 'j3', 'itime')):
+                proto = "AmneziaWG v1.5/2.0"
+            elif any(k in amn_opts for k in ('jc', 'jmin', 'jmax')):
+                proto = "AmneziaWG v1.0"
+            else:
+                proto = "AmneziaWG"
+        else:
+            proto = "WireGuard Classic"
+
+        return {"yaml": "\n".join(y), "name": name, "protocol": proto}, None
 
     except Exception as e:
         return None, str(e)
@@ -369,216 +477,445 @@ def replace_proxy_block(content, target_name, new_yaml_lines):
     return "\n".join(new_content_lines)
 
 
-HTML_TEMPLATE = """<!DOCTYPE html>
+HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Mihomo Studio v1.4</title>
+<title>Mihomo Studio v1.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 :root {
-    --bg-grad: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-    --bg-sec: rgba(255, 255, 255, 0.4);
-    --bg-ter: rgba(255, 255, 255, 0.6);
-    --txt: #1c1e21; --txt-sec: #4b4f56; --bd: rgba(255, 255, 255, 0.5);
-    --btn-s: linear-gradient(135deg, #1877f2, #2851a3); --btn-r: linear-gradient(135deg, #42b72a, #2b7a1a); --btn-d: linear-gradient(135deg, #fa383e, #a61a1e); --btn-u: linear-gradient(135deg, #f7b928, #b8860b); --btn-g: rgba(255,255,255,0.7);
-    --btn-g-txt: #050505;
-    --log-bg: rgba(0, 0, 0, 0.7); --log-txt: #e4e6eb;
-    --comp-h: 40px; --radius: 12px;
-    --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    --glass-sh: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    --glass-blur: blur(12px);
+    --bg-grad: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%);
+    --bg-sec: rgba(17, 24, 39, 0.78);
+    --bg-ter: rgba(31, 41, 55, 0.65);
+    --txt: #f9fafb; --txt-sec: #9ca3af; --bd: rgba(255, 255, 255, 0.12);
+    --btn-s: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --btn-r: linear-gradient(135deg, #059669, #047857);
+    --btn-d: linear-gradient(135deg, #dc2626, #991b1b);
+    --btn-u: linear-gradient(135deg, #d97706, #b45309);
+    --btn-g: rgba(255, 255, 255, 0.08);
+    --btn-g-txt: #f3f4f6;
+    --log-bg: rgba(10, 15, 26, 0.92); --log-txt: #e2e8f0;
+    --comp-h: 36px; --radius: 10px;
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --glass-sh: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    --glass-blur: blur(16px);
 }
 body.dark {
-    --bg-grad: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
-    --bg-sec: rgba(30, 30, 30, 0.5);
-    --bg-ter: rgba(45, 45, 45, 0.6);
-    --txt: #e4e6eb; --txt-sec: #b0b3b8; --bd: rgba(255, 255, 255, 0.1);
-    --btn-s: linear-gradient(135deg, #2d88ff, #1a5bb8); --btn-r: linear-gradient(135deg, #45bd62, #2d8240); --btn-d: linear-gradient(135deg, #f02849, #9e152b); --btn-u: linear-gradient(135deg, #f7b928, #b8860b); --btn-g: rgba(255,255,255,0.1);
-    --btn-g-txt: #e4e6eb;
-    --log-bg: rgba(0, 0, 0, 0.85);
-    --shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    --glass-sh: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    --bg-grad: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%);
+    --bg-sec: rgba(17, 24, 39, 0.78);
+    --bg-ter: rgba(31, 41, 55, 0.65);
+    --txt: #f9fafb; --txt-sec: #9ca3af; --bd: rgba(255, 255, 255, 0.12);
+    --btn-s: linear-gradient(135deg, #2563eb, #1d4ed8);
+    --btn-r: linear-gradient(135deg, #059669, #047857);
+    --btn-d: linear-gradient(135deg, #dc2626, #991b1b);
+    --btn-u: linear-gradient(135deg, #d97706, #b45309);
+    --btn-g: rgba(255, 255, 255, 0.08);
+    --btn-g-txt: #f3f4f6;
+    --log-bg: rgba(10, 15, 26, 0.92);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    --glass-sh: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+body.light {
+    --bg-grad: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%);
+    --bg-sec: rgba(255, 255, 255, 0.88);
+    --bg-ter: rgba(241, 245, 249, 0.92);
+    --txt: #0f172a; --txt-sec: #475569; --bd: rgba(15, 23, 42, 0.12);
+    --btn-s: linear-gradient(135deg, #2563eb, #1e40af);
+    --btn-r: linear-gradient(135deg, #10b981, #059669);
+    --btn-d: linear-gradient(135deg, #ef4444, #b91c1c);
+    --btn-u: linear-gradient(135deg, #f59e0b, #d97706);
+    --btn-g: rgba(15, 23, 42, 0.06);
+    --btn-g-txt: #0f172a;
+    --log-bg: rgba(15, 23, 42, 0.95); --log-txt: #f8fafc;
+    --shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    --glass-sh: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 body.midnight {
-    --bg-grad: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-    --bg-sec: rgba(15, 23, 42, 0.6);
-    --bg-ter: rgba(30, 41, 59, 0.7);
-    --txt: #f1f5f9; --txt-sec: #94a3b8; --bd: rgba(255, 255, 255, 0.08);
-    --btn-s: linear-gradient(135deg, #3b82f6, #1d4ed8); --btn-r: linear-gradient(135deg, #10b981, #047857); --btn-d: linear-gradient(135deg, #ef4444, #b91c1c); --btn-u: linear-gradient(135deg, #f59e0b, #b45309); --btn-g: rgba(255,255,255,0.1);
-    --btn-g-txt: #f1f5f9;
+    --bg-grad: linear-gradient(135deg, #020617 0%, #0b132b 50%, #1c2541 100%);
+    --bg-sec: rgba(11, 19, 43, 0.78);
+    --bg-ter: rgba(28, 37, 65, 0.65);
+    --txt: #f8fafc; --txt-sec: #94a3b8; --bd: rgba(56, 189, 248, 0.18);
+    --btn-s: linear-gradient(135deg, #0284c7, #0369a1);
+    --btn-r: linear-gradient(135deg, #0d9488, #0f766e);
+    --btn-d: linear-gradient(135deg, #e11d48, #be123c);
+    --btn-u: linear-gradient(135deg, #ea580c, #c2410c);
+    --btn-g: rgba(56, 189, 248, 0.08);
+    --btn-g-txt: #e0f2fe;
+    --log-bg: rgba(2, 6, 23, 0.92);
 }
 body.cyber {
-    --bg-grad: radial-gradient(circle at center, #001100 0%, #000000 100%);
-    --bg-sec: rgba(0, 20, 0, 0.6);
-    --bg-ter: rgba(0, 40, 0, 0.7);
-    --txt: #00ff00; --txt-sec: #00cc00; --bd: rgba(0, 255, 0, 0.3);
-    --btn-s: linear-gradient(135deg, #007700, #004400); --btn-r: linear-gradient(135deg, #00aa00, #005500); --btn-d: linear-gradient(135deg, #aa0000, #550000); --btn-u: linear-gradient(135deg, #aaaa00, #555500); --btn-g: rgba(0, 255, 0, 0.1);
-    --btn-g-txt: #00ff00;
-    --radius: 0px;
-    --shadow: 0 0 12px rgba(0, 255, 0, 0.2);
-    --glass-sh: inset 0 0 0 1px rgba(0, 255, 0, 0.2);
+    --bg-grad: radial-gradient(circle at center, #021a08 0%, #000000 100%);
+    --bg-sec: rgba(0, 26, 8, 0.78);
+    --bg-ter: rgba(0, 45, 15, 0.65);
+    --txt: #00ff66; --txt-sec: #00bb44; --bd: rgba(0, 255, 102, 0.3);
+    --btn-s: linear-gradient(135deg, #008833, #005520);
+    --btn-r: linear-gradient(135deg, #00cc44, #008822);
+    --btn-d: linear-gradient(135deg, #cc1100, #770000);
+    --btn-u: linear-gradient(135deg, #cc9900, #775500);
+    --btn-g: rgba(0, 255, 102, 0.12);
+    --btn-g-txt: #00ff66;
+    --radius: 6px;
+    --shadow: 0 0 16px rgba(0, 255, 102, 0.25);
+    --glass-sh: inset 0 0 0 1px rgba(0, 255, 102, 0.25);
 }
 
-body{font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background:var(--bg-grad); color:var(--txt); margin:0; display:flex; flex-direction:column; height:100vh; overflow:hidden;}
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-grad); color: var(--txt); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 * { box-sizing: border-box; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: var(--radius); }
-::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.25); border-radius: var(--radius); }
+::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.45); }
 
-.hdr{background:var(--bg-sec); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); padding:0 20px; border-bottom:1px solid var(--bd); display:flex; justify-content:space-between; align-items:center; height:60px; flex-shrink:0; box-shadow:var(--shadow), var(--glass-sh); z-index:10;}
-.bar{background:var(--bg-sec); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); padding:10px 20px; display:flex; gap:10px; border-bottom:1px solid var(--bd); flex-wrap:wrap; flex-shrink:0; align-items:center; z-index:9; box-shadow:var(--shadow), var(--glass-sh);}
+/* Header */
+.hdr {
+    background: var(--bg-sec);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    padding: 0 16px;
+    border-bottom: 1px solid var(--bd);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 48px;
+    min-height: 48px;
+    flex-shrink: 0;
+    box-shadow: var(--shadow), var(--glass-sh);
+    z-index: 10;
+}
+.hdr-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.logo {
+    font-size: 18px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #3b82f6, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.4px;
+    white-space: nowrap;
+}
+.ver-badge {
+    color: var(--txt-sec);
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg-ter);
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--bd);
+}
+.hdr-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+.live-clock {
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--txt-sec);
+    background: var(--bg-ter);
+    border: 1px solid var(--bd);
+    padding: 2px 8px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    min-width: 72px;
+    letter-spacing: 0.5px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+.btn-hdr {
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    gap: 4px !important;
+}
+
+/* Action Toolbar */
+.bar {
+    background: var(--bg-sec);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--bd);
+    flex-shrink: 0;
+    z-index: 9;
+    box-shadow: var(--shadow), var(--glass-sh);
+}
+.bar-main {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.bar-opts {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.bar-sel {
+    height: 32px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+    width: auto !important;
+}
 
 button, input, select, textarea {
-    font-family: inherit; font-size: 14px; color: var(--txt);
+    font-family: inherit; font-size: 13px; color: var(--txt);
     border: 1px solid var(--bd); border-radius: var(--radius);
     background: var(--bg-ter);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); outline: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); outline: none;
     box-shadow: var(--shadow);
 }
-button { 
-    height: var(--comp-h); padding: 0 20px; cursor: pointer; color: #fff; font-weight: 600; 
-    display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+button {
+    height: var(--comp-h); padding: 0 14px; cursor: pointer; color: #fff; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
 }
-button:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 6px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3); }
-button:active { transform: translateY(1px) scale(0.97); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-input, select { height: var(--comp-h); padding: 0 12px; width: 100%; backdrop-filter: blur(5px); }
-input:focus, select:focus, textarea:focus { border-color: rgba(24, 119, 242, 0.6); box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2), inset 0 1px 2px rgba(0,0,0,0.1); background: var(--bg-sec); }
+button:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25); }
+button:active { transform: translateY(1px) scale(0.98); box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+input, select { height: var(--comp-h); padding: 0 10px; width: 100%; backdrop-filter: blur(5px); }
+input:focus, select:focus, textarea:focus { border-color: rgba(37, 99, 235, 0.7); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), inset 0 1px 2px rgba(0,0,0,0.1); background: var(--bg-sec); }
 
-.btn-s{background:var(--btn-s)}.btn-r{background:var(--btn-r)}.btn-d{background:var(--btn-d)}.btn-u{background:var(--btn-u)}
-.btn-g{background:var(--btn-g); color:var(--btn-g-txt); border:1px solid var(--bd); box-shadow:var(--shadow);}
+.btn-s { background: var(--btn-s); }
+.btn-r { background: var(--btn-r); }
+.btn-d { background: var(--btn-d); }
+.btn-u { background: var(--btn-u); }
+.btn-g { background: var(--btn-g); color: var(--btn-g-txt); border: 1px solid var(--bd); box-shadow: var(--shadow); }
 
-.main{display:flex;flex:1;overflow:hidden; position:relative;}
-#ed{flex:1;font-size:14px;}
-.sb{width:340px; background:var(--bg-sec); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); border-left:1px solid var(--bd); display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; box-shadow: -4px 0 20px rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.1);}
-.sec{padding:20px; border-bottom:1px solid var(--bd); display:flex; flex-direction:column; gap:12px;}
-.sec h3{margin:0 0 8px 0; font-size:16px; font-weight:700; color:var(--txt); text-shadow: 0 1px 2px rgba(0,0,0,0.1);}
+.main { display: flex; flex: 1; overflow: hidden; position: relative; }
+#ed { flex: 1; font-size: 14px; }
+.sb { width: 330px; background: var(--bg-sec); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-left: 1px solid var(--bd); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; box-shadow: -4px 0 20px rgba(0,0,0,0.1), inset 1px 0 0 rgba(255,255,255,0.08); }
+.sec { padding: 14px 16px; border-bottom: 1px solid var(--bd); display: flex; flex-direction: column; gap: 10px; }
+.sec h3 { margin: 0 0 4px 0; font-size: 14px; font-weight: 700; color: var(--txt); text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
-.ovl{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:999; display:none; justify-content:center; align-items:center; padding:20px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: fadeIn 0.3s ease;}
-.mod{background:var(--bg-sec); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); padding:24px; border-radius:calc(var(--radius) + 4px); width:100%; max-width:600px; border:1px solid var(--bd); display:flex; flex-direction:column; max-height:90vh; box-shadow: 0 25px 50px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.1); animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
-.mod h3{margin-top:0; color:var(--txt); border-bottom:1px solid var(--bd); padding-bottom:15px; margin-bottom:20px; font-size:18px;}
-@keyframes slideUp { from { opacity:0; transform: translateY(20px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }
+.ovl { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: fadeIn 0.2s ease; }
+.mod { background: var(--bg-sec); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); padding: 22px; border-radius: calc(var(--radius) + 4px); width: 100%; max-width: 580px; border: 1px solid var(--bd); display: flex; flex-direction: column; max-height: 90vh; box-shadow: 0 20px 40px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.1); animation: slideUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.mod h3 { margin-top: 0; color: var(--txt); border-bottom: 1px solid var(--bd); padding-bottom: 12px; margin-bottom: 16px; font-size: 17px; }
+@keyframes slideUp { from { opacity:0; transform: translateY(15px) scale(0.97); } to { opacity:1; transform: translateY(0) scale(1); } }
 
-.bk-item{background:var(--bg-ter); padding:10px 12px; margin-bottom:8px; border:1px solid var(--bd); border-radius:var(--radius); display:flex; justify-content:space-between; align-items:center; height:auto; min-height:44px; transition: all 0.2s;}
-.bk-item:hover { background: var(--bg-sec); transform: translateX(2px); box-shadow: var(--shadow); border-color: rgba(255,255,255,0.3); }
-.bk-item div:first-child { flex: 1; min-width: 0; padding-right: 10px; display: flex; flex-direction: column; justify-content: center; }
-.bk-item b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-size: 14px; margin-bottom: 2px;}
-.bk-btns { display: flex; gap: 6px; flex-shrink: 0; }
-.bk-btns button { width: 32px; padding: 0; height: 32px; font-size: 16px; border-radius: 50%; border-radius: var(--radius); }
+.bk-item { background: var(--bg-ter); padding: 8px 10px; margin-bottom: 6px; border: 1px solid var(--bd); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; height: auto; min-height: 38px; transition: all 0.2s; }
+.bk-item:hover { background: var(--bg-sec); transform: translateX(2px); box-shadow: var(--shadow); border-color: rgba(255,255,255,0.25); }
+.bk-item div:first-child { flex: 1; min-width: 0; padding-right: 8px; display: flex; flex-direction: column; justify-content: center; }
+.bk-item b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-size: 13px; margin-bottom: 2px; }
+.bk-btns { display: flex; gap: 5px; flex-shrink: 0; }
+.bk-btns button { width: 30px; padding: 0; height: 30px; font-size: 15px; border-radius: var(--radius); }
 
-#bk-content { background: var(--log-bg); color: var(--log-txt); font-family: 'Consolas', 'Monaco', monospace; padding: 15px; border-radius: var(--radius); border: 1px solid var(--bd); white-space: pre-wrap; overflow-y: auto; flex-grow: 1; min-height: 200px; max-height: 60vh; font-size: 13px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); }
-.bk-controls {display:flex; gap:10px; align-items:center; background:var(--bg-ter); padding:8px 12px; border-radius:var(--radius); border: 1px solid var(--bd); box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);}
-.bk-controls input {width: 60px !important; text-align: center; margin:0; height: 32px; padding: 0;}
-.bk-controls span {font-size:13px; color:var(--txt-sec); white-space: nowrap;}
-.bk-controls button { height: 32px; font-size: 12px; padding: 0 12px; margin-left: auto; }
-#bk-list { max-height: 250px; overflow-y: auto; padding-right: 5px; }
+#bk-content { background: var(--log-bg); color: var(--log-txt); font-family: 'JetBrains Mono', 'Consolas', monospace; padding: 12px; border-radius: var(--radius); border: 1px solid var(--bd); white-space: pre-wrap; overflow-y: auto; flex-grow: 1; min-height: 200px; max-height: 60vh; font-size: 13px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); }
+.bk-controls { display: flex; gap: 8px; align-items: center; background: var(--bg-ter); padding: 6px 10px; border-radius: var(--radius); border: 1px solid var(--bd); box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); }
+.bk-controls input { width: 55px !important; text-align: center; margin: 0; height: 30px; padding: 0; }
+.bk-controls span { font-size: 12px; color: var(--txt-sec); white-space: nowrap; }
+.bk-controls button { height: 30px; font-size: 12px; padding: 0 10px; margin-left: auto; }
+#bk-list { max-height: 220px; overflow-y: auto; padding-right: 4px; }
 
-.prof-row {display:flex; gap:10px; align-items:center;}
-#prof-sel { flex: 1; font-weight: 500;}
-.prof-btns { display: flex; gap: 10px; margin-top: 5px; }
-.prof-btns button { flex: 1; }
-.proxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.prof-row { display: flex; gap: 8px; align-items: center; }
+#prof-sel { flex: 1; font-weight: 500; }
+.prof-btns { display: flex; gap: 8px; margin-top: 4px; }
+.prof-btns button { flex: 1; height: 34px; font-size: 12px; }
+.proxy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.proxy-grid button { height: 34px; font-size: 12px; }
 
-#last-load { font-size: 12px; color: var(--txt-sec); background: var(--bg-ter); border: 1px solid var(--bd); padding: 4px 12px; border-radius: 20px; display: inline-flex; align-items: center; height: 28px; font-weight: 500; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
-
-#cons{background:var(--log-bg); color:var(--log-txt); font-family:'Consolas', 'Monaco', monospace; padding:15px; height:350px; overflow:auto; white-space:pre-wrap; font-size:13px; border:1px solid var(--bd); border-radius:var(--radius); box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);}
-.g-list {display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; overflow-y: auto; padding: 5px; margin-top: 5px; max-height: 300px;}
+#cons { background: var(--log-bg); color: var(--log-txt); font-family: 'JetBrains Mono', 'Consolas', monospace; padding: 12px; height: 320px; overflow: auto; white-space: pre-wrap; font-size: 13px; border: 1px solid var(--bd); border-radius: var(--radius); box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); line-height: 1.5; }
+.log-line { margin-bottom: 2px; }
+.g-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; overflow-y: auto; padding: 4px; margin-top: 5px; max-height: 280px; }
 .g-item { position: relative; }
 .g-item input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
-.g-item label {display: flex; align-items: center; justify-content: center; background: var(--bg-ter); border: 1px solid var(--bd); border-radius: var(--radius); padding: 10px 5px; font-size: 13px; color: var(--txt); cursor: pointer; transition: all 0.2s; text-align: center; user-select: none; word-break: break-word; min-height: 40px; font-weight: 500;}
+.g-item label { display: flex; align-items: center; justify-content: center; background: var(--bg-ter); border: 1px solid var(--bd); border-radius: var(--radius); padding: 8px 4px; font-size: 12px; color: var(--txt); cursor: pointer; transition: all 0.2s; text-align: center; user-select: none; word-break: break-word; min-height: 38px; font-weight: 500; }
 .g-item label:hover { transform: translateY(-1px); background: var(--bg-sec); box-shadow: var(--shadow); }
-.g-item input:checked + label {background: linear-gradient(135deg, #1877f2, #2851a3); color: white; border-color: transparent; font-weight: bold; box-shadow: 0 4px 12px rgba(24, 119, 242, 0.4);}
+.g-item input:checked + label { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-color: transparent; font-weight: bold; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); }
 
-.toast {position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--bg-sec); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: var(--txt); padding: 12px 24px; border-radius: 30px; z-index: 3000; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.1); border: none; font-weight: 500; align-items: center; gap: 10px; animation: slideUpToast 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);}
-@keyframes slideUpToast { from { opacity:0; transform: translate(-50%, 20px); } to { opacity:1; transform: translate(-50%, 0); } }
-.toast-icon { font-size: 18px; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--bg-sec); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: var(--txt); padding: 10px 20px; border-radius: 25px; z-index: 3000; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.1); border: none; font-weight: 500; align-items: center; gap: 8px; font-size: 13px; animation: slideUpToast 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes slideUpToast { from { opacity:0; transform: translate(-50%, 15px); } to { opacity:1; transform: translate(-50%, 0); } }
+.toast-icon { font-size: 16px; }
 
-.modal-tabs { display: flex; border-bottom: 1px solid var(--bd); margin-bottom: 20px; gap: 20px;}
-.modal-tabs button { flex: 1; justify-content: center; background: none; border: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 10px; font-size: 15px; color: var(--txt-sec); height: auto; box-shadow: none; font-weight:600; transition: color 0.2s; }
-.modal-tabs button:hover { color: var(--txt); background: none; transform:none; }
-.modal-tabs button.active { color: #1877f2; border-bottom-color: #1877f2; }
+.modal-tabs { display: flex; border-bottom: 1px solid var(--bd); margin-bottom: 16px; gap: 15px; }
+.modal-tabs button { flex: 1; justify-content: center; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; padding: 8px; font-size: 14px; color: var(--txt-sec); height: auto; box-shadow: none; font-weight: 600; transition: color 0.2s; }
+.modal-tabs button:hover { color: var(--txt); background: none; transform: none; }
+.modal-tabs button.active { color: #3b82f6; border-bottom-color: #3b82f6; }
 .tab-content { display: none; animation: fadeIn 0.2s ease-out; }
 .tab-content.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-.file-drop-zone { border: 2px dashed var(--bd); border-radius: var(--radius); padding: 30px; text-align: center; color: var(--txt-sec); cursor: pointer; transition: all 0.2s; margin-bottom: 15px; background: rgba(0,0,0,0.02); }
-.file-drop-zone:hover { background: var(--bg-sec); border-color: rgba(24,119,242,0.5); color: #1877f2; transform: translateY(-1px); }
-.file-drop-zone.dragover { background: rgba(24,119,242,0.1); border-color: #1877f2; }
+.file-drop-zone { border: 2px dashed var(--bd); border-radius: var(--radius); padding: 20px; text-align: center; color: var(--txt-sec); cursor: pointer; transition: all 0.2s; margin-bottom: 12px; background: rgba(0,0,0,0.03); }
+.file-drop-zone:hover { background: var(--bg-sec); border-color: rgba(37, 99, 235, 0.6); color: #3b82f6; transform: translateY(-1px); }
+.file-drop-zone.dragover { background: rgba(37, 99, 235, 0.12); border-color: #3b82f6; color: #3b82f6; }
 
-.log-time { color: #888; margin-right: 8px; font-size: 0.9em; }
-.log-info { color: #4dabf7; font-weight: bold; }
-.log-warn { color: #ff922b; font-weight: bold; }
-.log-err { color: #ff6b6b; font-weight: bold; }
-.log-green { color: #51cf66; }
-.log-yellow { color: #fcc419; }
+.proto-badge-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-ter); border: 1px solid var(--bd); border-radius: var(--radius); margin-bottom: 12px; animation: fadeIn 0.2s ease-out; }
+.proto-lbl { font-size: 12px; color: var(--txt-sec); font-weight: 500; }
+.badge-proto { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 16px; letter-spacing: 0.3px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.badge-awg3 { background: linear-gradient(135deg, #8b5cf6, #06b6d4); color: #ffffff; box-shadow: 0 0 10px rgba(139, 92, 246, 0.4); }
+.badge-awg2 { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #ffffff; }
+.badge-awg1 { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #ffffff; }
+.badge-wg { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
+.badge-reality { background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #ffffff; }
+.badge-ws { background: linear-gradient(135deg, #06b6d4, #3b82f6); color: #ffffff; }
+.badge-grpc { background: linear-gradient(135deg, #f59e0b, #ea580c); color: #ffffff; }
+.badge-vless { background: linear-gradient(135deg, #6366f1, #a855f7); color: #ffffff; }
 
-.logo { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #1877f2, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.mobile-nav-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    background: var(--bg-sec);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--bd);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+}
+.mob-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 0;
+    height: 100%;
+    padding: 2px 0;
+    color: var(--txt-sec);
+    gap: 2px;
+    box-shadow: none;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.mob-tab:hover { background: none; transform: none; color: var(--txt); }
+.mob-tab.active { color: #3b82f6; font-weight: 700; }
+.mob-icon { font-size: 16px; line-height: 1; }
+.mob-lbl { font-size: 10px; line-height: 1; }
 
 @media (max-width: 768px) {
-    .main { flex-direction: column; }
-    .sb { width: 100%; border-left: none; border-top: 1px solid var(--bd); height: auto; max-height: 50vh; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-    #ed { flex: 1; min-height: 40vh; }
-    .bar { padding: 8px; gap: 6px; }
-    .bar button, .bar select { flex: 1 1 calc(33% - 6px); justify-content: center; font-size: 13px; padding: 0 10px; }
-    .mod { width: 95%; max-height: 95vh; padding: 15px; }
-    .hdr { padding: 8px 10px; height: auto; min-height: 50px; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .logo { font-size: 16px; }
-    .hdr button { font-size: 11px !important; padding: 0 6px !important; }
+    .mobile-nav-bar { display: flex !important; }
+    .main { flex-direction: column; height: calc(100vh - 148px); }
+    .sb { width: 100%; border-left: none; border-top: none; height: 100%; max-height: none; padding-bottom: 60px; box-shadow: none; }
+    #ed { width: 100%; height: calc(100vh - 148px); min-height: 250px; }
+    
+    .hdr {
+        padding: 0 10px;
+        height: 44px;
+        min-height: 44px;
+    }
+    .logo {
+        font-size: 15px;
+    }
+    .live-clock {
+        font-size: 11px;
+        padding: 2px 6px;
+        min-width: 60px;
+        height: 24px;
+    }
+    .btn-hdr {
+        height: 26px !important;
+        padding: 0 6px !important;
+        font-size: 11px !important;
+        gap: 3px !important;
+    }
+
+    .bar {
+        padding: 6px 10px;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .bar-main {
+        width: 100%;
+        gap: 6px;
+    }
+    .bar-main button {
+        flex: 1;
+        height: 32px;
+        font-size: 12px;
+        padding: 0 4px;
+        justify-content: center;
+    }
+    .bar-opts {
+        width: 100%;
+        gap: 6px;
+    }
+    .bar-opts select {
+        flex: 1;
+        height: 30px;
+        font-size: 12px;
+        padding: 0 6px;
+    }
+
+    .mod { width: 95%; max-height: 90vh; padding: 16px; }
+}
+
+@media (max-width: 480px) {
+    .hdr-btn-lbl { display: none; }
+    .btn-hdr { width: 28px !important; padding: 0 !important; justify-content: center; }
 }
 </style>
 </head>
 <body>
 <div class="toast" id="toast"><span class="toast-icon"></span> <span id="toast-msg" data-i18n="toast_saved">Saved</span></div>
+
 <div class="hdr">
-    <div style="display:flex;align-items:center;gap:12px">
+    <div class="hdr-brand">
         <div class="logo" data-i18n="title">Mihomo Studio</div>
-        <span style="color:var(--txt-sec);font-size:11px;background:var(--bg-ter);padding:2px 6px;border-radius:4px;border:1px solid var(--bd)">v1.4</span>
+        <span class="ver-badge">v1.5</span>
     </div>
-    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center;">
-        <button onclick="restartService()" class="btn-r" style="height:28px; padding:0 10px; font-size:12px; gap:4px;" title="Перезапустить сервис"><span data-i18n="restart_service_short">🔄 Рестарт</span></button>
-        <button onclick="updateStudio()" class="btn-u" style="height:28px; padding:0 10px; font-size:12px; gap:4px;" title="Проверить обновления"><span data-i18n="update_btn_short">🔄 Обновить</span></button>
-        <div id="last-load" data-i18n="last_load_lbl">Loaded: __TIME__</div>
+    <div class="hdr-right">
+        <div class="live-clock" id="live-clock" title="Время">--:--:--</div>
+        <button onclick="restartService()" class="btn-r btn-hdr" title="Перезапустить веб-сервис"><span class="btn-icon">🔄</span><span class="hdr-btn-lbl" data-i18n="restart_service_short">Рестарт</span></button>
+        <button onclick="updateStudio()" class="btn-u btn-hdr" title="Проверить обновления"><span class="btn-icon">⚡</span><span class="hdr-btn-lbl" data-i18n="update_btn_short">Обновить</span></button>
     </div>
 </div>
-<div class="bar">
-    <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
-    <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
-    <button onclick="openPanel()" class="btn-g" title="Открыть встроенную панель Mihomo" data-i18n="panel">🌐 Панель</button>
 
-    <div style="display:flex; gap:8px; margin-left:auto; flex-wrap: wrap;">
-        <select id="lang-sel" onchange="setLang(this.value)" style="width:auto; min-width: 80px;">
+<div class="bar">
+    <div class="bar-main">
+        <button onclick="save('save')" class="btn-s" data-i18n="save">💾 Сохранить</button>
+        <button onclick="save('restart')" class="btn-r" data-i18n="restart">🚀 Рестарт</button>
+        <button onclick="openPanel()" class="btn-g" title="Открыть панель Mihomo" data-i18n="panel">🌐 Панель</button>
+    </div>
+    <div class="bar-opts">
+        <select id="lang-sel" onchange="setLang(this.value)" class="bar-sel">
             <option value="ru">🇷🇺 RU</option>
             <option value="en">🇺🇸 EN</option>
             <option value="uk">🇺🇦 UA</option>
         </select>
-        <select id="theme-sel" onchange="setTheme(this.value)" style="width:auto; min-width: 100px;">
-            <option value="dark" data-i18n="theme_dark">🌑 Dark</option>
-            <option value="light" data-i18n="theme_light">☀️ Light</option>
-            <option value="midnight" data-i18n="theme_midnight">🌃 Midnight</option>
-            <option value="cyber" data-i18n="theme_cyber">👾 Cyber</option>
+        <select id="theme-sel" onchange="setTheme(this.value)" class="bar-sel">
+            <option value="dark" data-i18n="theme_dark">🌑 Тёмная</option>
+            <option value="light" data-i18n="theme_light">☀️ Светлая</option>
+            <option value="midnight" data-i18n="theme_midnight">🌃 Полночь</option>
+            <option value="cyber" data-i18n="theme_cyber">👾 Кибер</option>
         </select>
     </div>
 </div>
+
 <div class="main">
     <div id="ed"></div>
     <div class="sb">
-        <div class="sec">
+        <div class="sec" id="sec-profiles">
             <h3><span data-i18n="profiles">Профили</span></h3>
             <div class="prof-row">
                 <select id="prof-sel">__PROFILES__</select>
-                <button onclick="switchProf()" class="btn-s" style="padding:0; width:40px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
-                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:40px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
+                <button onclick="switchProf()" class="btn-s" style="padding:0; width:36px; justify-content:center;" title="Выбрать" data-i18n="select">✔</button>
+                <button onclick="downloadProf()" class="btn-g" style="padding:0; width:36px; justify-content:center;" title="Скачать" data-i18n="download">💾</button>
             </div>
             <div class="prof-btns">
                  <button onclick="openAddProf()" class="btn-u" data-i18n="create">➕ Создать</button>
                  <button onclick="delProf()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
             </div>
         </div>
-        <div class="sec">
+        <div class="sec" id="sec-proxy-mgmt">
             <h3><span data-i18n="proxy_mgmt">Управление</span></h3>
             <div class="proxy-grid">
                 <button onclick="openAddProxyModal()" class="btn-s" data-i18n="add">➕ Добавить</button>
@@ -587,7 +924,7 @@ input:focus, select:focus, textarea:focus { border-color: rgba(24, 119, 242, 0.6
                 <button onclick="showDel()" class="btn-d" data-i18n="delete">🗑 Удалить</button>
             </div>
         </div>
-        <div class="sec">
+        <div class="sec" id="sec-backups">
             <h3><span data-i18n="backups">Бэкапы</span></h3>
             <div class="bk-controls">
                 <span data-i18n="keep">Оставить:</span>
@@ -596,27 +933,47 @@ input:focus, select:focus, textarea:focus { border-color: rgba(24, 119, 242, 0.6
             </div>
             <div id="bk-list">__BACKUPS__</div>
         </div>
-        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 15px; border-bottom: none; margin-top: auto;">
+        <div class="sec" style="text-align: center; font-size: 11px; color: var(--txt-sec); padding: 12px; border-bottom: none; margin-top: auto;">
             Mihomo Studio &copy; 2025 - 2026
         </div>
     </div>
 </div>
 
-<div id="m-grp" class="ovl"><div class="mod"><h3 data-i18n="modal_groups">Добавить в группы:</h3>
-<div style="display:flex; gap:10px; margin-bottom:15px"><button onclick="tgGrp(true)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_all">☑ Выбрать все</button><button onclick="tgGrp(false)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_none">☐ Снять все</button></div>
-<div id="g-cnt" class="g-list"></div>
-<div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:15px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
+<div class="mobile-nav-bar" id="mob-nav">
+    <button class="mob-tab active" id="mtab-ed" onclick="switchMobileView('ed')">
+        <span class="mob-icon">📝</span>
+        <span class="mob-lbl" data-i18n="nav_editor">Редактор</span>
+    </button>
+    <button class="mob-tab" id="mtab-prof" onclick="switchMobileView('prof')">
+        <span class="mob-icon">📁</span>
+        <span class="mob-lbl" data-i18n="nav_profiles">Профили</span>
+    </button>
+    <button class="mob-tab" id="mtab-bk" onclick="switchMobileView('bk')">
+        <span class="mob-icon">📦</span>
+        <span class="mob-lbl" data-i18n="nav_backups">Бэкапы</span>
+    </button>
+    <button class="mob-tab" id="mtab-add" onclick="openAddProxyModal()">
+        <span class="mob-icon">➕</span>
+        <span class="mob-lbl" data-i18n="nav_add">Добавить</span>
+    </button>
+</div>
 
-<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
-<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
+<div id="m-grp" class="ovl"><div class="mod"><h3 data-i18n="modal_groups">Добавить в группы:</h3>
+<div style="display:flex; gap:8px; margin-bottom:12px"><button onclick="tgGrp(true)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_all">☑ Выбрать все</button><button onclick="tgGrp(false)" class="btn-g" style="flex:1; justify-content:center" data-i18n="btn_sel_none">☐ Снять все</button></div>
+<div id="g-cnt" class="g-list"></div>
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid var(--bd)"><button onclick="applyVless()" class="btn-s" style="flex:1;justify-content:center" data-i18n="btn_add">Добавить</button><button onclick="closeM('m-grp')" class="btn-g" style="flex:1;justify-content:center" data-i18n="btn_cancel">Отмена</button></div></div></div>
+
+<div id="m-del" class="ovl"><div class="mod"><h3 data-i18n="modal_del_proxy">Удалить прокси</h3><select id="sel-del"></select><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button onclick="doDel()" class="btn-d" data-i18n="delete">Удалить</button><button onclick="closeM('m-del')" class="btn-g" data-i18n="btn_cancel">Отмена</button></div></div></div>
+
+<div id="m-con" class="ovl"><div class="mod"><h3 data-i18n="modal_console">Консоль</h3><div id="cons">...</div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button onclick="location.reload()" class="btn-s" data-i18n="btn_update">Обновить</button><button onclick="closeM('m-con')" class="btn-g" data-i18n="btn_close">Закрыть</button></div></div></div>
 
 <div id="m-ren" class="ovl"><div class="mod">
     <h3 data-i18n="modal_ren_proxy">Переименовать прокси</h3>
-    <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
+    <p style="margin-top:0;font-size:13px;color:var(--txt-sec);margin-bottom:6px;" data-i18n="lbl_sel_ren">Выберите прокси для переименования:</p>
     <select id="sel-ren-proxy"></select>
-    <p style="margin-top:15px;font-size:13px;color:var(--txt-sec);margin-bottom:8px;" data-i18n="lbl_new_name">Новое имя:</p>
+    <p style="margin-top:12px;font-size:13px;color:var(--txt-sec);margin-bottom:6px;" data-i18n="lbl_new_name">Новое имя:</p>
     <input id="inp-ren-newname" placeholder="Введите новое имя" data-i18n-ph="ph_new_name">
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:25px">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
         <button onclick="doRename()" class="btn-s" data-i18n="btn_rename">Переименовать</button>
         <button onclick="closeM('m-ren')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
     </div>
@@ -624,30 +981,35 @@ input:focus, select:focus, textarea:focus { border-color: rgba(24, 119, 242, 0.6
 
 <div id="m-add-prof" class="ovl"><div class="mod">
     <h3 data-i18n="modal_new_prof">Новый профиль</h3>
-    <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_prof_name">Имя (англ, без пробелов):</label>
-    <input id="np-name" placeholder="my_config" style="margin-bottom:15px">
-    <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
-    <div style="display:flex; gap:5px; margin-bottom:10px">
+    <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_prof_name">Имя (англ, без пробелов):</label>
+    <input id="np-name" placeholder="my_config" style="margin-bottom:12px">
+    <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_content">Содержимое:</label>
+    <div style="display:flex; gap:5px; margin-bottom:8px">
         <button onclick="document.getElementById('np-file').click()" class="btn-u" style="flex:1;justify-content:center" data-i18n="btn_load_file">📂 Загрузить файл</button>
     </div>
     <input type="file" id="np-file" style="display:none" onchange="loadProfFile(this)">
     <textarea id="np-content" rows="10" placeholder="Вставьте YAML конфиг сюда..." data-i18n-ph="ph_paste_yaml"></textarea>
-    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
         <button onclick="saveNewProf()" class="btn-s" data-i18n="btn_save">Сохранить</button>
         <button onclick="closeM('m-add-prof')" class="btn-g" data-i18n="btn_cancel">Отмена</button>
     </div>
 </div></div>
 
 <div id="addProxyModal" class="ovl"><div class="mod">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:15px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd); padding-bottom:12px; margin-bottom:16px;">
        <h3 id="proxyModalTitle" style="margin:0; padding:0; border:0;" data-i18n="modal_add_proxy">Добавить прокси</h3>
-       <button onclick="closeM('addProxyModal')" style="width:32px; height:32px; padding:0; background:transparent; color:var(--txt-sec); font-size:20px; box-shadow:none;">✕</button>
+       <button onclick="closeM('addProxyModal')" style="width:30px; height:30px; padding:0; background:transparent; color:var(--txt-sec); font-size:18px; box-shadow:none; border:none;">✕</button>
     </div>
 
-    <div id="edit-proxy-container" style="display:none; margin-bottom:15px;">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
+    <div id="edit-proxy-container" style="display:none; margin-bottom:12px;">
+        <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_select_edit">Выберите прокси для изменения:</label>
         <select id="edit-proxy-sel"></select>
-        <div style="font-size:12px; color:var(--btn-u); margin-top:8px; background:rgba(247, 185, 40, 0.1); padding:8px; border-radius:4px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
+        <div style="font-size:11px; color:var(--btn-u); margin-top:6px; background:rgba(217, 119, 6, 0.12); padding:6px 10px; border-radius:6px;" data-i18n="warn_edit">⚠️ Данные этого прокси будут полностью заменены новыми!</div>
+    </div>
+
+    <div id="proto-badge-row" class="proto-badge-row" style="display:none;">
+        <span class="proto-lbl" data-i18n="proto_detected">Обнаружен протокол:</span>
+        <span id="proto-badge" class="badge-proto"></span>
     </div>
 
     <div class="modal-tabs">
@@ -656,38 +1018,50 @@ input:focus, select:focus, textarea:focus { border-color: rgba(24, 119, 242, 0.6
     </div>
 
     <div id="vlessTab" class="tab-content active">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
-        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:15px;">
+        <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_vless_link">Ссылка VLESS:</label>
+        <input id="vlessLink" placeholder="vless://..." style="margin-bottom:12px;" oninput="updateProtocolBadge('vless')">
 
         <div id="vless-name-block">
-            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:15px;">
+            <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
+            <input id="vlessProxyName" placeholder="Автоматически из ссылки" data-i18n-ph="ph_auto_vless" style="margin-bottom:14px;">
         </div>
 
         <button onclick="parseVless()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
     </div>
 
     <div id="wgTab" class="tab-content">
-        <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
-        <textarea id="wgConfig" rows="8" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:15px;"></textarea>
+        <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_wg_conf">Конфигурация WireGuard:</label>
+        <div class="file-drop-zone" id="wgDropZone" onclick="document.getElementById('wgFile').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)">
+            <span data-i18n="drop_conf_here">📂 Нажмите или перетащите .conf файл сюда</span>
+        </div>
+        <textarea id="wgConfig" rows="6" placeholder="Вставьте содержимое .conf файла сюда..." data-i18n-ph="ph_paste_conf" style="width:100%; margin-bottom:12px;" oninput="updateProtocolBadge('wg')"></textarea>
 
         <div id="wg-name-block">
-            <label style="font-size:13px; margin-bottom:6px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
-            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:15px;">
+            <label style="font-size:13px; margin-bottom:4px; color:var(--txt-sec); display:block;" data-i18n="lbl_proxy_name">Имя прокси (необязательно):</label>
+            <input id="wgProxyName" placeholder="Автоматически из Endpoint" data-i18n-ph="ph_auto_wg" style="margin-bottom:14px;">
         </div>
 
-        <input type="file" id="wgFile" accept=".conf" style="display:none" onchange="loadWgFile(this)">
-        <button onclick="document.getElementById('wgFile').click()" class="btn-u" style="width:100%; justify-content:center; margin-bottom:15px;" data-i18n="btn_load_file">📂 Или загрузить .conf файл</button>
+        <input type="file" id="wgFile" accept=".conf,.txt" style="display:none" onchange="loadWgFile(this)">
         <button onclick="addWireguard()" class="btn-s" style="width:100%; justify-content:center;" data-i18n="btn_save">Сохранить</button>
+    </div>
+</div></div>
+
+<div id="m-bk-view" class="ovl"><div class="mod">
+    <h3 id="bk-view-title" data-i18n="modal_view_bk">Просмотр бэкапа</h3>
+    <pre id="bk-content"></pre>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button id="btn-bk-restore" class="btn-u" data-i18n="btn_restore">Восстановить</button>
+        <button onclick="closeM('m-bk-view')" class="btn-g" data-i18n="btn_close">Закрыть</button>
     </div>
 </div></div>
 
 <script>
 var ed=ace.edit("ed");ed.setTheme("ace/theme/monokai");ed.session.setMode("ace/mode/yaml");ed.setOptions({fontSize:14,tabSize:2,useSoftTabs:true});
-var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang";
+var pData=null, GRP_KEY="mihomo_grp_sel", LIM_KEY="mihomo_bk_lim", THM_KEY="mihomo_theme", LANG_KEY="mihomo_lang", MOB_KEY="mihomo_mob_tab";
 var initialConfig = __JSON_CONTENT__;
 var isEditMode = false;
 var currLang = 'ru';
+var currentMobileView = localStorage.getItem(MOB_KEY) || 'ed';
 
 const TR = {
     ru: {
@@ -768,14 +1142,18 @@ const TR = {
         lbl_sel_ren: "Выберите прокси для переименования:",
         lbl_new_name: "Новое имя:",
         ph_new_name: "Введите новое имя",
-        btn_rename: "Перейменувати",
+        btn_rename: "Переименовать",
         modal_console: "Консоль",
         modal_view_bk: "Просмотр бэкапа",
         log_loading: "⏳ Выполнение xkeen -restart...",
-        last_load_lbl: "Загружено: __TIME__",
-        last_saved: "Сохранено:",
-        restart_service_short: "🔄 Рестарт",
-        update_btn_short: "🔄 Обновить"
+        restart_service_short: "Рестарт",
+        update_btn_short: "Обновить",
+        nav_editor: "Редактор",
+        nav_profiles: "Профили",
+        nav_backups: "Бэкапы",
+        nav_add: "Добавить",
+        proto_detected: "Обнаружен протокол:",
+        drop_conf_here: "📂 Нажмите или перетащите .conf файл сюда"
     },
     uk: {
         title: "Mihomo Studio",
@@ -859,10 +1237,14 @@ const TR = {
         modal_console: "Консоль",
         modal_view_bk: "Перегляд бекапу",
         log_loading: "⏳ Виконання xkeen -restart...",
-        last_load_lbl: "Завантажено: __TIME__",
-        last_saved: "Збережено:",
-        restart_service_short: "🔄 Рестарт",
-        update_btn_short: "🔄 Оновити"
+        restart_service_short: "Рестарт",
+        update_btn_short: "Оновити",
+        nav_editor: "Редактор",
+        nav_profiles: "Профілі",
+        nav_backups: "Бекапи",
+        nav_add: "Додати",
+        proto_detected: "Виявлено протокол:",
+        drop_conf_here: "📂 Натисніть або перетягніть .conf файл сюди"
     },
     en: {
         title: "Mihomo Studio",
@@ -946,10 +1328,14 @@ const TR = {
         modal_console: "Console",
         modal_view_bk: "View Backup",
         log_loading: "⏳ Running xkeen -restart...",
-        last_load_lbl: "Loaded: __TIME__",
-        last_saved: "Saved:",
-        restart_service_short: "🔄 Restart",
-        update_btn_short: "🔄 Update"
+        restart_service_short: "Restart",
+        update_btn_short: "Update",
+        nav_editor: "Editor",
+        nav_profiles: "Profiles",
+        nav_backups: "Backups",
+        nav_add: "Add",
+        proto_detected: "Detected Protocol:",
+        drop_conf_here: "📂 Click or drop .conf file here"
     }
 };
 
@@ -958,6 +1344,17 @@ function t(k, ...args) {
     args.forEach((a, i) => s = s.replace('{'+i+'}', a));
     return s;
 }
+
+function updateClock() {
+    var now = new Date();
+    var h = String(now.getHours()).padStart(2, '0');
+    var m = String(now.getMinutes()).padStart(2, '0');
+    var s = String(now.getSeconds()).padStart(2, '0');
+    var el = document.getElementById('live-clock');
+    if (el) el.innerText = h + ':' + m + ':' + s;
+}
+updateClock();
+setInterval(updateClock, 1000);
 
 function setLang(l) {
     currLang = l;
@@ -973,136 +1370,237 @@ function setLang(l) {
         if(TR[l][k]) e.placeholder = TR[l][k];
     });
 
-    // Update dynamic parts
     if(isEditMode) document.getElementById('proxyModalTitle').innerText = TR[l].modal_edit_proxy;
     else document.getElementById('proxyModalTitle').innerText = TR[l].modal_add_proxy;
-
-    // Update last load label with time
-    var timeElem = document.getElementById('last-load');
-    var timeText = timeElem.innerText.split(': ')[1] || '';
-    timeElem.innerText = TR[l].last_load_lbl.replace('__TIME__', timeText);
 }
 
-// Открываем панель через наш локальный прокси (безопасно для PNA/CORS)
 function openPanel() {
     var url = window.location.protocol + "//" + window.location.host + "/mihomo_panel/ui/";
     window.open(url, '_blank');
 }
 ed.setValue(initialConfig); ed.clearSelection();
 
+function fmtLog(raw) {
+    if(!raw) return '<div class="log-line" style="color:var(--txt-sec)">Log empty</div>';
+    return raw.split('\n').map(l => {
+        if(!l.trim()) return "";
+        l = l.replace(/\x1b\[32m/g, '<span style="color:#10b981">')
+             .replace(/\x1b\[33m/g, '<span style="color:#f59e0b">')
+             .replace(/\x1b\[31m/g, '<span style="color:#ef4444">')
+             .replace(/\x1b\[0m/g, '</span>');
+        var m = l.match(/time="(.*?)"\s+level=(\w+)\s+msg="(.*)"/);
+        if(m) {
+            var ts = new Date(m[1]).toLocaleTimeString();
+            var lvl = m[2].toUpperCase();
+            var txt = m[3];
+            var cls = 'color:#38bdf8';
+            if(lvl==='WARN'||lvl==='WARNING') cls='color:#f59e0b';
+            if(lvl==='ERROR'||lvl==='FATAL') cls='color:#ef4444';
+            return `<div class="log-line"><span style="color:var(--txt-sec)">[${ts}]</span> <span style="${cls}">[${lvl}]</span> ${txt}</div>`;
+        }
+        return `<div class="log-line">${l}</div>`;
+    }).join('');
+}
+
+function detectProtocolFromWg(conf) {
+    if (!conf || !conf.trim()) return null;
+    var low = conf.toLowerCase();
+    if (low.includes('headerprotectionkey') || low.includes('header-protection-key') ||
+        low.includes('randomtrailers') || low.includes('random-trailers') ||
+        low.includes('disablecookies') || low.includes('disable-cookies') ||
+        low.includes('contentpaddingaddition') || low.includes('content-padding-addition') ||
+        low.includes('rekeyaftertime') || low.includes('rekey-after-time')) {
+        return { name: 'AmneziaWG v3.1', cls: 'badge-awg3' };
+    }
+    if (low.includes('s1') || low.includes('s2') || low.includes('s3') || low.includes('s4') ||
+        low.includes('h1') || low.includes('h2') || low.includes('h3') || low.includes('h4') ||
+        low.includes('i1') || low.includes('i2') || low.includes('j1') || low.includes('itime')) {
+        return { name: 'AmneziaWG v1.5/2.0', cls: 'badge-awg2' };
+    }
+    if (low.includes('jc') || low.includes('jmin') || low.includes('jmax')) {
+        return { name: 'AmneziaWG v1.0', cls: 'badge-awg1' };
+    }
+    if (low.includes('[interface]') || low.includes('privatekey') || low.includes('endpoint')) {
+        return { name: 'WireGuard Classic', cls: 'badge-wg' };
+    }
+    return null;
+}
+
+function detectProtocolFromVless(link) {
+    if (!link || !link.trim().startsWith('vless://')) return null;
+    var low = link.toLowerCase();
+    if (low.includes('security=reality') || low.includes('pbk=')) {
+        return { name: 'VLESS Reality', cls: 'badge-reality' };
+    }
+    if (low.includes('type=ws') || low.includes('security=tls')) {
+        return { name: 'VLESS WebSocket', cls: 'badge-ws' };
+    }
+    if (low.includes('type=grpc')) {
+        return { name: 'VLESS gRPC', cls: 'badge-grpc' };
+    }
+    return { name: 'VLESS', cls: 'badge-vless' };
+}
+
+function updateProtocolBadge(type) {
+    var badgeRow = document.getElementById('proto-badge-row');
+    var badge = document.getElementById('proto-badge');
+    var info = null;
+
+    if (type === 'vless') {
+        var link = document.getElementById('vlessLink').value;
+        info = detectProtocolFromVless(link);
+    } else if (type === 'wg') {
+        var conf = document.getElementById('wgConfig').value;
+        info = detectProtocolFromWg(conf);
+    }
+
+    if (info) {
+        badge.className = 'badge-proto ' + info.cls;
+        badge.innerText = info.name;
+        badgeRow.style.display = 'flex';
+    } else {
+        badgeRow.style.display = 'none';
+    }
+}
+
+function extractWgName(conf) {
+    if (!conf || !conf.trim()) return '';
+    var lines = conf.split(/\r?\n/);
+    var firstLineComment = null;
+    for (var i = 0; i < lines.length; i++) {
+        var l = lines[i].trim();
+        if (i === 0 && l.startsWith('#') && l.length > 2) {
+            firstLineComment = l.substring(1).trim();
+        }
+        var m = l.match(/^endpoint\s*=\s*(.+)$/i);
+        if (m && m[1]) {
+            var ep = m[1].trim();
+            if (firstLineComment) return firstLineComment;
+            if (ep.startsWith('[') && ep.includes(']:')) {
+                return 'WG_' + ep.split(']:')[0].substring(1);
+            } else if (ep.includes(':')) {
+                return 'WG_' + ep.split(':')[0].trim();
+            } else {
+                return 'WG_' + ep;
+            }
+        }
+    }
+    return firstLineComment || '';
+}
+
 document.getElementById('vlessLink').addEventListener('input', function() {
-    if(isEditMode) return; 
-    var link = this.value;
+    updateProtocolBadge('vless');
+    if(isEditMode) return;
+    var link = this.value.trim();
     if (link.startsWith("vless://") && link.includes("#")) {
         var name = link.split('#')[1];
-        document.getElementById('vlessProxyName').value = decodeURIComponent(name).trim();
+        if(name) {
+            document.getElementById('vlessProxyName').value = decodeURIComponent(name).trim();
+        }
     }
 });
 
 document.getElementById('wgConfig').addEventListener('input', function() {
+    updateProtocolBadge('wg');
     if(isEditMode) return;
-    var conf = this.value;
     var nameField = document.getElementById('wgProxyName');
-    var endpointMatch = conf.match(/Endpoint\s*=\s*(.+)/);
-    if (endpointMatch && endpointMatch[1]) {
-        var server = endpointMatch[1].split(':')[0].trim();
-        if (server) nameField.value = 'WG_' + server;
+    var autoName = extractWgName(this.value);
+    if (autoName && (!nameField.value || nameField.value.startsWith('WG_'))) {
+        nameField.value = autoName;
     }
+});
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('wgDropZone').classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('wgDropZone').classList.remove('dragover');
+}
+
+function handleFileDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('wgDropZone').classList.remove('dragover');
+    var files = e.dataTransfer.files;
+    if (files.length > 0) {
+        var f = files[0];
+        var r = new FileReader();
+        r.onload = function(evt) {
+            var content = evt.target.result;
+            document.getElementById('wgConfig').value = content;
+            if (!isEditMode) {
+                var extracted = extractWgName(content);
+                if (!extracted) {
+                    var fname = f.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+                    if (fname) extracted = fname;
+                }
+                if (extracted) document.getElementById('wgProxyName').value = extracted;
+            }
+            updateProtocolBadge('wg');
+        };
+        r.readAsText(f);
+    }
+}
+
+function switchMobileView(view) {
+    currentMobileView = view;
+    localStorage.setItem(MOB_KEY, view);
+    document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('active'));
+    var tabBtn = document.getElementById('mtab-' + view);
+    if (tabBtn) tabBtn.classList.add('active');
+
+    var edElem = document.getElementById('ed');
+    var sbElem = document.querySelector('.sb');
+    var secProf = document.getElementById('sec-profiles');
+    var secMgmt = document.getElementById('sec-proxy-mgmt');
+    var secBk = document.getElementById('sec-backups');
+
+    if (window.innerWidth <= 768) {
+        if (view === 'ed') {
+            edElem.style.display = 'block';
+            sbElem.style.display = 'none';
+            ed.resize();
+        } else if (view === 'prof') {
+            edElem.style.display = 'none';
+            sbElem.style.display = 'flex';
+            if (secProf) secProf.style.display = 'flex';
+            if (secMgmt) secMgmt.style.display = 'flex';
+            if (secBk) secBk.style.display = 'none';
+        } else if (view === 'bk') {
+            edElem.style.display = 'none';
+            sbElem.style.display = 'flex';
+            if (secProf) secProf.style.display = 'none';
+            if (secMgmt) secMgmt.style.display = 'none';
+            if (secBk) secBk.style.display = 'flex';
+        }
+    } else {
+        edElem.style.display = 'block';
+        sbElem.style.display = 'flex';
+        if (secProf) secProf.style.display = 'flex';
+        if (secMgmt) secMgmt.style.display = 'flex';
+        if (secBk) secBk.style.display = 'flex';
+        ed.resize();
+    }
+}
+
+// Initialize mobile view immediately on load
+switchMobileView(currentMobileView);
+window.addEventListener('resize', function() {
+    switchMobileView(currentMobileView);
 });
 
 function closeM(i){document.getElementById(i).style.display='none'}
 function showToast(msg){ 
     var tBox=document.getElementById('toast'); 
     var tMsg=document.getElementById('toast-msg');
-    tMsg.innerText=msg||t('toast_saved'); 
+    tMsg.innerText=msg; 
     tBox.style.display='flex'; 
-    setTimeout(()=>{tBox.style.display='none'}, 2500); 
-}
-
-function switchProf() {
-    var p = document.getElementById('prof-sel').value;
-    if(!confirm(t('confirm_switch', p))) return;
-    var params = new URLSearchParams(); params.append('act', 'switch_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
-        else window.location.reload();
-    });
-}
-function openAddProf() {
-    document.getElementById('np-name').value='';
-    document.getElementById('np-content').value='';
-    document.getElementById('m-add-prof').style.display='flex';
-}
-function loadProfFile(input) {
-    var f=input.files[0]; var r=new FileReader();
-    r.onload=function(e){document.getElementById('np-content').value = e.target.result};
-    r.readAsText(f); input.value='';
-}
-function saveNewProf() {
-    var n = document.getElementById('np-name').value.trim();
-    var c = document.getElementById('np-content').value;
-    if(!n) return alert(t('prompt_enter_name'));
-    if(!n.match(/^[a-zA-Z0-9_-]+$/)) return alert(t('error_invalid_name'));
-    var params = new URLSearchParams(); params.append('act', 'add_prof'); params.append('name', n); params.append('content', c);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
-        else { showToast(t('toast_saved')); setTimeout(()=>{window.location.reload()}, 500); }
-    });
-}
-function delProf() {
-    var p = document.getElementById('prof-sel').value;
-    if(!p) return;
-    if(!confirm(t('confirm_del_prof', p))) return;
-    var params = new URLSearchParams(); params.append('act', 'del_prof'); params.append('name', p);
-    fetch('/',{method:'POST',body:params}).then(r=>r.json()).then(d=>{
-        if(d.error) alert(d.error);
-        else { showToast(t('toast_deleted')); setTimeout(()=>{window.location.reload()}, 500); }
-    });
-}
-
-function downloadProf() {
-    var sel = document.getElementById('prof-sel');
-    if (!sel.value) return;
-    var name = sel.value;
-    var params = new URLSearchParams();
-    params.append('act', 'get_prof_content');
-    params.append('name', name);
-    fetch('/', { method: 'POST', body: params })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                alert(d.error);
-            } else {
-                var a = document.createElement('a');
-                a.href = 'data:text/yaml;charset=utf-8,' + encodeURIComponent(d.content);
-                a.download = name + '.yaml';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                showToast('💾');
-            }
-        });
-}
-
-function fmtLog(raw) {
-    if(!raw) return "Log empty";
-    return raw.split('\\n').map(l => {
-        if(!l.trim()) return "";
-        l = l.replace(/\\x1b\\[32m/g, '<span class="log-green">')
-             .replace(/\\x1b\\[33m/g, '<span class="log-yellow">')
-             .replace(/\\x1b\\[0m/g, '</span>');
-        var m = l.match(/time="(.*?)"\s+level=(\w+)\s+msg="(.*)"/);
-        if(m) {
-            var ts = new Date(m[1]).toLocaleTimeString();
-            var lvl = m[2].toUpperCase();
-            var txt = m[3];
-            var cls = 'log-info';
-            if(lvl==='WARN'||lvl==='WARNING') cls='log-warn';
-            if(lvl==='ERROR'||lvl==='FATAL') cls='log-err';
-            return `<div class="log-line"><span class="log-time">[${ts}]</span><span class="${cls}">[${lvl}]</span> ${txt}</div>`;
-        }
-        return `<div class="log-line">${l}</div>`;
-    }).join('');
+    setTimeout(function(){tBox.style.display='none'}, 3000);
 }
 
 function setTheme(t) {
@@ -1110,9 +1608,9 @@ function setTheme(t) {
     localStorage.setItem(THM_KEY, t);
     document.getElementById('theme-sel').value = t;
     var aceT = 'ace/theme/monokai';
-    var edBg = '#18191a'; // monokai default bg but slightly matched to dark theme
-    if(t === 'light') { aceT = 'ace/theme/chrome'; edBg = '#f0f2f5'; }
-    if(t === 'midnight') { aceT = 'ace/theme/tomorrow_night_blue'; edBg = '#0f172a'; }
+    var edBg = '#0b0f19';
+    if(t === 'light') { aceT = 'ace/theme/chrome'; edBg = '#f8fafc'; }
+    if(t === 'midnight') { aceT = 'ace/theme/tomorrow_night_blue'; edBg = '#020617'; }
     if(t === 'cyber') { aceT = 'ace/theme/terminal'; edBg = '#000000'; }
     ed.setTheme(aceT);
     document.getElementById('ed').style.background = edBg;
@@ -1124,114 +1622,18 @@ setTheme(savedTheme);
 var savedLang = localStorage.getItem(LANG_KEY) || 'ru';
 setLang(savedLang);
 
-var bkInp = document.getElementById('bk-lim');
-if(localStorage.getItem(LIM_KEY)) bkInp.value = localStorage.getItem(LIM_KEY);
-bkInp.addEventListener('change', function(){ localStorage.setItem(LIM_KEY, this.value); });
-
-function save(mode){
-    var c=ed.getValue();
-    var p=new URLSearchParams(); p.append('act', mode); p.append('content', c);
-    if(mode==='restart') {
-        document.getElementById('m-con').style.display='flex'; 
-        document.getElementById('cons').innerHTML='<div style="padding:20px;text-align:center">' + t('log_loading') + '</div>';
-    }
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
-        if(mode==='save'){
-            showToast(t('toast_saved'));
-            document.getElementById('last-load').innerText = t('last_saved') + " " + d.time;
-            if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
-        } else {
-            var consoleDiv = document.getElementById('cons');
-            consoleDiv.innerHTML = fmtLog(d.log);
-            consoleDiv.scrollTop = consoleDiv.scrollHeight;
-        }
-    }).catch(e=>alert("Error: "+e));
-}
-
-function cleanBackups(){
-    var lim = document.getElementById('bk-lim').value;
-    if(!confirm(t('confirm_clean', lim))) return;
-    var p=new URLSearchParams(); p.append('act', 'clean_backups'); p.append('limit', lim);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
-        showToast(t('toast_cleaned'));
-        if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
-    });
-}
-
-function delBackup(fname){
-    if(!confirm(t('confirm_del_bk', fname))) return;
-    var p=new URLSearchParams(); p.append('act', 'del_backup'); p.append('f', fname);
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{
-        showToast(t('toast_deleted'));
-        if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
-    });
-}
-
-function viewBackup(fname) {
-    var p = new URLSearchParams();
-    p.append('act', 'view_backup');
-    p.append('f', fname);
-    fetch('/', { method: 'POST', body: p }).then(r => r.json()).then(d => {
-        if (d.error) {
-            alert(d.error);
-        } else {
-            document.getElementById('bk-content').textContent = d.content;
-            document.getElementById('bk-restore-btn').onclick = function() { restoreBackup(fname) };
-            document.getElementById('m-view-bk').style.display = 'flex';
-        }
-    });
-}
-
-function restoreBackup(fname){
-    if(!confirm(t('confirm_restore', fname))) return;
-    var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', fname);
-    fetch('/',{method:'POST',body:p}).then(r=>r.text()).then(()=>{
-        window.location.reload();
-    });
-}
-
-function updateStudio() {
-    if(!confirm(t('confirm_update'))) return;
-    showToast(t('toast_checking'));
-    var p = new URLSearchParams(); p.append('act', 'update_service');
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(d => {
-            alert(d.log);
-            if(d.log.includes("Установка/обновление завершено")) location.reload(); 
-        })
-        .catch(e => {
-            alert(t('alert_updating'));
-            setTimeout(() => location.reload(), 5000);
-        });
-}
-
-function restartService() {
-    if(!confirm(t('confirm_restart_service'))) return;
-    showToast(t('toast_restarting'));
-    var p = new URLSearchParams(); p.append('act', 'restart_service');
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(d => {
-            // Сервис перезапускается, поэтому ответ может не прийти или прийти с задержкой
-            // Но мы все равно попробуем перезагрузить страницу через некоторое время
-            setTimeout(() => location.reload(), 3000);
-        })
-        .catch(e => {
-            // Ошибка ожидаема, так как сервер убивает сам себя
-            setTimeout(() => location.reload(), 3000);
-        });
-}
-
 function getProxiesList() {
-    var ls = ed.getValue().split(/\\r?\\n/);
-    var prs = [], inP = 0;
-    for (var l of ls) {
-        if (l.match(/^proxies:/)) inP = 1;
-        if (inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)) inP = 0;
-        if (inP) {
-            var m = l.match(/^\s+-\s+name:\s+(.*)/);
-            if (m) prs.push(m[1].trim().replace(/^['"]|['"]$/g, ''))
+    var c = ed.getValue();
+    var prs = [];
+    var lines = c.split('\n');
+    var inP = false;
+    for(var i=0; i<lines.length; i++) {
+        var l = lines[i];
+        if(l.trim().startsWith('proxies:')) { inP = true; continue; }
+        if(inP && l.length > 0 && !l.startsWith(' ') && !l.startsWith('\t') && !l.startsWith('#')) { inP = false; break; }
+        if(inP && l.trim().startsWith('- name:')) {
+            var m = l.match(/- name:\s*["']?([^"']+)["']?/);
+            if(m && m[1]) prs.push(m[1].trim());
         }
     }
     return prs;
@@ -1245,8 +1647,8 @@ function openAddProxyModal() {
     document.getElementById('edit-proxy-container').style.display = 'none';
     document.getElementById('vless-name-block').style.display = 'block';
     document.getElementById('wg-name-block').style.display = 'block';
+    document.getElementById('proto-badge-row').style.display = 'none';
 
-    // Clear inputs
     document.getElementById('vlessLink').value = '';
     document.getElementById('vlessProxyName').value = '';
     document.getElementById('wgConfig').value = '';
@@ -1263,8 +1665,8 @@ function openEditProxyModal() {
     document.getElementById('edit-proxy-container').style.display = 'block';
     document.getElementById('vless-name-block').style.display = 'none';
     document.getElementById('wg-name-block').style.display = 'none';
+    document.getElementById('proto-badge-row').style.display = 'none';
 
-    // Populate select
     var prs = getProxiesList();
     var sel = document.getElementById('edit-proxy-sel');
     sel.innerHTML = '';
@@ -1282,7 +1684,6 @@ function openEditProxyModal() {
         });
     }
 
-    // Clear inputs
     document.getElementById('vlessLink').value = '';
     document.getElementById('wgConfig').value = '';
 
@@ -1301,6 +1702,8 @@ function switchTab(evt, tabName) {
     }
     document.getElementById(tabName).classList.add("active");
     evt.currentTarget.classList.add("active");
+    if (tabName === 'vlessTab') updateProtocolBadge('vless');
+    else if (tabName === 'wgTab') updateProtocolBadge('wg');
 }
 
 function loadWgFile(input) {
@@ -1310,7 +1713,15 @@ function loadWgFile(input) {
     r.onload = function(e) {
         var content = e.target.result;
         document.getElementById('wgConfig').value = content;
-        document.getElementById('wgConfig').dispatchEvent(new Event('input'));
+        if (!isEditMode) {
+            var extracted = extractWgName(content);
+            if (!extracted) {
+                var fname = f.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+                if (fname) extracted = fname;
+            }
+            if (extracted) document.getElementById('wgProxyName').value = extracted;
+        }
+        updateProtocolBadge('wg');
     };
     r.readAsText(f);
     input.value = '';
@@ -1348,13 +1759,13 @@ function addWireguard() {
                    showG();
                 }
             }
-        });
+        })
+        .catch(e => alert("Error: " + e));
 }
 
 function parseVless(){
     var link = document.getElementById('vlessLink').value;
     var name = '';
-
     if(isEditMode) {
         name = document.getElementById('edit-proxy-sel').value;
         if(!name || document.getElementById('edit-proxy-sel').disabled) return alert(t('error_no_proxy_edit'));
@@ -1362,19 +1773,17 @@ function parseVless(){
         name = document.getElementById('vlessProxyName').value.trim();
     }
 
-    if (!link) return;
-
+    if(!link.startsWith("vless://")) return alert("Only vless:// supported");
     var p = new URLSearchParams();
     p.append('act', 'parse');
     p.append('link', link);
     if (name) p.append('proxy_name', name);
 
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                alert(d.error);
-            } else {
+    fetch('/', {method:'POST', body:p})
+        .then(r=>r.json())
+        .then(d=>{
+            if(d.error) alert(d.error);
+            else {
                 if(isEditMode) {
                     replaceProxyData(name, d.yaml);
                 } else {
@@ -1383,23 +1792,76 @@ function parseVless(){
                     showG();
                 }
             }
+        })
+        .catch(e => alert("Error: " + e));
+}
+
+function showG(){
+    var val = ed.getValue(), grps = [], inG = false, lines = val.split('\n');
+    for(var i = 0; i < lines.length; i++){
+        var l = lines[i];
+        if(l.trim().startsWith('proxy-groups:')) { inG = true; continue; }
+        if(inG && l.length > 0 && !l.startsWith(' ') && !l.startsWith('\t') && !l.startsWith('#')) { inG = false; break; }
+        if(inG && l.trim().startsWith('- name:')){
+            var m = l.match(/- name:\s*["']?([^"']+)["']?/);
+            if(m && m[1]) grps.push(m[1].trim());
+        }
+    }
+    var h = '';
+    grps.forEach((g, idx) => {
+        var id = 'grp_' + idx;
+        h += `<div class="g-item"><input type="checkbox" id="${id}" value="${g}"><label for="${id}">${g}</label></div>`;
+    });
+    var container = document.getElementById('g-cnt');
+    container.innerHTML = h;
+    var sv = JSON.parse(localStorage.getItem(GRP_KEY));
+    if(sv && Array.isArray(sv)){
+        var cbs = container.querySelectorAll('input[type=checkbox]');
+        cbs.forEach(cb => { if(sv.includes(cb.value)) cb.checked = true; });
+    }
+    document.getElementById('m-grp').style.display = 'flex';
+}
+
+function tgGrp(v){
+    document.getElementById('g-cnt').querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=v);
+}
+
+function applyVless(){
+    if(!pData) return;
+    var cbs=document.getElementById('g-cnt').querySelectorAll('input[type=checkbox]:checked'), sel=[];
+    cbs.forEach(c=>sel.push(c.value));
+    localStorage.setItem(GRP_KEY, JSON.stringify(sel));
+
+    var p = new URLSearchParams();
+    p.append('act', 'apply_insert');
+    p.append('content', ed.getValue());
+    p.append('proxy_name', pData.name);
+    p.append('proxy_yaml', pData.yaml);
+    p.append('targets', JSON.stringify(sel));
+
+    fetch('/', {method:'POST', body:p})
+        .then(r=>r.json())
+        .then(d=>{
+            ed.setValue(d.new_content);
+            ed.clearSelection();
+            closeM('m-grp');
+            pData = null;
+            showToast(t('toast_added'));
         });
 }
 
 function replaceProxyData(targetName, newYaml) {
-    if(!confirm(t('confirm_replace', targetName))) return;
-    var content = ed.getValue();
     var p = new URLSearchParams();
     p.append('act', 'replace_proxy');
+    p.append('content', ed.getValue());
     p.append('target_name', targetName);
     p.append('new_yaml', newYaml);
-    p.append('content', content);
 
-    fetch('/', { method: 'POST', body: p })
-        .then(r => r.json())
-        .then(d => {
-            if (d.error) {
-                alert(d.error);
+    fetch('/', {method:'POST', body:p})
+        .then(r=>r.json())
+        .then(d=>{
+            if(d.error) {
+                alert('Ошибка: ' + d.error);
             } else {
                 ed.setValue(d.new_content);
                 ed.clearSelection();
@@ -1409,36 +1871,211 @@ function replaceProxyData(targetName, newYaml) {
         });
 }
 
-function showG(){
-    var txt=ed.getValue(); var ls=txt.split(/\\r?\\n/); var grps=[], inG=false;
-    for(var l of ls){ if(l.match(/^proxy-groups:/))inG=true; if(inG && l.match(/^[a-zA-Z]/) && !l.match(/^proxy-groups:/))inG=false; if(inG){var m=l.match(/^\s*-\s+name:\s+(.*)/);if(m)grps.push(m[1].trim().replace(/^['"]|['"]$/g,''))}}
-    var c=document.getElementById('g-cnt'); c.innerHTML=''; var sv=JSON.parse(localStorage.getItem(GRP_KEY));
-    if(grps.length===0) c.innerHTML='<div style="color:orange">Группы не найдены</div>';
-    else grps.forEach(g=>{
-        var ch=(sv===null||sv.includes(g))?'checked':'';
-        c.innerHTML+=`<div class="g-item"><input type="checkbox" id="c_${g}" value="${g}" ${ch}><label for="c_${g}">${g}</label></div>`;
+function save(mode){
+    var c = ed.getValue();
+    var p = new URLSearchParams(); p.append('act', mode); p.append('content', c);
+    if(mode === 'restart') {
+        document.getElementById('cons').innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-sec)">' + t('log_loading') + '</div>';
+        document.getElementById('m-con').style.display = 'flex'; 
+    }
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if(mode === 'save'){
+                showToast(t('toast_saved'));
+                if(d.backups) document.getElementById('bk-list').innerHTML = d.backups;
+            } else {
+                document.getElementById('cons').innerHTML = fmtLog(d.log);
+                document.getElementById('cons').scrollTop = document.getElementById('cons').scrollHeight;
+                document.getElementById('m-con').style.display = 'flex';
+            }
+        })
+        .catch(e => {
+            if(mode === 'restart') {
+                document.getElementById('cons').innerHTML += `<div style="color:#ef4444;padding:10px">Error: ${e}</div>`;
+            } else {
+                alert("Error: " + e);
+            }
+        });
+}
+
+function updateStudio() {
+    if (!confirm(t('confirm_update'))) return;
+    showToast(t('toast_checking'));
+    document.getElementById('cons').innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-sec)">🔍 Проверка обновлений...</div>';
+    document.getElementById('m-con').style.display = 'flex';
+    var p = new URLSearchParams();
+    p.append('act', 'update_service');
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('cons').innerHTML = fmtLog(d.log);
+            document.getElementById('cons').scrollTop = document.getElementById('cons').scrollHeight;
+        })
+        .catch(e => {
+            document.getElementById('cons').innerHTML = `<div style="color:#ef4444;padding:10px">Error: ${e}</div>`;
+        });
+}
+
+function restartService() {
+    if (!confirm(t('confirm_restart_service'))) return;
+    showToast(t('toast_restarting'));
+    var p = new URLSearchParams();
+    p.append('act', 'restart_service');
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            setTimeout(function() {
+                location.reload();
+            }, 3000);
+        })
+        .catch(e => {
+            setTimeout(function() {
+                location.reload();
+            }, 3000);
+        });
+}
+
+function switchProf(){
+    var v=document.getElementById('prof-sel').value;
+    if(confirm(t('confirm_switch', v))) {
+        var p=new URLSearchParams(); p.append('act', 'switch_prof'); p.append('name', v);
+        fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d=>{
+            if(d.error) alert(d.error);
+            else location.reload();
+        });
+    }
+}
+
+function downloadProf(){
+    var v=document.getElementById('prof-sel').value;
+    window.location.href = '/?download_profile=' + encodeURIComponent(v);
+}
+
+function openAddProf(){
+    document.getElementById('np-name').value='';
+    document.getElementById('np-content').value='';
+    document.getElementById('m-add-prof').style.display='flex';
+}
+
+function loadProfFile(inp){
+    var f = inp.files[0];
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(e){
+        document.getElementById('np-content').value = e.target.result;
+        var name = f.name.replace(/\.[^/.]+$/, "");
+        name = name.replace(/[^a-zA-Z0-9_-]/g, "_");
+        document.getElementById('np-name').value = name;
+    };
+    r.readAsText(f);
+}
+
+function saveNewProf(){
+    var n=document.getElementById('np-name').value.trim();
+    var c=document.getElementById('np-content').value;
+    if(!n) return alert(t('prompt_enter_name'));
+    if(!/^[a-zA-Z0-9_-]+$/.test(n)) return alert(t('error_invalid_name'));
+
+    var sel = document.getElementById('prof-sel');
+    for(var i=0; i<sel.options.length; i++){
+        if(sel.options[i].value === n) return alert(t('error_exists'));
+    }
+
+    var p=new URLSearchParams();
+    p.append('act', 'add_prof');
+    p.append('name', n);
+    p.append('content', c);
+    fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d=>{
+        if(d.error) alert(d.error);
+        else location.reload();
     });
-    document.getElementById('m-grp').style.display='flex';
 }
-function tgGrp(s){document.querySelectorAll('#g-cnt input').forEach(c=>c.checked=s)}
-function applyVless(){
-    closeM('m-grp'); var txt=ed.getValue(); var sels=[];
-    document.querySelectorAll('#g-cnt input:checked').forEach(c=>sels.push(c.value));
-    localStorage.setItem(GRP_KEY, JSON.stringify(sels));
-    var p=new URLSearchParams(); p.append('act','apply_insert'); p.append('content',txt); p.append('proxy_name',pData.name); p.append('proxy_yaml',pData.yaml); p.append('targets',JSON.stringify(sels));
-    fetch('/',{method:'POST',body:p}).then(r=>r.json()).then(d=>{if(d.error)alert(d.error);else{ed.setValue(d.new_content);ed.clearSelection();showToast(t('toast_added'))}});
+
+function delProf(){
+    var v=document.getElementById('prof-sel').value;
+    var sel = document.getElementById('prof-sel');
+    if(sel.options.length <= 1) return alert("Cannot delete the only profile!");
+
+    if(confirm(t('confirm_del_prof', v))){
+        var p=new URLSearchParams(); p.append('act', 'del_prof'); p.append('name', v);
+        fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d=>{
+            if(d.error) alert(d.error);
+            else location.reload();
+        });
+    }
 }
+
+function cleanBackups(){
+    var lim=document.getElementById('bk-lim').value;
+    localStorage.setItem(LIM_KEY, lim);
+    if(confirm(t('confirm_clean', lim))){
+        var p=new URLSearchParams(); p.append('act', 'clean_backups'); p.append('limit', lim);
+        fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d=>{
+            document.getElementById('bk-list').innerHTML=d.backups;
+            showToast(t('toast_cleaned'));
+        });
+    }
+}
+var svLim = localStorage.getItem(LIM_KEY);
+if(svLim) document.getElementById('bk-lim').value = svLim;
+
+function delBackup(f){
+    if(confirm(t('confirm_del_bk', f))){
+        var p=new URLSearchParams(); p.append('act', 'del_backup'); p.append('f', f);
+        fetch('/', {method:'POST', body:p}).then(r=>r.json()).then(d=>{
+            document.getElementById('bk-list').innerHTML=d.backups;
+            showToast(t('toast_deleted'));
+        });
+    }
+}
+
+function viewBackup(f) {
+    var p = new URLSearchParams();
+    p.append('act', 'view_backup');
+    p.append('f', f);
+    fetch('/', { method: 'POST', body: p })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert(d.error);
+            } else {
+                document.getElementById('bk-content').innerText = d.content;
+                document.getElementById('m-bk-view').style.display = 'flex';
+                document.getElementById('bk-view-title').innerText = t('modal_view_bk') + ': ' + f;
+                document.getElementById('btn-bk-restore').onclick = function() {
+                    closeM('m-bk-view');
+                    restoreBackup(f);
+                };
+            }
+        });
+}
+
+function restoreBackup(f){
+    if(confirm(t('confirm_restore', f))){
+        var p=new URLSearchParams(); p.append('act', 'rest'); p.append('f', f);
+        fetch('/', {method:'POST', body:p}).then(()=>location.reload());
+    }
+}
+
 function showDel(){
     var prs = getProxiesList();
-    var s=document.getElementById('sel-del');s.innerHTML='';
-    prs.forEach(p=>{var o=document.createElement('option');o.text=p;s.add(o)});
-    document.getElementById('m-del').style.display='flex';
+    var s = document.getElementById('sel-del');
+    s.innerHTML = '';
+    prs.forEach(p => { var o = document.createElement('option'); o.text = p; s.add(o); });
+    document.getElementById('m-del').style.display = 'flex';
 }
+
 function doDel(){
-    var nm=document.getElementById('sel-del').value;if(!nm)return;if(!confirm(t('confirm_del_proxy')))return;closeM('m-del');
-    var ls=ed.getValue().split(/\\r?\\n/); var nls=[], inP=false, delB=false, bInd=-1;
+    var nm=document.getElementById('sel-del').value;
+    if(!nm) return;
+    if(!confirm(t('confirm_del_proxy') + " " + nm + "?")) return;
+    closeM('m-del');
+    var ls=ed.getValue().split(/\r?\n/);
+    var nls=[], inP=false, delB=false, bInd=-1;
     for(var l of ls){
-        if(l.match(/^proxies:/)){inP=true;nls.push(l);continue} if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)){inP=false;delB=false}
+        if(l.match(/^proxies:/)){inP=true;nls.push(l);continue}
+        if(inP && l.match(/^[a-zA-Z]/) && !l.match(/^proxies:/)){inP=false;delB=false}
         if(inP){
             var df=l.match(/^(\s+)-\s+name:\s+(.*)/);
             if(df){
@@ -1467,31 +2104,42 @@ function doDel(){
         if(rm){var rn=rm[1]||rm[2]||rm[3];if(rn&&rn.trim()===nm)continue}
         nls.push(l);
     }
-    ed.setValue(nls.join('\\n'));
+    ed.setValue(nls.join('\n'));
+    ed.clearSelection();
+    showToast(t('toast_deleted'));
 }
 
 function showRename() {
-    var prs = getProxiesList();
-    var s = document.getElementById('sel-ren-proxy');
-    s.innerHTML = '';
-    prs.forEach(p => {
+    var proxies = getProxiesList();
+    var sel = document.getElementById('sel-ren-proxy');
+    sel.innerHTML = '';
+    proxies.forEach(p => {
         var o = document.createElement('option');
         o.text = p;
-        s.add(o)
+        sel.add(o);
     });
-    document.getElementById('inp-ren-newname').value = '';
+
+    if (proxies.length > 0) {
+        document.getElementById('inp-ren-newname').value = proxies[0];
+    } else {
+        document.getElementById('inp-ren-newname').value = '';
+    }
+
+    sel.onchange = function() {
+        document.getElementById('inp-ren-newname').value = this.value;
+    };
+
     document.getElementById('m-ren').style.display = 'flex';
 }
 
 function doRename() {
     var oldName = document.getElementById('sel-ren-proxy').value;
     var newName = document.getElementById('inp-ren-newname').value.trim();
-    if (!newName) {
-        alert("Новое имя не может быть пустым.");
-        return;
-    }
-    if (!oldName) {
-        alert("Прокси не выбран.");
+
+    if (!oldName) return alert('Выберите прокси для переименования');
+    if (!newName) return alert('Введите новое имя');
+    if (oldName === newName) {
+        closeM('m-ren');
         return;
     }
 
@@ -1514,7 +2162,7 @@ function doRename() {
                 showToast(t('toast_renamed'));
             }
         })
-        .catch(e => alert("Сетевая ошибка: " + e));
+        .catch(e => alert("Network error: " + e));
 }
 </script></body></html>"""
 
@@ -1632,7 +2280,7 @@ class H(http.server.SimpleHTTPRequestHandler):
         out = HTML_TEMPLATE.replace('__JSON_CONTENT__', json.dumps(c)) \
             .replace('__BACKUPS__', s.get_bks()) \
             .replace('__PROFILES__', s.get_prof_opts()) \
-            .replace('__TIME__', datetime.now().strftime("%H:%M:%S"))
+            
         s.wfile.write(out.encode('utf-8'))
 
     def do_POST(s):
@@ -1872,8 +2520,12 @@ class H(http.server.SimpleHTTPRequestHandler):
         s.send_error(405, "Method Not Allowed")
 
 
-try:
-    socketserver.TCPServer.allow_reuse_address = True;
-    socketserver.TCPServer(("", PORT), H).serve_forever()
-except Exception as e:
-    print(e)
+if __name__ == '__main__':
+    init_system()
+    try:
+        socketserver.TCPServer.allow_reuse_address = True
+        print(f"Mihomo Studio starting on port {PORT}...")
+        socketserver.TCPServer(("", PORT), H).serve_forever()
+    except Exception as e:
+        print(e)
+
